@@ -76,7 +76,6 @@ import trade.nesty.app.ui.NavRow
 import trade.nesty.app.ui.Route
 import trade.nesty.app.ui.TabHeader
 import trade.nesty.app.ui.WhileShown
-import trade.nesty.app.ui.discover.noTrading
 import trade.nesty.app.ui.discover.shareKey
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
@@ -84,6 +83,7 @@ import trade.nesty.app.ui.signColor
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
+import trade.nesty.app.ui.trade.QuickTrade
 
 /** A followed wallet's trade, with what the coin is worth now. */
 data class TrackedTrade(
@@ -273,7 +273,7 @@ fun TrackerScreen() {
                     Notice("Follow a wallet to see its trades", "Follow one from the Leaderboard, a coin's holders, or add an address here.")
                 }
                 rows.isNotEmpty() -> items(rows, key = { it.chain.feed + it.wallet + it.trade.tx + it.trade.token + it.trade.isBuy }) { r ->
-                    TrackedRow(r, now, settings, onOpen = { nav.push(Route.Token(r.chain, r.trade.token)) }, onBuy = { toasts.noTrading() })
+                    TrackedRow(r, now, settings, onOpen = { nav.push(Route.Token(r.chain, r.trade.token)) }, onBuy = { QuickTrade.buy(toasts, r.chain, r.trade.token, settings.quickBuy.toDouble(), r.symbol) })
                 }
                 !model.loaded -> item { Notice("Reading their trades…", "") }
                 else -> item { Notice("No trades match", "Try a smaller minimum, another chain or all wallets.") }

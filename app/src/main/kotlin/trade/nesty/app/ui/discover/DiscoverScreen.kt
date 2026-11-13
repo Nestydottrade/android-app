@@ -39,6 +39,7 @@ import trade.nesty.app.ui.ChainChips
 import trade.nesty.app.ui.CoinAvatar
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
+import trade.nesty.app.ui.menu.oneBalance
 import trade.nesty.app.ui.StickToTop
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.IconButton48
@@ -50,7 +51,6 @@ import trade.nesty.app.ui.NIcons
 import trade.nesty.app.ui.Route
 import trade.nesty.app.ui.TabHeader
 import trade.nesty.app.ui.ToneMark
-import trade.nesty.app.ui.Toasts
 import trade.nesty.app.ui.WhileShown
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
@@ -58,9 +58,7 @@ import trade.nesty.app.ui.signColor
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
-
-/** Trading arrives with the wallets; until then each buy says so. */
-fun Toasts.noTrading() = show("Buying is not in this build yet", "This first build only reads.")
+import trade.nesty.app.ui.trade.QuickTrade
 
 @Composable
 fun DiscoverScreen() {
@@ -110,7 +108,7 @@ fun DiscoverScreen() {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Text("One Balance", style = text(13, color = Ink.muted))
-                Text("$0.00", style = text(15, FontWeight.SemiBold))
+                Text(oneBalance(), style = text(15, FontWeight.SemiBold))
             }
         }
         Divider()
@@ -125,7 +123,7 @@ fun DiscoverScreen() {
                             now = now,
                             quick = settings.quickBuy,
                             onOpen = { nav.push(Route.Token(r.chain, r.address)) },
-                            onBuy = { toasts.noTrading() },
+                            onBuy = { QuickTrade.buy(toasts, r.chain, r.address, settings.quickBuy.toDouble(), r.symbol) },
                         )
                     }
                 }

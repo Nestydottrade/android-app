@@ -562,3 +562,49 @@ data class PricesAnswer(val prices: List<PriceRow> = emptyList())
 
 @Serializable
 data class AppRelease(val version: String = "", val code: Int = 0, val url: String = "", val sha256: String = "", val size: Long = 0)
+
+/** One chain of /balances: the coin in its smallest unit, and what a whole one is worth. */
+@Serializable
+data class ChainBalance(
+    val feed: String = "",
+    /** Wei or lamports, as a decimal string. */
+    val native: String = "0",
+    /** Dollars for a whole coin; null when not priced. */
+    val usd: Double? = null,
+    /** True when this chain could not be read: its figure is then not a zero. */
+    val failed: Boolean = false,
+    /** The tokens the phone named, held on this chain, in their smallest unit. */
+    val tokens: List<TokenRaw> = emptyList(),
+)
+
+@Serializable
+data class TokenRaw(val address: String = "", val raw: String? = null)
+
+@Serializable
+data class BalancesAnswer(val address: String = "", val chains: List<ChainBalance> = emptyList(), val whole: Boolean = false)
+
+/**
+ * What a landed trade did for a wallet, from its receipt (/fill). `state` is `pending`, `failed`,
+ * `other` (not a trade of this wallet) or `filled`; the rest is there once filled.
+ */
+@Serializable
+data class FillAnswer(
+    val state: String = "",
+    val feed: String = "",
+    val tx: String = "",
+    /** When it landed, in milliseconds. */
+    val at: Long? = null,
+    val side: String? = null,
+    val token: String? = null,
+    /** Tokens in or out, in their smallest unit. */
+    val raw: String? = null,
+    val decimals: Int? = null,
+    /** The chain's coin paid or received, raw. */
+    val native: String? = null,
+    val usd: Double? = null,
+    val nativeUsd: Double? = null,
+    val supply: Double? = null,
+    val priceUsd: Double? = null,
+    val mcapUsd: Double? = null,
+    val late: Boolean = false,
+)

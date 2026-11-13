@@ -38,6 +38,10 @@ import trade.nesty.app.BuildConfigLite
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.AppRelease
 import trade.nesty.app.data.Settings
+import trade.nesty.app.data.VaultState
+import trade.nesty.app.ui.Fmt
+import trade.nesty.app.ui.vault.ExportForm
+import trade.nesty.app.vault.WalletInfo
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.IconButton48
@@ -52,6 +56,8 @@ import trade.nesty.app.ui.theme.text
 fun MenuScreen() {
     val nav = LocalNavigator.current
     val settings = AppGraph.settings
+    val session = AppGraph.session
+    val wallet = session.active
     var release by remember { mutableStateOf<AppRelease?>(null) }
     var asked by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
@@ -75,9 +81,28 @@ fun MenuScreen() {
                             Text("One Balance", style = text(15, FontWeight.Bold))
                             Text("Portfolio and deposit", style = text(13, color = Ink.muted))
                         }
-                        Text("$0.00", style = figure(24, FontWeight.SemiBold))
+                        Text(oneBalance(), style = figure(24, FontWeight.SemiBold))
                     }
-                    Text("No wallet yet", style = text(13, color = Ink.text2))
+                    if (wallet == null) {
+                        Text("No wallet yet", style = text(13, color = Ink.text2))
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            wallet.evm?.let { Text("EVM chains: ${Fmt.address(it)}", style = text(13, color = Ink.text2)) }
+                            wallet.sol?.let { Text("Solana: ${Fmt.address(it)}", style = text(13, color = Ink.text2)) }
+                        }
+                    }
+                }
+            }
+
+            Card {
+                val count = session.wallets.size
+                when {
+                    session.state == VaultState.NONE ->
+                        MenuLink("Set up a wallet", "Make a password, then create or import one") { nav.push(Route.Setup) }
+                    wallet == null ->
+                        MenuLink("Add your first wallet", "Create one or import one") { nav.push(Route.Wallets(adding = true)) }
+                    else ->
+                        MenuLink("Trading with ${wallet.name}", "${Fmt.counted(count.toLong(), "wallet")} · switch or make a new one") { nav.push(Route.Wallets()) }
                 }
             }
 
@@ -114,6 +139,10 @@ fun MenuScreen() {
                 MenuLink("Updates", "What changed in Nesty, newest first") { nav.push(Route.Updates) }
             }
 
+            if (session.state == VaultState.OPEN) {
+                Section("Security") { Security(wallet) }
+            }
+
             Card {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text("Nesty for Android ${BuildConfigLite.VERSION}", style = text(15, FontWeight.SemiBold))
@@ -121,13 +150,81 @@ fun MenuScreen() {
                     Text(
                         when {
                             r != null && r.code > BuildConfigLite.CODE -> "Version ${r.version} is ready to install"
-                            asked -> "This build reads only: wallets and trading come next"
+                            asked -> "This build has wallets and reads. Trading comes next."
                             else -> " "
                         },
                         style = text(13, color = Ink.muted, lineHeight = 18.sp),
                     )
                 }
             }
+        }
+    }
+}
+
+/** When the wallets lock by themselves, a lock right now, and a key's export behind the password. */
+@Composable
+private fun Security(wallet: WalletInfo?) {
+    val settings = AppGraph.settings
+    val session = AppGraph.session
+    var exporting by remember { mutableStateOf(false) }
+    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text("Lock after", style = text(15, FontWeight.SemiBold))
+            Text("Time away from the app. Your password opens Nesty again.", style = text(13, color = Ink.muted))
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (minutes in Settings.LOCK_STEPS) {
+                val on = settings.lockAfterMinutes == minutes
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (on) Ink.violetBg else Ink.raised)
+                        .border(1.dp, if (on) Ink.violet else Ink.line2, RoundedCornerShape(12.dp))
+                        .clickable(role = Role.Button) { settings.pickLockAfter(minutes) }
+                        .semantics { selected = on },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(if (minutes >= 60) "1 hour" else "$minutes min", style = text(15, FontWeight.Bold, if (on) Ink.text else Ink.text2))
+                }
+            }
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(44.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, Ink.line3, RoundedCornerShape(12.dp))
+                .clickable(role = Role.Button) { session.lock() },
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Lock now", style = text(15, FontWeight.Bold))
+        }
+    }
+    if (wallet != null) {
+        Divider()
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text("Export a private key", style = text(15, FontWeight.SemiBold))
+                    Text("Of ${wallet.name}. Asks for your password first.", style = text(13, color = Ink.muted))
+                }
+                Box(
+                    Modifier
+                        .height(44.dp)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Ink.raised)
+                        .border(1.dp, Ink.line3, RoundedCornerShape(12.dp))
+                        .clickable(role = Role.Button) { exporting = !exporting }
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(if (exporting) "Hide" else "Show", style = text(14, FontWeight.Bold))
+                }
+            }
+            // The form opens right under its row.
+            if (exporting) ExportForm(wallet, onClose = { exporting = false })
         }
     }
 }

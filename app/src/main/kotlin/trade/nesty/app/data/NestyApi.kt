@@ -83,6 +83,17 @@ class NestyApi(
     suspend fun prices(coins: List<Pair<Chain, String>>): PricesAnswer =
         get("prices", "tokens" to coins.joinToString(",") { "${it.first.feed}:${it.second}" })
 
+    /**
+     * A wallet's own coin on each chain of its kind: every EVM chain for a 0x address, Solana for a
+     * Solana one, and the tokens named (50 at most: the coins of its positions, since EVM chains
+     * cannot list what a wallet holds). The server sees the address and the coins asked about.
+     */
+    suspend fun balances(address: String, tokens: List<Pair<Chain, String>> = emptyList()): BalancesAnswer =
+        get("balances/$address", "tokens" to tokens.take(50).takeIf { it.isNotEmpty() }?.joinToString(",") { "${it.first.feed}:${it.second}" })
+
+    /** What a landed trade of `wallet` did, from its receipt: kept as the position's entry. */
+    suspend fun fill(chain: Chain, tx: String, wallet: String): FillAnswer = get("fill/${chain.feed}/$tx", "wallet" to wallet)
+
     suspend fun signals(chain: Chain): SignalsAnswer = get("signals/${chain.feed}")
 
     suspend fun signalRecord(): RecordAnswer = get("signals/record")

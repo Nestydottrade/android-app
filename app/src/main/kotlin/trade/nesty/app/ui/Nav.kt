@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -25,11 +26,18 @@ sealed interface Route {
 
     data class Token(val chain: Chain, val address: String) : Route
     data class TradesHolders(val chain: Chain, val address: String) : Route
+
+    /** The wallet's position in a coin: what it holds, its result, selling. */
+    data class Position(val chain: Chain, val address: String) : Route
     data class Wallet(val chain: Chain, val address: String) : Route
     data object Search : Route
     data object Menu : Route
     data object Stats : Route
     data object Updates : Route
+
+    /** Making the password, before the first wallet. */
+    data object Setup : Route
+    data class Wallets(val adding: Boolean = false) : Route
 
     val isTab: Boolean get() = this is Discover || this is Smart || this is Tracker || this is Portfolio
 }
@@ -99,9 +107,21 @@ class Toasts {
     /** Sheets open now. A sheet covers the screen's own note, so it shows the note itself. */
     var sheets by mutableIntStateOf(0)
 
-    fun show(title: String, detail: String = "") {
+    /** The height of a bar at the bottom of the page, system bar included: notes sit above it. */
+    var lift by mutableStateOf(0.dp)
+
+    /** `bad`: something did not happen. `action` and `onAction`: one link in the note, such as View. */
+    fun show(title: String, detail: String = "", bad: Boolean = false, action: String? = null, onAction: (() -> Unit)? = null) {
         serial += 1
-        current = ToastMessage(serial, title, detail)
+        val id = serial
+        current = ToastMessage(id, title, detail, bad, action, onAction?.let { act -> { clear(id); act() } })
+    }
+
+    /** How long a note stays: one with a link or a reason to read stays longer. */
+    fun lifeOf(t: ToastMessage): Long = when {
+        t.action != null -> 6_000
+        t.bad -> 5_000
+        else -> 2_800
     }
 
     fun clear(id: Int) {
@@ -109,6 +129,13 @@ class Toasts {
     }
 }
 
-data class ToastMessage(val id: Int, val title: String, val detail: String)
+data class ToastMessage(
+    val id: Int,
+    val title: String,
+    val detail: String,
+    val bad: Boolean = false,
+    val action: String? = null,
+    val onAction: (() -> Unit)? = null,
+)
 
 val LocalToasts = staticCompositionLocalOf<Toasts> { error("No toasts") }

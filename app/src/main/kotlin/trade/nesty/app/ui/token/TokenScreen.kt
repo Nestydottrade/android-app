@@ -63,7 +63,6 @@ import trade.nesty.app.ui.CoinAvatar
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
 import trade.nesty.app.ui.Fmt
-import trade.nesty.app.ui.GreenButton
 import trade.nesty.app.ui.IconButton48
 import trade.nesty.app.ui.LiveMark
 import trade.nesty.app.ui.LocalNavigator
@@ -78,7 +77,6 @@ import trade.nesty.app.ui.Tone
 import trade.nesty.app.ui.ToneChip
 import trade.nesty.app.ui.ToneMark
 import trade.nesty.app.ui.WhileShown
-import trade.nesty.app.ui.discover.noTrading
 import trade.nesty.app.ui.rememberEntryModel
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
@@ -88,6 +86,7 @@ import trade.nesty.app.ui.signColor
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
+import trade.nesty.app.ui.trade.TradeBar
 import trade.nesty.app.ui.venueName
 
 const val TOKEN_MODEL = "token"
@@ -110,7 +109,6 @@ fun copyText(context: Context, label: String, value: String) {
 fun TokenScreen(chain: Chain, address: String) {
     val model = rememberTokenModel(chain, address)
     val nav = LocalNavigator.current
-    val toasts = LocalToasts.current
     val settings = AppGraph.settings
     WhileShown { model.live(withChart = true) }
     val coin = model.coin
@@ -155,7 +153,7 @@ fun TokenScreen(chain: Chain, address: String) {
                         NavRow("Trades and holders", note.ifEmpty { null }, onClick = { nav.push(Route.TradesHolders(chain, address)) })
                     }
                 }
-                BuyBar(coin, onBuy = { toasts.noTrading() })
+                TradeBar(chain, address, coin, checks, onChecks = { scope.launch { scroll.animateScrollTo(checksY.toInt()) } })
                 if (signalOpen && head != null) {
                     SignalWalletsSheet(
                         chain = chain,
@@ -318,10 +316,13 @@ private fun ChartSection(model: TokenModel, coin: Coin) {
             candles.isNotEmpty() && supply != null && supply > 0 -> {
                 val from = candles.takeLast(36).first().open * supply
                 val to = candles.last().close * supply
+                // Each length starts at its newest candles.
+                val view = remember(model.frame) { ChartView() }
                 CandleChart(
                     candles,
                     supply,
                     "$symbol market cap in ${model.frame.words} candles, from about ${Fmt.usd(from)} to ${Fmt.usd(to)}",
+                    view,
                 )
             }
             model.chartPhase == Phase.LOADING -> ChartNote("Loading the chart…")
@@ -472,48 +473,6 @@ private fun WalletsCard(model: TokenModel, signal: SignalHead?, followed: List<F
                     modifier = Modifier.weight(1f),
                 )
                 Icon(NIcons.chevronRight, contentDescription = null, tint = Ink.muted, modifier = Modifier.size(18.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun BuyBar(coin: Coin, onBuy: () -> Unit) {
-    val nav = LocalNavigator.current
-    val symbol = coin.symbol ?: "this coin"
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(Ink.card)
-            .navigationBarsPadding(),
-    ) {
-        Divider()
-        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Buy", style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
-                Row(Modifier.clickable(role = Role.Button) { nav.tab(Route.Portfolio) }, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("One Balance", style = text(13, color = Ink.muted))
-                    Text("$0.00", style = text(13, FontWeight.SemiBold))
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (usd in listOf(10, 25, 50)) {
-                    GreenButton(
-                        "$$usd",
-                        onBuy,
-                        Modifier.weight(1f).semantics { contentDescription = "Buy $$usd of $symbol" },
-                    )
-                }
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .height(52.dp)
-                        .background(Ink.raised, androidx.compose.foundation.shape.RoundedCornerShape(14.dp))
-                        .clickable(role = Role.Button, onClick = onBuy),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text("Custom", style = text(15, FontWeight.Bold))
-                }
             }
         }
     }

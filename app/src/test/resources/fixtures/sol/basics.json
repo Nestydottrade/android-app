@@ -1,0 +1,917 @@
+{
+ "note": "Written by the extension's Solana code. The seed is MADE-UP: never funded, never used on a chain; it signs over a made-up blockhash only.",
+ "seedHex": "4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b",
+ "wallet": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+ "wsol": "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX",
+ "atas": [
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "So11111111111111111111111111111111111111112",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX"
+  },
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "So11111111111111111111111111111111111111112",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "ALA6k5TbtKqn6CJP3fi8q9CXDJLzUBADwsA4uENRxTbh"
+  },
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "GB68nE2AHjrdHBFYnnScNACyiZUEfupgYZoEcRA5WVUu"
+  },
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "3gMTraCHtaVTkj66r6Pcnjky8j4Zd5nLYzobHXu24EtT"
+  },
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "DX6e7PenRcoFLz29Jhmuv8BtFayyS8Rs7K6euYj1mitV"
+  },
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "HghBcbaEYpc2XAXwuaD7jNM6tshNutc8JCDdbepba9f8"
+  },
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "5y4d1ZsiVfyjhCqWDsRv9EGqaY3sg1LQNiUPkVqM2c1e"
+  },
+  {
+   "owner": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "AJS8VhniH6ErB3fa5BBR1kFPUaZs1H4SV9HyeWni8rKf"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "So11111111111111111111111111111111111111112",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "emuQwCoSbauDDNwtFDr4gmXCR2ii7ojMMKQ7MjhVSr6"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "So11111111111111111111111111111111111111112",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "Qt9gbqQN2riHyKHwdu7NgLKpiAbnstAyRJwecmfWtUY"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "Ynq1w6HjX22K3Z7WgzZkWWCNcRW11HXTqALheCQv1M2"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "88Y8qcu6wx4iKPfRB7LS4pupS4jbDuQ3dhhtMEr2WcXN"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "8r4bNzgXfkMToW5sPzAsALZyABmXKNXvexzuuaffNp3R"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "2MMH65Cs6Bixom2Kapo9jFGQY9hWZbjqZ29rFweNdE6f"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "4LtcgMmStUHwAddCugQSYaLwYWVL6kQzJCZ1yAhHYbZX"
+  },
+  {
+   "owner": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "rP8kLTMxcZCRbtuA79aj6x15cTYHGQzQmU4o7dFD3Qb"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "So11111111111111111111111111111111111111112",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "3zhC79VF9oWobJwXGFzwZWBA9mMK9rHB2xtUVzsH2pe4"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "So11111111111111111111111111111111111111112",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "6bN63Q4MLDsLXMfoKmckztVMPuVDjcogt1LzFNkRwTJ6"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "84VB7iWUVTAG4AZmXqaeWqTJx9DgnRDJg3prY1UPWbvR"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "ApQL5QA6fummasUSJVPYKKGPWso7Xmw8oQRXNDwV1iPc"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "2FyZkKPAwTRpJfRD1d6Fx5vfYPajuwk173Kjspp8sQcJ"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "A8N4u7J1f4LydZveveaQfBjmJRL4B3VqHqGXi35t9rKh"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+   "program": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "ata": "6sN4soarhjKDdtrJuj3FSnr2usMjHyGGFL32ykUfJ2oF"
+  },
+  {
+   "owner": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+   "program": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+   "ata": "CfP1UCcZRzhdEoj8UzXGXcGokDseym4deEDBcgLzQ1jY"
+  }
+ ],
+ "coins": [
+  {
+   "mint": "So11111111111111111111111111111111111111112",
+   "metadata": "6dM4TqWyWJsbx7obrdLcviBkTafD5E8av61zfU6jq57X",
+   "curve": "6PiyjiAPkp2KdZtqkyQYzVsD1Prv7t8v4TaYd8ip4YFd",
+   "poolSol": "4wEs2BnHGeLWeXgXcQZFEUxgLay8jwE4rwjmi1xURmU7",
+   "poolUsdc": "HBcF1C3d5ZdadNDu7HYK1BikNR6GWwoT32Rbs23JjJuK"
+  },
+  {
+   "mint": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+   "metadata": "5x38Kp4hvdomTCnCrAny4UtMUt5rQBdB6px2K1Ui45Wq",
+   "curve": "8Rr2Qo9ch94zRZxojHfg7Xeq8DfAp9mfNaLZnQScnpbA",
+   "poolSol": "7RhvxY3mDRVrJep3hhQf5VZ6AqB7LNA5gqRsT5ffNXED",
+   "poolUsdc": "J17nNm8S7u22PqR3FYeDpeaxWYmY7Yc1G2cVATpBFy1H"
+  },
+  {
+   "mint": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+   "metadata": "FEqmnJf5LXsbK3H2rXqb884ZJW1GXnn37SSX3fyhJTwC",
+   "curve": "84L76fj2mRnnvmTxHYZydt8HVN11WzVhCPK3zFirqpSE",
+   "poolSol": "6crjjZhaHG8kBPN7gSgSycL2erYEPygoryX6zuxEybPA",
+   "poolUsdc": "8y9vcMEL6Q9Y3ZHQBNVtk2F6HMrDFKPQsWZQq3WVADta"
+  },
+  {
+   "mint": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm",
+   "metadata": "C1BpuaMytZAbSCFf9WM2gm6fAm54Yh1gh32ieptrp12B",
+   "curve": "7kAsAxtVQckxu5eoenWfyztb45pjb3raxKQEZd2ndi7J",
+   "poolSol": "Hw3sV3nF6REGUi5iHcxWReH1nq7a6hdRAakceViuXTG",
+   "poolUsdc": "wmtvVdUy7TQwSe5Rc9zxGhryHBXJfmc12JFZ1zJZgkn"
+  }
+ ],
+ "pdas": [
+  {
+   "seeds": [
+    "676c6f62616c"
+   ],
+   "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+   "address": "4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf",
+   "bump": 255
+  },
+  {
+   "seeds": [
+    "626f6e64696e672d6375727665",
+    "44c8d51e5412d02da5f338cf715c734d1c462633ff4767fd40a93d2f25c3064f"
+   ],
+   "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+   "address": "84L76fj2mRnnvmTxHYZydt8HVN11WzVhCPK3zFirqpSE",
+   "bump": 254
+  },
+  {
+   "seeds": [
+    "5f5f6576656e745f617574686f72697479"
+   ],
+   "program": "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+   "address": "GS4CU59F31iL7aR2Q8zVS8DRrcRnXX1yjQ66TqNVQnaR",
+   "bump": 255
+  },
+  {
+   "seeds": [
+    "757365725f766f6c756d655f616363756d756c61746f72",
+    "ddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d"
+   ],
+   "program": "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",
+   "address": "GvL7jL9yADwfrEQgrHRvc162uh8UBw8quKJZaMg5Z9Er",
+   "bump": 255
+  },
+  {
+   "seeds": [
+    "010203",
+    "0909090909090909090909090909090909090909090909090909090909090909"
+   ],
+   "program": "11111111111111111111111111111111",
+   "address": "5UjmtdbANUbFKoUXtn2BBi6XBSwnd9iHEkTFouz4w8F9",
+   "bump": 255
+  }
+ ],
+ "onCurve": [
+  {
+   "address": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "onCurve": true
+  },
+  {
+   "address": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "onCurve": true
+  },
+  {
+   "address": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+   "onCurve": false
+  },
+  {
+   "address": "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX",
+   "onCurve": false
+  },
+  {
+   "address": "ALA6k5TbtKqn6CJP3fi8q9CXDJLzUBADwsA4uENRxTbh",
+   "onCurve": false
+  },
+  {
+   "address": "GB68nE2AHjrdHBFYnnScNACyiZUEfupgYZoEcRA5WVUu",
+   "onCurve": false
+  },
+  {
+   "address": "3gMTraCHtaVTkj66r6Pcnjky8j4Zd5nLYzobHXu24EtT",
+   "onCurve": false
+  },
+  {
+   "address": "84L76fj2mRnnvmTxHYZydt8HVN11WzVhCPK3zFirqpSE",
+   "onCurve": false
+  }
+ ],
+ "compact": [
+  {
+   "n": 0,
+   "bytes": [
+    0
+   ]
+  },
+  {
+   "n": 1,
+   "bytes": [
+    1
+   ]
+  },
+  {
+   "n": 127,
+   "bytes": [
+    127
+   ]
+  },
+  {
+   "n": 128,
+   "bytes": [
+    128,
+    1
+   ]
+  },
+  {
+   "n": 255,
+   "bytes": [
+    255,
+    1
+   ]
+  },
+  {
+   "n": 256,
+   "bytes": [
+    128,
+    2
+   ]
+  },
+  {
+   "n": 16383,
+   "bytes": [
+    255,
+    127
+   ]
+  },
+  {
+   "n": 16384,
+   "bytes": [
+    128,
+    128,
+    1
+   ]
+  },
+  {
+   "n": 65535,
+   "bytes": [
+    255,
+    255,
+    3
+   ]
+  }
+ ],
+ "instructions": [
+  {
+   "name": "unitLimit",
+   "programId": "ComputeBudget111111111111111111111111111111",
+   "keys": [],
+   "data": "0240e20100"
+  },
+  {
+   "name": "unitPrice",
+   "programId": "ComputeBudget111111111111111111111111111111",
+   "keys": [],
+   "data": "03fad93d0000000000"
+  },
+  {
+   "name": "transfer",
+   "programId": "11111111111111111111111111111111",
+   "keys": [
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": true,
+     "isWritable": true
+    },
+    {
+     "pubkey": "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+     "isSigner": false,
+     "isWritable": true
+    }
+   ],
+   "data": "0200000040420f0000000000"
+  },
+  {
+   "name": "openWsol",
+   "programId": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+   "keys": [
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": true,
+     "isWritable": true
+    },
+    {
+     "pubkey": "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX",
+     "isSigner": false,
+     "isWritable": true
+    },
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "So11111111111111111111111111111111111111112",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "11111111111111111111111111111111",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "isSigner": false,
+     "isWritable": false
+    }
+   ],
+   "data": "01"
+  },
+  {
+   "name": "openCoin2022",
+   "programId": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+   "keys": [
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": true,
+     "isWritable": true
+    },
+    {
+     "pubkey": "HghBcbaEYpc2XAXwuaD7jNM6tshNutc8JCDdbepba9f8",
+     "isSigner": false,
+     "isWritable": true
+    },
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "11111111111111111111111111111111",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb",
+     "isSigner": false,
+     "isWritable": false
+    }
+   ],
+   "data": "01"
+  },
+  {
+   "name": "openForOther",
+   "programId": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+   "keys": [
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": true,
+     "isWritable": true
+    },
+    {
+     "pubkey": "Ynq1w6HjX22K3Z7WgzZkWWCNcRW11HXTqALheCQv1M2",
+     "isSigner": false,
+     "isWritable": true
+    },
+    {
+     "pubkey": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "11111111111111111111111111111111",
+     "isSigner": false,
+     "isWritable": false
+    },
+    {
+     "pubkey": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+     "isSigner": false,
+     "isWritable": false
+    }
+   ],
+   "data": "01"
+  },
+  {
+   "name": "wrap",
+   "programId": "11111111111111111111111111111111",
+   "keys": [
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": true,
+     "isWritable": true
+    },
+    {
+     "pubkey": "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX",
+     "isSigner": false,
+     "isWritable": true
+    }
+   ],
+   "data": "0200000080b2e60e00000000"
+  },
+  {
+   "name": "sync",
+   "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "keys": [
+    {
+     "pubkey": "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX",
+     "isSigner": false,
+     "isWritable": true
+    }
+   ],
+   "data": "11"
+  },
+  {
+   "name": "close",
+   "programId": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+   "keys": [
+    {
+     "pubkey": "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX",
+     "isSigner": false,
+     "isWritable": true
+    },
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": false,
+     "isWritable": true
+    },
+    {
+     "pubkey": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+     "isSigner": true,
+     "isWritable": false
+    }
+   ],
+   "data": "09"
+  }
+ ],
+ "messages": [
+  {
+   "payer": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "blockhash": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+   "ixs": [
+    "unitLimit",
+    "unitPrice",
+    "transfer"
+   ],
+   "message": "01000204ddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0306466fe5211732ffecadba72c39be7bc8ce5bbc5f7126b2c439b3a4000000000000000000000000000000000000000000000000000000000000000000000000707070707070707070707070707070707070707070707070707070707070707030200050240e2010002000903fad93d0000000000030200010c0200000040420f0000000000",
+   "accounts": [
+    "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+    "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+    "ComputeBudget111111111111111111111111111111",
+    "11111111111111111111111111111111"
+   ],
+   "numSigners": 1,
+   "unsigned": "010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000204ddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0306466fe5211732ffecadba72c39be7bc8ce5bbc5f7126b2c439b3a4000000000000000000000000000000000000000000000000000000000000000000000000707070707070707070707070707070707070707070707070707070707070707030200050240e2010002000903fad93d0000000000030200010c0200000040420f0000000000",
+   "signature": "e7d30e4c9c989ed2d2df778e04074d422310ab38849490e77f6fdf2a58d7aecb251c5372293b87faf3d156aebeb15d3d5a882579f61d695db0ce8cf70eab0407",
+   "signed": "01e7d30e4c9c989ed2d2df778e04074d422310ab38849490e77f6fdf2a58d7aecb251c5372293b87faf3d156aebeb15d3d5a882579f61d695db0ce8cf70eab040701000204ddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0306466fe5211732ffecadba72c39be7bc8ce5bbc5f7126b2c439b3a4000000000000000000000000000000000000000000000000000000000000000000000000707070707070707070707070707070707070707070707070707070707070707030200050240e2010002000903fad93d0000000000030200010c0200000040420f0000000000"
+  },
+  {
+   "payer": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "blockhash": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+   "ixs": [
+    "unitLimit",
+    "unitPrice",
+    "openWsol",
+    "wrap",
+    "sync",
+    "openCoin2022",
+    "close"
+   ],
+   "message": "0100070addc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d5feb66cdf6c25dd7557dcecadecf4015a30c413aa36ee3efa25b19abc6a02290f7e613d2a8ef4b933f6ba2461147f5ec4d0ac49e052f17fea586f498cae4d1ab0306466fe5211732ffecadba72c39be7bc8ce5bbc5f7126b2c439b3a40000000069b8857feab8184fb687f634618c035dac439dc1aeb3b5598a0f00000000001000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85944c8d51e5412d02da5f338cf715c734d1c462633ff4767fd40a93d2f25c3064f06ddf6e1ee758fde18425dbce46ccddab61afc4d83b90d27febdf928d8a18bfc0707070707070707070707070707070707070707070707070707070707070707070300050240e2010003000903fad93d000000000007060001000405060101050200010c0200000080b2e60e0000000006010101110706000200080509010106030100000109",
+   "accounts": [
+    "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+    "7TRvTPgThRCe8wkH6pkbhr9XnGxUAqKqyL1iWwSVRECX",
+    "HghBcbaEYpc2XAXwuaD7jNM6tshNutc8JCDdbepba9f8",
+    "ComputeBudget111111111111111111111111111111",
+    "So11111111111111111111111111111111111111112",
+    "11111111111111111111111111111111",
+    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL",
+    "5dWLmCFzZ8tRFEYpCSyWJw2e6JwFE4Rk7MqRuD2opump",
+    "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+   ],
+   "numSigners": 1,
+   "unsigned": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000100070addc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d5feb66cdf6c25dd7557dcecadecf4015a30c413aa36ee3efa25b19abc6a02290f7e613d2a8ef4b933f6ba2461147f5ec4d0ac49e052f17fea586f498cae4d1ab0306466fe5211732ffecadba72c39be7bc8ce5bbc5f7126b2c439b3a40000000069b8857feab8184fb687f634618c035dac439dc1aeb3b5598a0f00000000001000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85944c8d51e5412d02da5f338cf715c734d1c462633ff4767fd40a93d2f25c3064f06ddf6e1ee758fde18425dbce46ccddab61afc4d83b90d27febdf928d8a18bfc0707070707070707070707070707070707070707070707070707070707070707070300050240e2010003000903fad93d000000000007060001000405060101050200010c0200000080b2e60e0000000006010101110706000200080509010106030100000109",
+   "signature": "137917b132a7ac107935f946a6d8ebbdb015d259b8a4165c51815bc09ffb652ea1324b6480b75b5fd54be6c4ff2557ec97ba672bca62da4998733c76e2b0e80d",
+   "signed": "01137917b132a7ac107935f946a6d8ebbdb015d259b8a4165c51815bc09ffb652ea1324b6480b75b5fd54be6c4ff2557ec97ba672bca62da4998733c76e2b0e80d0100070addc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d5feb66cdf6c25dd7557dcecadecf4015a30c413aa36ee3efa25b19abc6a02290f7e613d2a8ef4b933f6ba2461147f5ec4d0ac49e052f17fea586f498cae4d1ab0306466fe5211732ffecadba72c39be7bc8ce5bbc5f7126b2c439b3a40000000069b8857feab8184fb687f634618c035dac439dc1aeb3b5598a0f00000000001000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85944c8d51e5412d02da5f338cf715c734d1c462633ff4767fd40a93d2f25c3064f06ddf6e1ee758fde18425dbce46ccddab61afc4d83b90d27febdf928d8a18bfc0707070707070707070707070707070707070707070707070707070707070707070300050240e2010003000903fad93d000000000007060001000405060101050200010c0200000080b2e60e0000000006010101110706000200080509010106030100000109"
+  },
+  {
+   "payer": "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+   "blockhash": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+   "ixs": [
+    "openForOther",
+    "transfer",
+    "transfer"
+   ],
+   "message": "01000508ddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0824d2a3c9d8cb2aaab99cfe64cd2167d09d5948d816dc4cb5d5398d184cc1610d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0bc6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85907070707070707070707070707070707070707070707070707070707070707070307060001030405060101050200020c0200000040420f0000000000050200020c0200000040420f0000000000",
+   "accounts": [
+    "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+    "Ynq1w6HjX22K3Z7WgzZkWWCNcRW11HXTqALheCQv1M2",
+    "swqrv48gsrwpBFbftEwnP2vB4jckpvfGJfXkwaniLCC",
+    "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "11111111111111111111111111111111",
+    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+   ],
+   "numSigners": 1,
+   "unsigned": "010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001000508ddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0824d2a3c9d8cb2aaab99cfe64cd2167d09d5948d816dc4cb5d5398d184cc1610d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0bc6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85907070707070707070707070707070707070707070707070707070707070707070307060001030405060101050200020c0200000040420f0000000000050200020c0200000040420f0000000000",
+   "signature": "3123105a625861e97dfb897d0345961db25a22ab89860ee57039aad2e85efcb6f9cae6181cbf462242411ba79ee19c3e30444510be01982c93260c193d4cb90e",
+   "signed": "013123105a625861e97dfb897d0345961db25a22ab89860ee57039aad2e85efcb6f9cae6181cbf462242411ba79ee19c3e30444510be01982c93260c193d4cb90e01000508ddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0824d2a3c9d8cb2aaab99cfe64cd2167d09d5948d816dc4cb5d5398d184cc1610d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0d0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0bc6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85907070707070707070707070707070707070707070707070707070707070707070307060001030405060101050200020c0200000040420f0000000000050200020c0200000040420f0000000000"
+  },
+  {
+   "payer": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+   "blockhash": "US517G5965aydkZ46HS38QLi7UQiSojurfbQfKCELFx",
+   "ixs": [
+    "openForOther"
+   ],
+   "message": "020004070b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0bddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0824d2a3c9d8cb2aaab99cfe64cd2167d09d5948d816dc4cb5d5398d184cc161c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85907070707070707070707070707070707070707070707070707070707070707070106060102000304050101",
+   "accounts": [
+    "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+    "FvfrujSaPoQibHW42ZBo15pvMBPftMpNSb4HqpttCJf6",
+    "Ynq1w6HjX22K3Z7WgzZkWWCNcRW11HXTqALheCQv1M2",
+    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    "11111111111111111111111111111111",
+    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"
+   ],
+   "numSigners": 2,
+   "unsigned": "020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000020004070b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0b0bddc356ed71cf169764522d7b0038039102234d0ed324f36b83f7c45b7d222c8d0824d2a3c9d8cb2aaab99cfe64cd2167d09d5948d816dc4cb5d5398d184cc161c6fa7af3bedbad3a3d65f36aabc97431b1bbe4c2d2f6e0e47ca60203452f5d61000000000000000000000000000000000000000000000000000000000000000006ddf6e1d765a193d9cbe146ceeb79ac1cb485ed5f5b37913a8cf5857eff00a98c97258f4e2489f1bb3d1029148e0d830b5a1399daff1084048e7bd8dbe9f85907070707070707070707070707070707070707070707070707070707070707070106060102000304050101"
+  }
+ ],
+ "errors": [
+  {
+   "err": "InsufficientFundsForFee",
+   "programs": [],
+   "text": "Not enough SOL for the network fee."
+  },
+  {
+   "err": "BlockhashNotFound",
+   "programs": [],
+   "text": "Expired before it landed. Try again."
+  },
+  {
+   "err": "AccountNotFound",
+   "programs": [],
+   "text": "This wallet has no SOL yet."
+  },
+  {
+   "err": "InsufficientFunds",
+   "programs": [],
+   "text": "Insufficient SOL balance."
+  },
+  {
+   "err": "SomethingNew",
+   "programs": [],
+   "text": "Failed: SomethingNew."
+  },
+  {
+   "err": "not-a-kind!",
+   "programs": [],
+   "text": "Transaction failed."
+  },
+  {
+   "err": null,
+   "programs": [],
+   "text": "Transaction failed."
+  },
+  {
+   "err": {},
+   "programs": [],
+   "text": "Transaction failed."
+  },
+  {
+   "err": {
+    "InsufficientFundsForRent": {
+     "account_index": 0
+    }
+   },
+   "programs": [],
+   "text": "Not enough SOL to keep the account open."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 6002
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+   ],
+   "text": "Price moved past your slippage. Raise slippage or try again."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 6005
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+   ],
+   "text": "The pump.fun curve is complete. Trading opens on PumpSwap once it migrates."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 6040
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+   ],
+   "text": "Not enough SOL to cover the new accounts."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 6040
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA"
+   ],
+   "text": "Price moved past your slippage. Raise slippage or try again."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 6094
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+   ],
+   "text": "pump.fun refused this trade for a cashback coin. Try again."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 6080
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA"
+   ],
+   "text": "PumpSwap refused this trade for a mayhem pool. Try again."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 1
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "11111111111111111111111111111111"
+   ],
+   "text": "Insufficient SOL balance."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 1
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+   ],
+   "text": "Insufficient balance for this trade."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 1
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA"
+   ],
+   "text": "Insufficient balance for this trade."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 1
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"
+   ],
+   "text": "Program error 1."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     2,
+     {
+      "Custom": 42
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm"
+   ],
+   "text": "Program error 42."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     9,
+     {
+      "Custom": 6002
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111",
+    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
+   ],
+   "text": "Program error 6002."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     1,
+     "ProgramFailedToComplete"
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111"
+   ],
+   "text": "Ran out of compute. Try again."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     1,
+     "ComputationalBudgetExceeded"
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111"
+   ],
+   "text": "Ran out of compute. Try again."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     1,
+     "InvalidAccountData"
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111"
+   ],
+   "text": "Failed: InvalidAccountData."
+  },
+  {
+   "err": {
+    "InstructionError": [
+     1,
+     {
+      "BorshIoError": "x"
+     }
+    ]
+   },
+   "programs": [
+    "ComputeBudget111111111111111111111111111111",
+    "ComputeBudget111111111111111111111111111111"
+   ],
+   "text": "Failed: InstructionError."
+  },
+  {
+   "err": {
+    "DuplicateInstruction": 3
+   },
+   "programs": [],
+   "text": "Failed: DuplicateInstruction."
+  }
+ ]
+}

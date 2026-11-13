@@ -9,7 +9,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        // Not confirmed by the user yet; it cannot change after the first release.
+        // Confirmed by the user on 2026-11-13. It cannot change after the first release.
         applicationId = "trade.nesty.app"
         minSdk = 26
         targetSdk = 36
@@ -52,6 +52,9 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
     implementation(libs.coil.network.okhttp)
+    // Key derivation and the vault: secp256k1, Keccak, Ed25519, PBKDF2 and Argon2id. Used through
+    // its own classes only; it is never registered as a security provider.
+    implementation(libs.bouncycastle)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

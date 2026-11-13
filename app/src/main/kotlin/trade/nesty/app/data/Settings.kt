@@ -31,12 +31,22 @@ class Settings(context: Context) {
     var watchlist by mutableStateOf(prefs.getStringSet(KEY_WATCH, emptySet())!!.toSet())
         private set
 
+    /** Minutes away from the app after which the wallets lock: 5, 15 or 60. */
+    var lockAfterMinutes by mutableStateOf(prefs.getInt(KEY_LOCK, 15).takeIf { it in LOCK_STEPS } ?: 15)
+        private set
+
     var presets by mutableStateOf(readList<Preset>(KEY_PRESETS).takeIf { it.size == 3 } ?: DEFAULT_PRESETS)
         private set
 
     fun pickQuickBuy(usd: Int) {
         quickBuy = usd
         prefs.edit().putInt(KEY_QUICK, usd).apply()
+    }
+
+    fun pickLockAfter(minutes: Int) {
+        if (minutes !in LOCK_STEPS) return
+        lockAfterMinutes = minutes
+        prefs.edit().putInt(KEY_LOCK, minutes).apply()
     }
 
     fun nextQuickBuy() {
@@ -90,6 +100,8 @@ class Settings(context: Context) {
     companion object {
         const val MAX_FOLLOWED = 20
         val QUICK_STEPS = listOf(10, 25, 50, 100)
+        val LOCK_STEPS = listOf(5, 15, 60)
+        private const val KEY_LOCK = "lockAfter"
         val DEFAULT_PRESETS = listOf(Preset(15, "Fast"), Preset(25, "Turbo"), Preset(5, "Normal"))
         private const val KEY_QUICK = "quickBuy"
         private const val KEY_FOLLOWED = "followed"

@@ -495,25 +495,44 @@ fun BottomNav(current: Tab?, onPick: (Tab) -> Unit) {
 
 @Composable
 fun ToastCard(t: ToastMessage, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(16.dp)
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = 60.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(Ink.greenDeep)
-            .border(1.dp, Ink.greenLine, RoundedCornerShape(16.dp))
-            .semantics(mergeDescendants = true) {}
-            .padding(horizontal = 16.dp, vertical = 10.dp),
+            .clip(shape)
+            .background(if (t.bad) Ink.pinkBg else Ink.greenDeep)
+            .border(1.dp, if (t.bad) PINK_LINE else Ink.greenLine, shape)
+            .padding(start = 16.dp, end = if (t.action != null) 4.dp else 16.dp, top = 10.dp, bottom = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(NIcons.doneCircle, contentDescription = null, tint = Ink.green, modifier = Modifier.size(22.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Icon(
+            if (t.bad) NIcons.close else NIcons.doneCircle,
+            contentDescription = null,
+            tint = if (t.bad) Ink.pinkSoft else Ink.green,
+            modifier = Modifier.size(22.dp),
+        )
+        Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(t.title, style = text(15, FontWeight.Bold))
-            if (t.detail.isNotEmpty()) Text(t.detail, style = text(13, color = Ink.text2))
+            if (t.detail.isNotEmpty()) Text(t.detail, style = text(13, color = Ink.text2, lineHeight = 18.sp))
+        }
+        if (t.action != null && t.onAction != null) {
+            Box(
+                Modifier
+                    .heightIn(min = 44.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(role = Role.Button, onClick = t.onAction)
+                    .padding(horizontal = 12.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(t.action, style = text(15, FontWeight.Bold, Ink.green))
+            }
         }
     }
 }
+
+private val PINK_LINE = Color(0xFF4F2240)
 
 /** Where a figure stands against zero: green up, pink down. */
 /** A percent change that Fmt.pctChange writes as 0% is not green or pink. */

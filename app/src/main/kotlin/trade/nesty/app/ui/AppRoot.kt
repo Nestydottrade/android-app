@@ -41,10 +41,15 @@ import trade.nesty.app.ui.menu.UpdatesScreen
 import trade.nesty.app.ui.smart.LeadersModel
 import trade.nesty.app.ui.smart.SignalsModel
 import trade.nesty.app.ui.smart.SmartScreen
+import trade.nesty.app.data.VaultState
 import trade.nesty.app.ui.theme.Ink
+import trade.nesty.app.ui.vault.SetupScreen
+import trade.nesty.app.ui.vault.UnlockScreen
+import trade.nesty.app.ui.vault.WalletsScreen
 import trade.nesty.app.ui.token.TokenScreen
 import trade.nesty.app.ui.tracker.TrackerModel
 import trade.nesty.app.ui.tracker.TrackerScreen
+import trade.nesty.app.ui.trade.PositionScreen
 import trade.nesty.app.ui.wallet.WalletScreen
 
 /** The models of the four tabs, kept while the app runs so a tab comes back as it was left. */
@@ -77,7 +82,8 @@ fun AppRoot() {
     val top = nav.top
     val tab = Tab.of(top.route)
 
-    BackHandler(enabled = nav.stack.size > 1 || top.route != Route.Discover) {
+    // While the lock is up Back leaves the app, as on any first screen.
+    BackHandler(enabled = AppGraph.session.state != VaultState.LOCKED && (nav.stack.size > 1 || top.route != Route.Discover)) {
         if (!nav.pop()) nav.tab(Route.Discover)
     }
 
@@ -86,15 +92,38 @@ fun AppRoot() {
         nav.dropped.clear()
     }
 
+    // The wallet that trades has its balance read while the app is open and on screen.
+    val session = AppGraph.session
+    WhileShown(session.state) { if (session.state == VaultState.OPEN) AppGraph.balances.live() }
+
+    // Each trade that ends says so at the bottom of the screen, with a link to its position.
+    LaunchedEffect(Unit) {
+        val trading = AppGraph.trading
+        trading.notes.collect { n ->
+            if (n.id in trading.quiet) return@collect
+            val here = (nav.top.route as? Route.Position)?.let { it.chain == n.chain && it.address.equals(n.token, ignoreCase = true) } == true
+            if (n.ok && !here) {
+                toasts.show(n.title, n.detail, action = "View") { nav.push(Route.Position(n.chain, n.token)) }
+            } else {
+                toasts.show(n.title, n.detail, bad = !n.ok)
+            }
+        }
+    }
+
     CompositionLocalProvider(LocalNavigator provides nav, LocalToasts provides toasts, LocalRoot provides root) {
         Box(Modifier.fillMaxSize().background(Ink.ground)) {
+            // Closed wallets close the whole app: the lock is all there is until the password opens it.
+            if (session.state == VaultState.LOCKED) {
+                UnlockScreen()
+                return@Box
+            }
             Column(Modifier.fillMaxSize().statusBarsPadding()) {
                 Box(
                     Modifier
                         .weight(1f)
                         .fillMaxWidth()
-                        // The token page's Buy bar keeps itself above the system bar.
-                        .then(if (tab == null && top.route !is Route.Token) Modifier.navigationBarsPadding() else Modifier),
+                        // The trade bars of the token and position pages keep themselves above the system bar.
+                        .then(if (tab == null && top.route !is Route.Token && top.route !is Route.Position) Modifier.navigationBarsPadding() else Modifier),
                 ) {
                     saved.SaveableStateProvider(top.id) {
                         CompositionLocalProvider(LocalEntry provides top) {
@@ -112,13 +141,15 @@ fun AppRoot() {
             val t = toasts.current
             if (t != null) {
                 LaunchedEffect(t.id) {
-                    delay(2_800)
+                    delay(toasts.lifeOf(t))
                     toasts.clear(t.id)
                 }
-                val bottom = when {
-                    tab != null -> 84.dp
-                    top.route is Route.Token -> 140.dp
-                    else -> 24.dp
+                // Above the tabs, above a page's trade bar (its height includes the system bar), or low.
+                val lift = toasts.lift
+                val place = when {
+                    tab != null -> Modifier.navigationBarsPadding().padding(bottom = 84.dp)
+                    lift > 0.dp -> Modifier.padding(bottom = lift + 12.dp)
+                    else -> Modifier.navigationBarsPadding().padding(bottom = 24.dp)
                 }
                 // An open sheet shows the note itself (NestySheet): here it would sit under it.
                 if (toasts.sheets == 0) {
@@ -126,8 +157,8 @@ fun AppRoot() {
                         t,
                         Modifier
                             .align(Alignment.BottomCenter)
-                            .navigationBarsPadding()
-                            .padding(start = 16.dp, end = 16.dp, bottom = bottom),
+                            .then(place)
+                            .padding(horizontal = 16.dp),
                     )
                 }
             }
@@ -144,10 +175,13 @@ private fun Screen(route: Route) {
         Route.Portfolio -> PortfolioScreen()
         is Route.Token -> TokenScreen(route.chain, route.address)
         is Route.TradesHolders -> TradesHoldersScreen(route.chain, route.address)
+        is Route.Position -> PositionScreen(route.chain, route.address)
         is Route.Wallet -> WalletScreen(route.chain, route.address)
         Route.Search -> SearchScreen()
         Route.Menu -> MenuScreen()
         Route.Stats -> StatsScreen()
         Route.Updates -> UpdatesScreen()
+        Route.Setup -> SetupScreen()
+        is Route.Wallets -> WalletsScreen(route.adding)
     }
 }

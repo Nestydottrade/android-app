@@ -28,6 +28,9 @@ enum class Chain(
 
     val isEvm: Boolean get() = this != SOLANA
 
+    /** Decimals of the chain's own coin: wei on the EVM chains, lamports on Solana. */
+    val decimals: Int get() = if (this == SOLANA) 9 else 18
+
     /** The explorer's page of an address or token. */
     fun addressUrl(address: String): String =
         if (this == SOLANA) "$explorer/account/$address" else "$explorer/address/$address"

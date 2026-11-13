@@ -68,7 +68,6 @@ import trade.nesty.app.ui.ToneMark
 import trade.nesty.app.ui.Toasts
 import trade.nesty.app.ui.WalletTag
 import trade.nesty.app.ui.WhileShown
-import trade.nesty.app.ui.discover.noTrading
 import trade.nesty.app.ui.rememberEntryModel
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
@@ -79,6 +78,7 @@ import trade.nesty.app.ui.signColor
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
+import trade.nesty.app.ui.trade.QuickTrade
 
 /** The site's figure for a signal without a known supply: most launchpad coins have a billion. */
 private const val SUPPLY = 1e9
@@ -178,7 +178,7 @@ private fun SignalsTab() {
                         s, model, now,
                         onOpen = { nav.push(Route.Token(s.chain, s.row.token)) },
                         onWallets = { openKey = signalKey(s) },
-                        onBuy = { toasts.noTrading() },
+                        onBuy = { QuickTrade.buy(toasts, s.chain, s.row.token, AppGraph.settings.quickBuy.toDouble(), s.row.symbol) },
                     )
                 }
             }

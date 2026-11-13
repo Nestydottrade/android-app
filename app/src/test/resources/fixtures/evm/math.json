@@ -1,0 +1,1604 @@
+{
+ "note": "Written by android/tools/vectors/builds.test.ts.",
+ "minOutAfter": [
+  {
+   "out": "1000000",
+   "taxBps": 0,
+   "slippageBps": 1000,
+   "min": "900000"
+  },
+  {
+   "out": "1000000",
+   "taxBps": 300,
+   "slippageBps": 1000,
+   "min": "873000"
+  },
+  {
+   "out": "1",
+   "taxBps": 0,
+   "slippageBps": 1000,
+   "min": "1"
+  },
+  {
+   "out": "1000000000000000000000000000000",
+   "taxBps": 9999,
+   "slippageBps": 5000,
+   "min": "50000000000000000000000000"
+  },
+  {
+   "out": "1000000000000000000000000000000",
+   "taxBps": 12000,
+   "slippageBps": 1,
+   "min": "99990000000000000000000000"
+  },
+  {
+   "out": "999",
+   "taxBps": 5,
+   "slippageBps": 5000,
+   "min": "499"
+  }
+ ],
+ "approvalTarget": [
+  {
+   "held": "0",
+   "unlimited": true,
+   "bufferBps": 1000,
+   "target": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+  },
+  {
+   "held": "0",
+   "unlimited": false,
+   "bufferBps": 1000,
+   "target": "0"
+  },
+  {
+   "held": "1",
+   "unlimited": true,
+   "bufferBps": 1000,
+   "target": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+  },
+  {
+   "held": "1",
+   "unlimited": false,
+   "bufferBps": 1000,
+   "target": "1"
+  },
+  {
+   "held": "1000000000000000000000000",
+   "unlimited": true,
+   "bufferBps": 1000,
+   "target": "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+  },
+  {
+   "held": "1000000000000000000000000",
+   "unlimited": false,
+   "bufferBps": 1000,
+   "target": "1100000000000000000000000"
+  }
+ ],
+ "priceImpact": [
+  {
+   "amountIn": "1000000000000000000",
+   "out": "990",
+   "refIn": "10000000000000000",
+   "refOut": "10",
+   "bps": 100
+  },
+  {
+   "amountIn": "1000000000000000000",
+   "out": "1000",
+   "refIn": "10000000000000000",
+   "refOut": "10",
+   "bps": 0
+  },
+  {
+   "amountIn": "1000000000000000000",
+   "out": "2000",
+   "refIn": "10000000000000000",
+   "refOut": "10",
+   "bps": 0
+  },
+  {
+   "amountIn": "0",
+   "out": "1",
+   "refIn": "1",
+   "refOut": "1",
+   "bps": null
+  },
+  {
+   "amountIn": "5",
+   "out": "1",
+   "refIn": "1",
+   "refOut": "0",
+   "bps": null
+  }
+ ],
+ "fees": [
+  {
+   "chainId": 1,
+   "preset": "p1",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "0",
+   "maxFeePerGas": "500000000",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p2",
+   "priorityFeeGwei": "2",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "0",
+   "maxFeePerGas": "2000000000",
+   "maxPriorityFeePerGas": "2000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p3",
+   "priorityFeeGwei": "5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "0",
+   "maxFeePerGas": "5000000000",
+   "maxPriorityFeePerGas": "5000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p1",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "1",
+   "maxFeePerGas": "500000001",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p2",
+   "priorityFeeGwei": "2",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "1",
+   "maxFeePerGas": "2000000002",
+   "maxPriorityFeePerGas": "2000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p3",
+   "priorityFeeGwei": "5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "1",
+   "maxFeePerGas": "5000000003",
+   "maxPriorityFeePerGas": "5000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p1",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "7",
+   "maxFeePerGas": "500000010",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p2",
+   "priorityFeeGwei": "2",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "7",
+   "maxFeePerGas": "2000000014",
+   "maxPriorityFeePerGas": "2000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p3",
+   "priorityFeeGwei": "5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "7",
+   "maxFeePerGas": "5000000021",
+   "maxPriorityFeePerGas": "5000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p1",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "5000000000",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p2",
+   "priorityFeeGwei": "2",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "8000000000",
+   "maxPriorityFeePerGas": "2000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p3",
+   "priorityFeeGwei": "5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "14000000000",
+   "maxPriorityFeePerGas": "5000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p1",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "38000000000",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p2",
+   "priorityFeeGwei": "2",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "52000000000",
+   "maxPriorityFeePerGas": "2000000000"
+  },
+  {
+   "chainId": 1,
+   "preset": "p3",
+   "priorityFeeGwei": "5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "80000000000",
+   "maxPriorityFeePerGas": "5000000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p1",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "0",
+   "maxFeePerGas": "50000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p2",
+   "priorityFeeGwei": "0.1",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "0",
+   "maxFeePerGas": "100000000",
+   "maxPriorityFeePerGas": "100000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p3",
+   "priorityFeeGwei": "1",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "0",
+   "maxFeePerGas": "1000000000",
+   "maxPriorityFeePerGas": "1000000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p1",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "1",
+   "maxFeePerGas": "50000001",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p2",
+   "priorityFeeGwei": "0.1",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "1",
+   "maxFeePerGas": "100000002",
+   "maxPriorityFeePerGas": "100000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p3",
+   "priorityFeeGwei": "1",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "1",
+   "maxFeePerGas": "1000000003",
+   "maxPriorityFeePerGas": "1000000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p1",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "7",
+   "maxFeePerGas": "50000010",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p2",
+   "priorityFeeGwei": "0.1",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "7",
+   "maxFeePerGas": "100000014",
+   "maxPriorityFeePerGas": "100000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p3",
+   "priorityFeeGwei": "1",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "7",
+   "maxFeePerGas": "1000000021",
+   "maxPriorityFeePerGas": "1000000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p1",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "4550000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p2",
+   "priorityFeeGwei": "0.1",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "6100000000",
+   "maxPriorityFeePerGas": "100000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p3",
+   "priorityFeeGwei": "1",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "10000000000",
+   "maxPriorityFeePerGas": "1000000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p1",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "37550000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p2",
+   "priorityFeeGwei": "0.1",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "50100000000",
+   "maxPriorityFeePerGas": "100000000"
+  },
+  {
+   "chainId": 56,
+   "preset": "p3",
+   "priorityFeeGwei": "1",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "76000000000",
+   "maxPriorityFeePerGas": "1000000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p1",
+   "priorityFeeGwei": "0.001",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "0",
+   "maxFeePerGas": "1000000",
+   "maxPriorityFeePerGas": "1000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p2",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "0",
+   "maxFeePerGas": "10000000",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p3",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "0",
+   "maxFeePerGas": "50000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p1",
+   "priorityFeeGwei": "0.001",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "1",
+   "maxFeePerGas": "1000001",
+   "maxPriorityFeePerGas": "1000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p2",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "1",
+   "maxFeePerGas": "10000002",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p3",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "1",
+   "maxFeePerGas": "50000003",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p1",
+   "priorityFeeGwei": "0.001",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "7",
+   "maxFeePerGas": "1000010",
+   "maxPriorityFeePerGas": "1000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p2",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "7",
+   "maxFeePerGas": "10000014",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p3",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "7",
+   "maxFeePerGas": "50000021",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p1",
+   "priorityFeeGwei": "0.001",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "4501000000",
+   "maxPriorityFeePerGas": "1000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p2",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "6010000000",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p3",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "9050000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p1",
+   "priorityFeeGwei": "0.001",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "37501000000",
+   "maxPriorityFeePerGas": "1000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p2",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "50010000000",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 8453,
+   "preset": "p3",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "75050000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p1",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "0",
+   "maxFeePerGas": "1",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p2",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "0",
+   "maxFeePerGas": "1",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p3",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "0",
+   "maxFeePerGas": "1",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p1",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "1",
+   "maxFeePerGas": "1",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p2",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "1",
+   "maxFeePerGas": "2",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p3",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "1",
+   "maxFeePerGas": "3",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p1",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "7",
+   "maxFeePerGas": "10",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p2",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "7",
+   "maxFeePerGas": "14",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p3",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "7",
+   "maxFeePerGas": "21",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p1",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "4500000000",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p2",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "6000000000",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p3",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "9000000000",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p1",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "37500000000",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p2",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "50000000000",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 4663,
+   "preset": "p3",
+   "priorityFeeGwei": "0",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "75000000000",
+   "maxPriorityFeePerGas": "0"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p1",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "0",
+   "maxFeePerGas": "10000000",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p2",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "0",
+   "maxFeePerGas": "50000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p3",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "0",
+   "maxFeePerGas": "500000000",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p1",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "1",
+   "maxFeePerGas": "10000001",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p2",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "1",
+   "maxFeePerGas": "50000002",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p3",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "1",
+   "maxFeePerGas": "500000003",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p1",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "7",
+   "maxFeePerGas": "10000010",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p2",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "7",
+   "maxFeePerGas": "50000014",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p3",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "7",
+   "maxFeePerGas": "500000021",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p1",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "4510000000",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p2",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "6050000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p3",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "3000000000",
+   "maxFeePerGas": "9500000000",
+   "maxPriorityFeePerGas": "500000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p1",
+   "priorityFeeGwei": "0.01",
+   "maxFeeMultiplier": 1.5,
+   "slippageBps": 500,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "37510000000",
+   "maxPriorityFeePerGas": "10000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p2",
+   "priorityFeeGwei": "0.05",
+   "maxFeeMultiplier": 2,
+   "slippageBps": 1000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "50050000000",
+   "maxPriorityFeePerGas": "50000000"
+  },
+  {
+   "chainId": 99901,
+   "preset": "p3",
+   "priorityFeeGwei": "0.5",
+   "maxFeeMultiplier": 3,
+   "slippageBps": 2000,
+   "baseFee": "25000000000",
+   "maxFeePerGas": "75500000000",
+   "maxPriorityFeePerGas": "500000000"
+  }
+ ],
+ "staticGas": [
+  {
+   "chainId": 1,
+   "kind": "swap",
+   "gas": "500000"
+  },
+  {
+   "chainId": 1,
+   "kind": "approve",
+   "gas": "90000"
+  },
+  {
+   "chainId": 1,
+   "kind": "transfer",
+   "gas": "21000"
+  },
+  {
+   "chainId": 1,
+   "kind": "tokenTransfer",
+   "gas": "90000"
+  },
+  {
+   "chainId": 1,
+   "kind": "deposit",
+   "gas": "90000"
+  },
+  {
+   "chainId": 1,
+   "kind": "routed",
+   "gas": "1200000"
+  },
+  {
+   "chainId": 56,
+   "kind": "swap",
+   "gas": "500000"
+  },
+  {
+   "chainId": 56,
+   "kind": "approve",
+   "gas": "90000"
+  },
+  {
+   "chainId": 56,
+   "kind": "transfer",
+   "gas": "21000"
+  },
+  {
+   "chainId": 56,
+   "kind": "tokenTransfer",
+   "gas": "90000"
+  },
+  {
+   "chainId": 56,
+   "kind": "deposit",
+   "gas": "90000"
+  },
+  {
+   "chainId": 56,
+   "kind": "routed",
+   "gas": "1200000"
+  },
+  {
+   "chainId": 8453,
+   "kind": "swap",
+   "gas": "500000"
+  },
+  {
+   "chainId": 8453,
+   "kind": "approve",
+   "gas": "90000"
+  },
+  {
+   "chainId": 8453,
+   "kind": "transfer",
+   "gas": "21000"
+  },
+  {
+   "chainId": 8453,
+   "kind": "tokenTransfer",
+   "gas": "90000"
+  },
+  {
+   "chainId": 8453,
+   "kind": "deposit",
+   "gas": "90000"
+  },
+  {
+   "chainId": 8453,
+   "kind": "routed",
+   "gas": "1200000"
+  },
+  {
+   "chainId": 4663,
+   "kind": "swap",
+   "gas": "3000000"
+  },
+  {
+   "chainId": 4663,
+   "kind": "approve",
+   "gas": "1000000"
+  },
+  {
+   "chainId": 4663,
+   "kind": "transfer",
+   "gas": "300000"
+  },
+  {
+   "chainId": 4663,
+   "kind": "tokenTransfer",
+   "gas": "1000000"
+  },
+  {
+   "chainId": 4663,
+   "kind": "deposit",
+   "gas": "1000000"
+  },
+  {
+   "chainId": 4663,
+   "kind": "routed",
+   "gas": "6000000"
+  },
+  {
+   "chainId": 99901,
+   "kind": "swap",
+   "gas": "500000"
+  },
+  {
+   "chainId": 99901,
+   "kind": "approve",
+   "gas": "90000"
+  },
+  {
+   "chainId": 99901,
+   "kind": "transfer",
+   "gas": "21000"
+  },
+  {
+   "chainId": 99901,
+   "kind": "tokenTransfer",
+   "gas": "90000"
+  },
+  {
+   "chainId": 99901,
+   "kind": "deposit",
+   "gas": "90000"
+  },
+  {
+   "chainId": 99901,
+   "kind": "routed",
+   "gas": "1200000"
+  }
+ ],
+ "expectedFee": [
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "swap",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "swap",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "approve",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "approve",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "transfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "transfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "tokenTransfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "tokenTransfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "deposit",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "deposit",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "routed",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": true,
+   "kind": "routed",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "swap",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "750000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "swap",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "500000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "approve",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "180000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "approve",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "120000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "transfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "63000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "transfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "42000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "tokenTransfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "195000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "tokenTransfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "130000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "deposit",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "180000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "deposit",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "120000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "routed",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "1200000000000000"
+  },
+  {
+   "chainId": 1,
+   "simulated": false,
+   "kind": "routed",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "800000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "swap",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "swap",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "approve",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "approve",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "transfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "transfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "tokenTransfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "tokenTransfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "deposit",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "deposit",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "routed",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "923076000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": true,
+   "kind": "routed",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "615384000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "swap",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "1200000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "swap",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "800000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "approve",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "1200000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "approve",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "800000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "transfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "1200000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "transfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "800000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "tokenTransfer",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "1200000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "tokenTransfer",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "800000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "deposit",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "1200000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "deposit",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "800000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "routed",
+   "base": null,
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "1200000000000000"
+  },
+  {
+   "chainId": 4663,
+   "simulated": false,
+   "kind": "routed",
+   "base": "1000000000",
+   "gas": "400000",
+   "maxFeePerGas": "3000000000",
+   "maxPriorityFeePerGas": "1000000000",
+   "fee": "800000000000000"
+  }
+ ],
+ "poolIds": [
+  {
+   "key": {
+    "currency0": "0x8888888888888888888888888888888888888888",
+    "currency1": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "fee": 0,
+    "tickSpacing": 200,
+    "hooks": "0x322dcEc4958C14e021A9F1cD49DF11b9457968cC"
+   },
+   "id": "0xc2825d83ab1ff65b9885bdd262cf0241645e9d0a27f0463c50a7a74ce3b91488"
+  },
+  {
+   "key": {
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0x8888888888888888888888888888888888888888",
+    "fee": 0,
+    "tickSpacing": 200,
+    "hooks": "0x00000000000000000000000000000000000000a1"
+   },
+   "id": "0x1b7a8be6e3c71b3a175a05233906ee7ba817162cce09afcf9c173587b92eecd4"
+  },
+  {
+   "key": {
+    "currency0": "0x4200000000000000000000000000000000000006",
+    "currency1": "0x9999999999999999999999999999999999999999",
+    "fee": 8388608,
+    "tickSpacing": 200,
+    "hooks": "0x00000000000000000000000000000000000000b2"
+   },
+   "id": "0x705ecf74edf9d7c45d0b18b60734230a26feb7e63c3f84a2c81702709af9d2f2"
+  },
+  {
+   "key": {
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0x5555555555555555555555555555555555555555",
+    "fee": 8388608,
+    "tickSpacing": 200,
+    "hooks": "0x00000000000000000000000000000000000000c3"
+   },
+   "id": "0x9b345d93259028224af98f92c419bb43de214200fcfe06cd56b8e2d6caf8a622"
+  },
+  {
+   "key": {
+    "currency0": "0x000000000D564D5be76f7f0d28fE52605afC7Cf8",
+    "currency1": "0x9999999999999999999999999999999999999999",
+    "fee": 0,
+    "tickSpacing": 60,
+    "hooks": "0x00000000000000000000000000000000000000a1"
+   },
+   "id": "0x179b89c2008183672fb3bb732580788e1e0d3d9b16f96511538fd7015cbac02a"
+  },
+  {
+   "key": {
+    "currency0": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "currency1": "0x9999999999999999999999999999999999999999",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "id": "0x8112ad4e9fd1848b45bdbf0b99714ce171396ef79f8dbbacbdc3395e8c7e0bb0"
+  },
+  {
+   "key": {
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0x5555555555555555555555555555555555555555",
+    "fee": 0,
+    "tickSpacing": 200,
+    "hooks": "0x00000000000000000000000000000000000000a1"
+   },
+   "id": "0x8250d3471f82119dc5e3af30b5d8623e05b0521c26816a82feb5678134388683"
+  },
+  {
+   "key": {
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0x7777777777777777777777777777777777777777",
+    "fee": 10000,
+    "tickSpacing": 200,
+    "hooks": "0x0000000000000000000000000000000000000000"
+   },
+   "id": "0xe9f30894d600352f62a0e6a7142d3e71c5b8bec0974b17f24fe759a0adfc4d55"
+  },
+  {
+   "key": {
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0x7777777777777777777777777777777777777777",
+    "fee": 8388608,
+    "tickSpacing": 200,
+    "hooks": "0x6b1216A40B65c83e9c9e18a562C446697B8cf8EC"
+   },
+   "id": "0x99bc08c1b1531d88f96ec869fba9d2b313d2814c9fc7132b72daa1780efe2978"
+  },
+  {
+   "key": {
+    "currency0": "0x0000000000000000000000000000000000000000",
+    "currency1": "0x000000000D564D5be76f7f0d28fE52605afC7Cf8",
+    "fee": 0,
+    "tickSpacing": 60,
+    "hooks": "0x9e433f32bb5481a9ca7dff5b3af74a7ed041a888"
+   },
+   "id": "0x7af84d60777413f90cc511a83cf702b128bc885f84d6ca8be4b60063328d907a"
+  }
+ ]
+}

@@ -1,0 +1,107 @@
+{
+ "note": "PUBLIC TEST DATA. BIP-39 specification vectors and the phrase development tools ship with: known to everyone, they guard nothing. Made by the libraries the extension uses.",
+ "paths": {
+  "evm": "m/44'/60'/0'/0/0",
+  "solana": "m/44'/501'/0'/0'"
+ },
+ "phrases": [
+  {
+   "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
+   "seed": "5eb00bbddcf069084889a8ab9155568165f5c453ccb85e70811aaed6f6da5fc19a5ac40b389cd370d086206dec8aa6c43daea6690f20ad3d8d48b2d2ce9e38e4",
+   "evmPrivateKey": "0x1ab42cc412b618bdea3a599e3c9bae199ebf030895b039e9db1e30dafb12b727",
+   "evmAddress": "0x9858EfFD232B4033E47d90003D41EC34EcaEda94",
+   "solSeed": "37df573b3ac4ad5b522e064e25b63ea16bcbe79d449e81a0268d1047948bb445",
+   "solAddress": "HAgk14JpMQLgt6rVgv7cBQFJWFto5Dqxi472uT3DKpqk",
+   "solSecretBase58": "27npWoNE4HfmLeQo1TyWcW7NEA28qnsnDK7kcttDQEWrCWnro83HMJ97rMmpvYYZRwDAvG4KRuB7hTBacvwD7bgi",
+   "solSecretJson": "[55,223,87,59,58,196,173,91,82,46,6,78,37,182,62,161,107,203,231,157,68,158,129,160,38,141,16,71,148,139,180,69,240,54,39,98,70,167,91,157,227,52,158,212,43,21,226,50,246,81,143,194,15,95,205,79,29,100,232,31,155,210,88,247]"
+  },
+  {
+   "mnemonic": "test test test test test test test test test test test junk",
+   "seed": "9dfc3c64c2f8bede1533b6a79f8570e5943e0b8fd1cf77107adf7b72cef42185d564a3aee24cab43f80e3c4538087d70fc824eabbad596a23c97b6ee8322ccc0",
+   "evmPrivateKey": "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+   "evmAddress": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+   "solSeed": "a01c67efb5cb8f62f15907a9fcf124c73d2695c8a9a31f21c05742a31ca1dc72",
+   "solAddress": "oeYf6KAJkLYhBuR8CiGc6L4D4Xtfepr85fuDgA9kq96",
+   "solSecretBase58": "4Cfc4TJ6dsWwLcw8aJ5uhx7UJKPR5VGXTu2iJr5bVRoTDsxzb6qfJrzR5HNhBcwGwsXqGeHzDR3eUWLr7MRnska8",
+   "solSecretJson": "[160,28,103,239,181,203,143,98,241,89,7,169,252,241,36,199,61,38,149,200,169,163,31,33,192,87,66,163,28,161,220,114,11,243,43,159,13,176,150,114,3,143,234,54,19,155,24,249,138,95,1,73,239,76,224,51,46,68,185,167,126,131,194,45]"
+  },
+  {
+   "mnemonic": "legal winner thank year wave sausage worth useful legal winner thank yellow",
+   "seed": "878386efb78845b3355bd15ea4d39ef97d179cb712b77d5c12b6be415fffeffe5f377ba02bf3f8544ab800b955e51fbff09828f682052a20faa6addbbddfb096",
+   "evmPrivateKey": "0x33fa40f84e854b941c2b0436dd4a256e1df1cb41b9c1c0ccc8446408c19b8bf9",
+   "evmAddress": "0x58A57ed9d8d624cBD12e2C467D34787555bB1b25",
+   "solSeed": "6987bdb06aa8a243a3019f41489ffa8e609c953a885a748d1849a8df760aa479",
+   "solAddress": "BLeUXTx9thHGT7VJUtF9vHEmfMDgW1nnKZ9UVer2CoLX",
+   "solSecretBase58": "37NfN7eam3KCwdC6jAc7nFeuDNYCV1K2AgNWmT4Xo6ogQPMnJ1ZoWA7AKN6jzEoQi3FNTEkkXiwu7VjqXdu8FGUs",
+   "solSecretJson": "[105,135,189,176,106,168,162,67,163,1,159,65,72,159,250,142,96,156,149,58,136,90,116,141,24,73,168,223,118,10,164,121,153,157,70,251,61,18,86,247,4,156,142,208,147,20,215,38,134,18,232,169,27,128,14,145,147,68,99,132,131,5,201,140]"
+  },
+  {
+   "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art",
+   "seed": "408b285c123836004f4b8842c89324c1f01382450c0d439af345ba7fc49acf705489c6fc77dbd4e3dc1dd8cc6bc9f043db8ada1e243c4a0eafb290d399480840",
+   "evmPrivateKey": "0x1053fae1b3ac64f178bcc21026fd06a3f4544ec2f35338b001f02d1d8efa3d5f",
+   "evmAddress": "0xF278cF59F82eDcf871d630F28EcC8056f25C1cdb",
+   "solSeed": "7c139e1a603ca04f5f7cff194e1bb6f6d1b9098470ea90695ab628488a9f921b",
+   "solAddress": "3Cy3YNTFywCmxoxt8n7UH6hg6dLo5uACowX3CFceaSnx",
+   "solSecretBase58": "3Ut3FChwRuPUimihXxhpzZFxgy3vDBufQs9PDVy1T3Zu8zgaKNu8BQ7fFmUdLUhToTFCRuBwk18fkHoXEcwRT3o2",
+   "solSecretJson": "[124,19,158,26,96,60,160,79,95,124,255,25,78,27,182,246,209,185,9,132,112,234,144,105,90,182,40,72,138,159,146,27,32,200,33,182,81,8,52,174,28,71,8,76,111,97,253,151,134,77,95,18,215,49,249,95,75,6,254,71,123,30,251,69]"
+  }
+ ],
+ "entropy": [
+  {
+   "entropy": "00000000000000000000000000000000",
+   "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+  },
+  {
+   "entropy": "7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f7f",
+   "mnemonic": "legal winner thank year wave sausage worth useful legal winner thank yellow"
+  },
+  {
+   "entropy": "80808080808080808080808080808080",
+   "mnemonic": "letter advice cage absurd amount doctor acoustic avoid letter advice cage above"
+  },
+  {
+   "entropy": "ffffffffffffffffffffffffffffffff",
+   "mnemonic": "zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong"
+  },
+  {
+   "entropy": "0000000000000000000000000000000000000000000000000000000000000000",
+   "mnemonic": "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon art"
+  },
+  {
+   "entropy": "9e885d952ad362caeb4efe34a8e91bd2",
+   "mnemonic": "ozone drill grab fiber curtain grace pudding thank cruise elder eight picnic"
+  }
+ ],
+ "evmKeys": [
+  {
+   "privateKey": "0x4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b4c1e9a7b",
+   "address": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576"
+  }
+ ],
+ "kdf": [
+  {
+   "password": "Correct-Horse-9",
+   "salt": "bmVzdHktdGVzdC1zYWx0LTg=",
+   "memoryKiB": 8,
+   "iterations": 1,
+   "parallelism": 1,
+   "hash": "4944013c46f661cacbf1a25114fa7d4b9bcaa4d80060c74ed4c124318c1d0d28"
+  },
+  {
+   "password": "Correct-Horse-9",
+   "salt": "bmVzdHktdGVzdC1zYWx0LTEwMjQ=",
+   "memoryKiB": 1024,
+   "iterations": 2,
+   "parallelism": 1,
+   "hash": "3e93452aca74a3b6493c2d4d31908092b9e43fe824335bcad10bb51cdc76adb1"
+  },
+  {
+   "password": "pässwörd 🥚 1A",
+   "salt": "bmVzdHktdGVzdC1zYWx0LTQwOTY=",
+   "memoryKiB": 4096,
+   "iterations": 3,
+   "parallelism": 1,
+   "hash": "e7e118ab2bb928f3f5accb1332851dd4f9a333dd24e9c7816ecc3a9ffe805360"
+  }
+ ]
+}

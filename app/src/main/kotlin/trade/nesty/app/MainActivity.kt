@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import trade.nesty.app.data.AppGraph
 import trade.nesty.app.ui.AppRoot
 import trade.nesty.app.ui.theme.NestyTheme
 
@@ -19,5 +20,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             NestyTheme { AppRoot() }
         }
+    }
+
+    // The wallets lock once the app has been off the screen for the time picked in the menu.
+    override fun onStart() {
+        super.onStart()
+        AppGraph.session.onStart()
+    }
+
+    override fun onStop() {
+        AppGraph.session.onStop()
+        super.onStop()
     }
 }
