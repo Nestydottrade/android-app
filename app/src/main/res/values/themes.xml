@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ground">#FF08070F</color>
+    <color name="card">#FF0D0B18</color>
+
+    <style name="Theme.Nesty" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/ground</item>
+        <item name="android:colorBackground">@color/ground</item>
+    </style>
+</resources>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The nest egg centred in the adaptive icon's 108 unit canvas, inside its safe zone. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="1.25"
+        android:scaleY="1.25"
+        android:translateX="14"
+        android:translateY="14">
+        <path
+            android:fillColor="#2EE6A8"
+            android:pathData="M18.816 29.645A8 8 0 0 1 26.927 17.378A11.5 11.5 0 0 0 27.268 30.608Q23.043 30.354 18.816 29.645ZM30.051 30.726A9.5 9.5 0 1 1 43.766 29.87Q36.908 30.896 30.051 30.726Z" />
+        <path
+            android:fillColor="#F3F1FF"
+            android:pathData="M10 29.75Q32 35.75 54 29.75A22 20 0 0 1 52.495 37.02Q30.693 39.082 10.451 33.777A22 20 0 0 1 10 29.75ZM11.19 36.237Q30.56 41.081 51.309 39.335A22 20 0 0 1 50.517 40.549Q33.981 44.733 16.203 43.67A22 20 0 0 1 11.19 36.237ZM19.195 46.013Q34.07 46.526 48.091 43.389A22 20 0 0 1 19.195 46.013Z" />
+    </group>
+</vector>
