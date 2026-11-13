@@ -55,6 +55,7 @@ import trade.nesty.app.ui.WhileShown
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
 import trade.nesty.app.ui.signColor
+import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
@@ -116,7 +117,7 @@ fun DiscoverScreen() {
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when {
                 rows.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize(), state = list) {
-                    items(rows, key = { shareKey(it.chain, it.address) }) { r ->
+                    uniqueItems(rows, { shareKey(it.chain, it.address) }) { r ->
                         DiscoverRowView(
                             r,
                             lane = model.lane,

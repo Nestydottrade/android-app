@@ -66,6 +66,7 @@ import trade.nesty.app.ui.Route
 import trade.nesty.app.ui.TabHeader
 import trade.nesty.app.ui.Tone
 import trade.nesty.app.ui.ToneMark
+import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
@@ -143,7 +144,7 @@ fun PortfolioScreen() {
                         0 -> if (open.isEmpty()) {
                             item(key = "none") { EmptyNote("No open positions. Buy a coin from Discover or from its page.") }
                         } else {
-                            items(open, key = { "o:" + it.position.chain.feed + it.position.token }) { h ->
+                            uniqueItems(open, { "o:" + it.position.chain.feed + it.position.token }) { h ->
                                 OpenRow(h, trading.mcaps[Balances.tokenKey(h.position.chain, h.position.token)]) {
                                     nav.push(Route.Position(h.position.chain, h.position.token))
                                 }
@@ -152,14 +153,14 @@ fun PortfolioScreen() {
                         1 -> if (closed.isEmpty()) {
                             item(key = "none") { EmptyNote("Nothing closed yet.") }
                         } else {
-                            items(closed, key = { "c:" + it.position.chain.feed + it.position.token }) { h ->
+                            uniqueItems(closed, { "c:" + it.position.chain.feed + it.position.token }) { h ->
                                 ClosedRow(h, now) { nav.push(Route.Position(h.position.chain, h.position.token)) }
                             }
                         }
                         else -> if (activity.isEmpty()) {
                             item(key = "none") { EmptyNote("Nothing yet. Your buys and sells will list here.") }
                         } else {
-                            items(activity.take(200), key = { "a:" + it.tx + it.token }) { f ->
+                            uniqueItems(activity.take(200), { "a:" + it.tx + it.token }) { f ->
                                 ActivityRow(f, now) { f.chain?.let { c -> nav.push(Route.Position(c, f.token)) } }
                             }
                         }

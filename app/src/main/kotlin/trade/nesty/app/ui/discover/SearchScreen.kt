@@ -62,6 +62,7 @@ import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
 import trade.nesty.app.ui.venueName
+import trade.nesty.app.ui.uniqueItems
 
 private sealed interface Found {
     data object Idle : Found
@@ -146,8 +147,8 @@ fun SearchScreen() {
             Found.Looking -> EmptyNote("Looking…")
             Found.Failed -> EmptyNote("Could not reach Nesty. Try again.")
             is Found.Some -> if (f.list.isEmpty()) EmptyNote("No coin found.") else LazyColumn(Modifier.fillMaxSize()) {
-                items(f.list, key = { it.feed + ":" + it.address.lowercase() }) { t ->
-                    val chain = Chain.of(t.feed) ?: return@items
+                uniqueItems(f.list, { it.feed + ":" + it.address.lowercase() }) { t ->
+                    val chain = Chain.of(t.feed) ?: return@uniqueItems
                     SearchRow(t, chain) {
                         keyboard?.hide()
                         nav.push(Route.Token(chain, t.address))

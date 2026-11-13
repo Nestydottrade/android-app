@@ -38,6 +38,7 @@ import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.LocalNavigator
+import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.text
 
@@ -82,7 +83,7 @@ fun UpdatesScreen() {
             list == null -> EmptyNote("Loading…")
             days.isEmpty() -> EmptyNote("Nothing here yet.")
             else -> LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
-                items(days, key = { it.first }) { (day, entries) ->
+                uniqueItems(days, { it.first }) { (day, entries) ->
                     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(Fmt.day(day), style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.padding(horizontal = 4.dp).semantics { heading() })
                         Card {

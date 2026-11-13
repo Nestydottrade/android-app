@@ -75,6 +75,7 @@ import trade.nesty.app.ui.signal.CoinTraders
 import trade.nesty.app.ui.signal.SignalWallets
 import trade.nesty.app.ui.signal.SignalWalletsSheet
 import trade.nesty.app.ui.signColor
+import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
@@ -172,7 +173,7 @@ private fun SignalsTab() {
         }
         if (live.isNotEmpty()) {
             item { SectionTitle("Live now", null) }
-            items(live, key = { "live:" + it.chain.feed + it.row.token + it.row.at }) { s ->
+            uniqueItems(live, { "live:" + signalKey(it) }) { s ->
                 Box(Modifier.padding(horizontal = 16.dp, vertical = 5.dp)) {
                     LiveSignalCard(
                         s, model, now,
@@ -185,7 +186,7 @@ private fun SignalsTab() {
         }
         if (past.isNotEmpty()) {
             item { SectionTitle("Earlier today", "How each one went, good or bad") }
-            items(past, key = { "past:" + it.chain.feed + it.row.token + it.row.at }) { s ->
+            uniqueItems(past, { "past:" + signalKey(it) }) { s ->
                 PastSignalRow(s, now, onWallets = { openKey = signalKey(s) }) { nav.push(Route.Token(s.chain, s.row.token)) }
             }
         }
@@ -497,7 +498,7 @@ private fun LeadersTab() {
             }
         }
         when {
-            rows.isNotEmpty() -> items(rows, key = { it.wallet }) { r ->
+            rows.isNotEmpty() -> uniqueItems(rows, { it.wallet }) { r ->
                 val i = rows.indexOf(r)
                 LeaderRow(i + 1, r, model.sort, settings) { nav.push(Route.Wallet(model.chain, r.wallet)) }
             }

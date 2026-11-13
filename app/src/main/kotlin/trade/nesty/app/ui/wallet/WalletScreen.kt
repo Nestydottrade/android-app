@@ -76,6 +76,7 @@ import trade.nesty.app.ui.rememberEntryModel
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
 import trade.nesty.app.ui.signColor
+import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.smart.Period
 import trade.nesty.app.ui.smart.toggleFollow
 import trade.nesty.app.ui.theme.Ink
@@ -149,7 +150,7 @@ fun WalletScreen(chain: Chain, address: String) {
                     if (tab == 0) {
                         val coins = report.coins.sortedByDescending { it.last }.take(100)
                         if (coins.isEmpty()) item { EmptyNote("No coin traded in the ${model.period.words}.") }
-                        items(coins, key = { "c:" + it.token }) { c ->
+                        uniqueItems(coins, { "c:" + it.token }) { c ->
                             val facts = report.book[c.token]
                             val holding = report.holdings.firstOrNull { it.token == c.token }
                             val symbol = facts?.symbol?.takeIf { it.isNotBlank() } ?: Fmt.address(c.token)
@@ -199,7 +200,7 @@ fun WalletScreen(chain: Chain, address: String) {
                     } else {
                         val trades = report.trades.sortedByDescending { it.at }.take(200)
                         if (trades.isEmpty()) item { EmptyNote("No trade in the ${model.period.words}.") }
-                        items(trades, key = { "t:" + it.tx + it.token + it.isBuy }) { t ->
+                        uniqueItems(trades, { "t:" + it.tx + it.token + it.isBuy }) { t ->
                             val symbol = report.book[t.token]?.symbol?.takeIf { it.isNotBlank() } ?: Fmt.address(t.token)
                             Row(
                                 Modifier

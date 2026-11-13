@@ -80,6 +80,7 @@ import trade.nesty.app.ui.discover.shareKey
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
 import trade.nesty.app.ui.signColor
+import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
@@ -272,7 +273,7 @@ fun TrackerScreen() {
                 followed.isEmpty() -> item {
                     Notice("Follow a wallet to see its trades", "Follow one from the Leaderboard, a coin's holders, or add an address here.")
                 }
-                rows.isNotEmpty() -> items(rows, key = { it.chain.feed + it.wallet + it.trade.tx + it.trade.token + it.trade.isBuy }) { r ->
+                rows.isNotEmpty() -> uniqueItems(rows, { it.chain.feed + it.wallet + it.trade.tx + it.trade.token + it.trade.isBuy }) { r ->
                     TrackedRow(r, now, settings, onOpen = { nav.push(Route.Token(r.chain, r.trade.token)) }, onBuy = { QuickTrade.buy(toasts, r.chain, r.trade.token, settings.quickBuy.toDouble(), r.symbol) })
                 }
                 !model.loaded -> item { Notice("Reading their trades…", "") }

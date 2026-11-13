@@ -52,6 +52,8 @@ import trade.nesty.app.ui.WalletName
 import trade.nesty.app.ui.WhileShown
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.signColor
+import trade.nesty.app.ui.keyAt
+import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
@@ -108,7 +110,7 @@ private fun TradesList(model: TokenModel, only: String?, setOnly: (String?) -> U
         }
         when {
             shown.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize(), state = tradeList) {
-                items(shown, key = { it.id }) { t -> TradeRow(t, now, only, setOnly, open) }
+                uniqueItems(shown, { it.id }) { t -> TradeRow(t, now, only, setOnly, open) }
             }
             model.tradesPhase == Phase.LOADING || model.tradesReading -> EmptyNote("Reading its trades…")
             model.tradesPhase == Phase.FAILED -> EmptyNote("Could not read its trades. Trying again.")
@@ -176,7 +178,7 @@ private fun HoldersList(model: TokenModel, chain: Chain, open: (String) -> Unit)
         else -> {
             val top = list.first().share.takeIf { it > 0 } ?: 1.0
             LazyColumn(Modifier.fillMaxSize()) {
-                items(list.size, key = { list[it].wallet }) { i ->
+                items(list.size, key = keyAt(list) { it.wallet }) { i ->
                     val h = list[i]
                     val pnl = pnlOf[h.wallet.lowercase()]?.let { r -> quoteUsd?.let { r.pnl * it } }
                     Column {
@@ -233,7 +235,7 @@ private fun TradersList(model: TokenModel, early: Boolean, open: (String) -> Uni
         t == null -> EmptyNote("Reading its traders…")
         rows.isEmpty() -> EmptyNote(if (early) "No buyers yet." else "No trader has made anything yet.")
         else -> LazyColumn(Modifier.fillMaxSize()) {
-            items(rows.size, key = { rows[it].wallet }) { i ->
+            items(rows.size, key = keyAt(rows) { it.wallet }) { i ->
                 val r = rows[i]
                 Column {
                     Row(

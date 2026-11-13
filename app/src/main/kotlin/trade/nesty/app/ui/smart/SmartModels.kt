@@ -78,10 +78,14 @@ class SignalsModel(private val api: NestyApi) {
     /** How many proven wallets a chain has; null until read. */
     fun proven(c: Chain): Int? = lists[c]?.proven
 
-    /** The last day's signals of the picked size and chain, newest first. */
+    /**
+     * The last day's signals of the picked size and chain, newest first. A coin is listed once for
+     * each size it reached (2, 3 and 5 wallets), as it was when it got there, so a coin that reached
+     * 5 has rows at 2 and 3 too. Only the picked size's row is shown, as on the site.
+     */
     fun signals(): List<ChainSignal> {
         val chains = chain?.let { listOf(it) } ?: SMART_CHAINS
-        return chains.flatMap { c -> lists[c]?.list.orEmpty().filter { it.size >= need }.map { ChainSignal(c, it) } }
+        return chains.flatMap { c -> lists[c]?.list.orEmpty().filter { it.size == need }.map { ChainSignal(c, it) } }
             .sortedByDescending { it.row.at }
     }
 
