@@ -1,19 +1,25 @@
 package trade.nesty.app.ui.vault
 
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -22,9 +28,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -67,17 +76,19 @@ fun VaultException.say(): String = when (code) {
     VaultError.LIMIT -> "You have ${Vault.MAX_WALLETS} wallets, the most Nesty keeps"
     VaultError.CORRUPT -> "This phone cannot open its saved wallets. Restore them from your backups."
     VaultError.LOCKED -> "Nesty is locked"
+    VaultError.STALE_KEY -> Fingerprint.DROPPED
     else -> "That did not work. Try again."
 }
 
 /**
  * The lock over the whole app while its wallets are closed. No board in the redesign: the first
- * draft's Unlock screen in the new look, with the password only (the menu says the password
- * opens Nesty again).
+ * draft's Unlock screen in the new look. With fingerprint unlock on, the finger is asked for as the
+ * screen opens, and the password stays beside it.
  */
 @Composable
 fun UnlockScreen() {
     val session = AppGraph.session
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var password by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
@@ -85,6 +96,23 @@ fun UnlockScreen() {
     var waitUntil by remember { mutableLongStateOf(0L) }
     val now = rememberNow()
     SecureWindow()
+
+    val finger = session.fingerprintOn && remember { Fingerprint.can(context) } != Fingerprint.Can.NO
+    val useFinger = {
+        if (!busy) {
+            busy = true
+            problem = null
+            scope.launch {
+                try {
+                    problem = Fingerprint.unlock(context)
+                } finally {
+                    busy = false
+                }
+            }
+        }
+    }
+    // Asked once as the lock shows; Use fingerprint asks again.
+    LaunchedEffect(Unit) { if (finger) useFinger() }
 
     val waiting = waitUntil > now
     val go = {
@@ -119,6 +147,15 @@ fun UnlockScreen() {
             Text("Password", style = text(13, color = Ink.muted))
             TextBox(password, { password = it }, "Password", Modifier.fillMaxWidth(), secret = true, bad = problem, ime = ImeAction.Go, onIme = go)
             GreenButton(if (busy) "Unlocking…" else "Unlock", go, Modifier.fillMaxWidth(), solid = true)
+            if (finger) {
+                val shape = RoundedCornerShape(14.dp)
+                Box(
+                    Modifier.fillMaxWidth().height(52.dp).clip(shape).border(1.dp, Ink.line3, shape).clickable(role = Role.Button, onClick = useFinger),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text("Use fingerprint", style = text(17, FontWeight.Bold))
+                }
+            }
             val said = if (waiting) "Too many wrong tries. Try again in ${Fmt.duration((waitUntil - now).toDouble().coerceAtLeast(1_000.0))}." else problem
             if (said != null) {
                 Text(

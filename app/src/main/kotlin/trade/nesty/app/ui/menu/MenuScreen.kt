@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
@@ -41,6 +42,8 @@ import trade.nesty.app.data.Settings
 import trade.nesty.app.data.VaultState
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.vault.ExportForm
+import trade.nesty.app.ui.vault.Fingerprint
+import trade.nesty.app.ui.vault.FingerprintSetting
 import trade.nesty.app.vault.WalletInfo
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.Divider
@@ -150,7 +153,7 @@ fun MenuScreen() {
                     Text(
                         when {
                             r != null && r.code > BuildConfigLite.CODE -> "Version ${r.version} is ready to install"
-                            asked -> "This build has wallets and reads. Trading comes next."
+                            asked -> "This build buys and sells on every chain."
                             else -> " "
                         },
                         style = text(13, color = Ink.muted, lineHeight = 18.sp),
@@ -170,7 +173,10 @@ private fun Security(wallet: WalletInfo?) {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text("Lock after", style = text(15, FontWeight.SemiBold))
-            Text("Time away from the app. Your password opens Nesty again.", style = text(13, color = Ink.muted))
+            Text(
+                if (session.fingerprintOn) "Time away from the app. Your fingerprint or password opens Nesty again." else "Time away from the app. Your password opens Nesty again.",
+                style = text(13, color = Ink.muted),
+            )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (minutes in Settings.LOCK_STEPS) {
@@ -201,6 +207,10 @@ private fun Security(wallet: WalletInfo?) {
         ) {
             Text("Lock now", style = text(15, FontWeight.Bold))
         }
+    }
+    if (Fingerprint.can(LocalContext.current) != Fingerprint.Can.NO) {
+        Divider()
+        FingerprintSetting()
     }
     if (wallet != null) {
         Divider()

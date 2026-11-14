@@ -300,4 +300,58 @@ class VaultTest {
         v.lock()
         refused(VaultError.LOCKED) { v.signEvm(k.id, k.evm!!, hash) }
     }
+
+    @Test
+    fun fingerprintKeepsTheVaultsKeyBehindThePassword() {
+        val v = vault().apply { create(password) }
+        val w = v.importPhrase("Phrase", phrase(0, "mnemonic"))
+        // Turning it on asks for the password again; a wrong one counts as a failed unlock.
+        refused(VaultError.BAD_PASSWORD) { v.keyForFingerprint("Wrong-Horse-9") }
+        assertEquals(1, store.fails?.count)
+        val kept = v.keyForFingerprint(password)
+        assertEquals(32, kept.size)
+        assertNull(store.fails)
+        assertTrue(v.isKey(kept))
+        assertFalse(v.isKey(ByteArray(32)))
+
+        // The kept key opens the vault with no password, and the wallets are back.
+        v.lock()
+        assertFalse(v.isKey(kept))
+        v.unlockWithKey(kept)
+        assertTrue(v.unlocked)
+        assertEquals(listOf(w.id), v.wallets().map { it.id })
+        // It is the same vault: it still signs, and the caller's copy can be wiped.
+        kept.fill(0)
+        assertTrue(v.signSol(w.id, w.sol!!, ByteArray(8)).size == 64)
+        v.lock()
+        refused(VaultError.LOCKED) { v.keyForFingerprint(password) }
+    }
+
+    @Test
+    fun aKeyThatDoesNotOpenTheVaultChangesNothing() {
+        val v = vault().apply { create(password) }
+        v.importPhrase("Phrase", phrase(0, "mnemonic"))
+        v.lock()
+        refused(VaultError.STALE_KEY) { v.unlockWithKey(ByteArray(32) { 7 }) }
+        assertFalse(v.unlocked)
+        // A key from another vault (made again after the app's data was cleared) is refused too.
+        val other = vault(store = MemoryStore()).apply { create(password) }
+        val foreign = other.keyForFingerprint(password)
+        refused(VaultError.STALE_KEY) { v.unlockWithKey(foreign) }
+        // And the password still opens it.
+        v.unlock(password)
+        assertTrue(v.unlocked)
+    }
+
+    @Test
+    fun aFingerprintUnlockClearsThePasswordsWait() {
+        val v = vault().apply { create(password) }
+        val kept = v.keyForFingerprint(password)
+        v.lock()
+        repeat(Vault.FREE_TRIES) { refused(VaultError.BAD_PASSWORD) { v.unlock("Wrong-Horse-9") } }
+        refused(VaultError.TOO_MANY_ATTEMPTS) { v.unlock(password) }
+        // The phone limits fingerprint tries itself; a finger that opens the vault ends the wait.
+        v.unlockWithKey(kept)
+        assertNull(store.fails)
+    }
 }

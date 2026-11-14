@@ -28,6 +28,14 @@ six (below).
   Android leaves out of backups. A copied file is useless on another phone.
 - Unlock is by password. Five tries are free, then each failure doubles a wait
   from 30 seconds up to 15 minutes; the count is kept on disk.
+- Fingerprint unlock (Security in the menu, Android 9 and later, strong
+  biometrics only): turning it on asks for the password, then a finger seals
+  the vault's derived key with a second Keystore key that works once per
+  fingerprint (`vault/FingerprintKey.kt`, `ui/vault/Fingerprint.kt`). The lock
+  asks for the finger as it opens, with the password beside it. Android drops
+  that key when a fingerprint is added or the screen lock removed; the app then
+  says so and the password turns it on again. No password is stored, and the
+  phone limits fingerprint tries itself.
 - It locks after 5, 15 or 60 minutes away from the app (the menu), on Lock now,
   and whenever Android ends the process.
 - Screens: `ui/vault/` (the password, the lock, Wallets with create, import and

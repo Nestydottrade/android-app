@@ -39,6 +39,9 @@ enum class ExportKind { PHRASE, EVM_KEY, SOL_KEY }
 enum class VaultError {
     NO_VAULT, EXISTS, LOCKED, BAD_PASSWORD, WEAK_PASSWORD, BAD_PHRASE, BAD_KEY, DUPLICATE,
     NOT_FOUND, LIMIT, TOO_MANY_ATTEMPTS, CORRUPT, NO_SUCH_KEY,
+
+    /** Fingerprint unlock kept a key that does not open this vault. */
+    STALE_KEY,
 }
 
 class VaultException(val code: VaultError, val retryAfterMs: Long? = null) : Exception(code.name)
@@ -148,6 +151,47 @@ class Vault(
         public = part
     }
 
+    /**
+     * Opens the vault with the key fingerprint unlock kept: no password work and no wait, since
+     * the phone itself limits fingerprint tries. A key that does not open this vault is refused
+     * and changes nothing. The caller wipes [candidate]; the vault keeps its own copy.
+     */
+    @Synchronized
+    fun unlockWithKey(candidate: ByteArray) {
+        val rec = load()
+        val k = candidate.copyOf()
+        val part = try {
+            json.decodeFromString<PublicPart>(String(VaultCrypto.open(k, rec.public, aad(rec.kdf, "public")), Charsets.UTF_8))
+        } catch (_: Exception) {
+            k.wipe()
+            throw VaultException(VaultError.STALE_KEY)
+        }
+        // The owner is back: the password's wait no longer applies.
+        store.writeFails(null)
+        key.wipe()
+        key = k
+        record = rec
+        public = part
+    }
+
+    /**
+     * A copy of the open vault's key for fingerprint unlock to seal, once the password is checked
+     * again (a wrong one counts as a failed unlock). The caller wipes it.
+     */
+    @Synchronized
+    fun keyForFingerprint(password: String): ByteArray {
+        val k = key ?: throw VaultException(VaultError.LOCKED)
+        recheck(password, k, requireRecord())
+        return k.copyOf()
+    }
+
+    /** Whether [candidate] is the open vault's key: how a fingerprint confirms a send. */
+    @Synchronized
+    fun isKey(candidate: ByteArray): Boolean {
+        val k = key ?: return false
+        return MessageDigest.isEqual(candidate, k)
+    }
+
     @Synchronized
     fun lock() {
         key.wipe()
@@ -198,15 +242,7 @@ class Vault(
     fun export(password: String, id: String, what: ExportKind): String {
         val k = key ?: throw VaultException(VaultError.LOCKED)
         val rec = requireRecord()
-        checkThrottle()
-        val again = VaultCrypto.deriveKey(password, rec.kdf)
-        val same = MessageDigest.isEqual(again, k)
-        again.wipe()
-        if (!same) {
-            recordFailure()
-            throw VaultException(VaultError.BAD_PASSWORD)
-        }
-        store.writeFails(null)
+        recheck(password, k, rec)
         val wallet = public.wallets.firstOrNull { it.id == id } ?: throw VaultException(VaultError.NOT_FOUND)
         val secret = openSecret(k, rec, wallet.id)
         try {
@@ -373,6 +409,19 @@ class Vault(
     /** Binds the KDF's parameters and the blob's role to each seal, so neither can be swapped. */
     private fun aad(k: KdfParams, role: String): ByteArray =
         "nesty-android-vault|v1|${k.alg}|${k.memoryKiB}|${k.iterations}|${k.parallelism}|${k.salt}|$role".toByteArray(Charsets.UTF_8)
+
+    /** The password again, for a step that needs more than an open vault; a wrong one counts as a failed unlock. */
+    private fun recheck(password: String, k: ByteArray, rec: VaultRecord) {
+        checkThrottle()
+        val again = VaultCrypto.deriveKey(password, rec.kdf)
+        val same = MessageDigest.isEqual(again, k)
+        again.wipe()
+        if (!same) {
+            recordFailure()
+            throw VaultException(VaultError.BAD_PASSWORD)
+        }
+        store.writeFails(null)
+    }
 
     private fun checkThrottle() {
         val fails = store.readFails() ?: return
