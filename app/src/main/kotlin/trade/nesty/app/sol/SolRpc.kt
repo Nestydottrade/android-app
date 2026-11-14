@@ -255,6 +255,18 @@ class SolRpc(private val reads: SolCall, private val sender: SolSender? = null) 
 
     suspend fun getAccount(key: String): SolAccount? = getMultipleAccounts(listOf(key)).firstOrNull()
 
+    /**
+     * The least an account of `size` bytes may hold other than nothing: its rent exemption. Solana
+     * lowers it now and then (650,240 lamports for a wallet in October 2026, down from 890,880).
+     */
+    suspend fun minimumBalance(size: Int): BigInteger {
+        val r = call("getMinimumBalanceForRentExemption", buildJsonArray {
+            add(size)
+            add(buildJsonObject { put("commitment", "confirmed") })
+        })
+        return r.jsonPrimitive.contentOrNull?.toBigIntegerOrNull()?.takeIf { it.signum() > 0 } ?: throw IOException("bad answer")
+    }
+
     suspend fun getBalance(key: String): BigInteger {
         val r = call("getBalance", buildJsonArray {
             add(key)

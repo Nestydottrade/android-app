@@ -106,7 +106,7 @@ fun copyText(context: Context, label: String, value: String) {
 }
 
 @Composable
-fun TokenScreen(chain: Chain, address: String) {
+fun TokenScreen(chain: Chain, address: String, openBuy: Boolean = false) {
     val model = rememberTokenModel(chain, address)
     val nav = LocalNavigator.current
     val settings = AppGraph.settings
@@ -153,7 +153,7 @@ fun TokenScreen(chain: Chain, address: String) {
                         NavRow("Trades and holders", note.ifEmpty { null }, onClick = { nav.push(Route.TradesHolders(chain, address)) })
                     }
                 }
-                TradeBar(chain, address, coin, checks, onChecks = { scope.launch { scroll.animateScrollTo(checksY.toInt()) } })
+                TradeBar(chain, address, coin, checks, onChecks = { scope.launch { scroll.animateScrollTo(checksY.toInt()) } }, openBuy = openBuy)
                 if (signalOpen && head != null) {
                     SignalWalletsSheet(
                         chain = chain,

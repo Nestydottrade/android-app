@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.JsonElement
 import trade.nesty.app.evm.BlockedAction
 import trade.nesty.app.evm.Payout
 import trade.nesty.app.evm.Quote
@@ -925,66 +926,153 @@ class SolTrader(
         }
     }
 
+    /** What one Solana transaction came to before it was watched. */
+    private sealed interface LegSubmit {
+        class Blocked(val actions: List<BlockedAction>) : LegSubmit
+        class Skipped(val reason: String) : LegSubmit
+        class Failed(val error: String) : LegSubmit
+        class Out(val sent: Sent) : LegSubmit
+    }
+
     /**
      * Validate → simulate → sign → send → confirm, for one wallet's transaction. Nothing is signed
      * unless `job.validate` passes on the exact instructions.
      */
     private suspend fun runLeg(t: Ticket, i: Int, job: LegJob) {
+        val s = submitLeg(job.wallet, job.instructions, job.units, job.prefs, job.validate, job.shortfall) { sig ->
+            t.set(i) { it.copy(status = StepStatus.SENDING, hash = sig) }
+        }
+        when (s) {
+            is LegSubmit.Blocked -> {
+                t.block(i, s.actions)
+                job.settled(null)
+            }
+            is LegSubmit.Skipped -> {
+                t.set(i) { it.copy(status = StepStatus.SKIPPED, error = s.reason) }
+                job.settled(null)
+            }
+            is LegSubmit.Failed -> {
+                t.fail(i, s.error)
+                job.settled(null)
+            }
+            is LegSubmit.Out -> {
+                t.set(i) { it.copy(status = StepStatus.SUBMITTED) }
+                scope.launch { confirm(t, i, s.sent, job) }
+            }
+        }
+    }
+
+    /** Validate → simulate → sign → send for one transaction. Nothing is signed unless `validate` passes. */
+    private suspend fun submitLeg(
+        wallet: SolSigner,
+        instructions: List<Instruction>,
+        baseUnits: Int,
+        prefs: SolPrefs,
+        validate: (List<Instruction>) -> SolValidationResult,
+        shortfall: (suspend (BigInteger) -> String?)?,
+        onSending: (String) -> Unit,
+    ): LegSubmit {
         try {
-            val fee = job.prefs.priorityLamports
+            val fee = prefs.priorityLamports
             // A few random units make every transaction unique: an identical second click in the
             // same blockhash window would otherwise have the same signature and be dropped.
-            var units = minOf(Spl.MAX_COMPUTE_UNITS, job.units + random(256))
-            fun withBudget(u: Int) = listOf(Spl.setComputeUnitLimit(u), Spl.setComputeUnitPrice(microLamports(fee, u))) + job.instructions
+            var units = minOf(Spl.MAX_COMPUTE_UNITS, baseUnits + random(256))
+            fun withBudget(u: Int) = listOf(Spl.setComputeUnitLimit(u), Spl.setComputeUnitPrice(microLamports(fee, u))) + instructions
             var ixs = withBudget(units)
-            val verdict = job.validate(ixs)
-            if (!verdict.ok) {
-                t.block(i, verdict.actions)
-                job.settled(null)
-                return
-            }
+            val verdict = validate(ixs)
+            if (!verdict.ok) return LegSubmit.Blocked(verdict.actions)
 
             val (bh, short) = coroutineScope {
                 val b = async { blockhash() }
-                val s = async { job.shortfall?.invoke(fee) }
+                val s = async { shortfall?.invoke(fee) }
                 b.await() to s.await()
             }
-            if (short != null) {
-                t.set(i) { it.copy(status = StepStatus.SKIPPED, error = short) }
-                job.settled(null)
-                return
-            }
+            if (short != null) return LegSubmit.Skipped(short)
 
             // Always simulated first: on its error nothing is signed.
-            val sim = rpc.simulate(SolTx.serializeTransaction(SolTx.compileMessage(job.wallet.address, ixs, bh.blockhash), emptyList()))
-            if (sim.err != null) {
-                t.fail(i, SolErrors.explain(sim.err, ixs))
-                job.settled(null)
-                return
-            }
+            val sim = rpc.simulate(SolTx.serializeTransaction(SolTx.compileMessage(wallet.address, ixs, bh.blockhash), emptyList()))
+            if (sim.err != null) return LegSubmit.Failed(SolErrors.explain(sim.err, ixs))
             val used = sim.unitsConsumed
             if (used != null && used > 0) {
                 units = minOf(Spl.MAX_COMPUTE_UNITS, maxOf(30_000, ceil(used * 1.2).toInt()) + random(256))
                 ixs = withBudget(units)
                 // Same instructions, new budget: checked again all the same.
-                if (!job.validate(ixs).ok) throw IllegalStateException("Blocked after simulation")
+                if (!validate(ixs).ok) throw IllegalStateException("Blocked after simulation")
             }
 
-            val message = SolTx.compileMessage(job.wallet.address, ixs, bh.blockhash)
-            val signature = job.wallet.signMessage(message.bytes)
+            val message = SolTx.compileMessage(wallet.address, ixs, bh.blockhash)
+            val signature = wallet.signMessage(message.bytes)
             val raw = SolTx.serializeTransaction(message, listOf(signature))
             val sig = Base58.encode(signature)
-            t.set(i) { it.copy(status = StepStatus.SENDING, hash = sig) }
+            onSending(sig)
             rpc.broadcast(raw)
-            t.set(i) { it.copy(status = StepStatus.SUBMITTED) }
-            scope.launch { confirm(t, i, Sent(raw, sig, ixs, bh.lastValidBlockHeight, job)) }
+            return LegSubmit.Out(Sent(raw, sig, ixs, bh.lastValidBlockHeight))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            t.fail(i, shortErr(e))
-            job.settled(null)
+            return LegSubmit.Failed(shortErr(e))
         }
     }
+
+    // ── plain transactions: a bridge deposit, a send ─────────────────────────────────
+
+    /** What a plain Solana transaction came to: sent with its signature, or refused (nothing was signed). */
+    sealed interface Plain {
+        class Out(val sig: String, internal val sent: Any) : Plain
+        data class Refused(val reason: String, val blocked: List<BlockedAction>? = null) : Plain
+    }
+
+    /** How a sent plain transaction ended: landed with its fee, or not, and why. */
+    sealed interface PlainEnd {
+        data class Landed(val feeLamports: BigInteger?) : PlainEnd
+        data class Failed(val reason: String, val unknown: Boolean = false) : PlainEnd
+    }
+
+    /**
+     * One plain transaction from `wallet` on the same path as a trade's: the exact instructions,
+     * compute budget included, pass `validate` before every signature; it is simulated first.
+     */
+    suspend fun sendPlain(
+        wallet: SolSigner,
+        instructions: List<Instruction>,
+        units: Int,
+        prefs: SolPrefs,
+        validate: (List<Instruction>) -> SolValidationResult,
+        shortfall: (suspend (BigInteger) -> String?)? = null,
+        /** The signature, right before the transaction is sent: a caller keeps it in case the app closes. */
+        onSigned: (String) -> Unit = {},
+    ): Plain = when (val s = submitLeg(wallet, instructions, units, prefs, validate, shortfall, onSigned)) {
+        is LegSubmit.Blocked -> Plain.Refused(s.actions.firstOrNull { !it.ok }?.reason ?: "Blocked", s.actions)
+        is LegSubmit.Skipped -> Plain.Refused(s.reason)
+        is LegSubmit.Failed -> Plain.Refused(s.error)
+        is LegSubmit.Out -> Plain.Out(s.sent.sig, s.sent)
+    }
+
+    /** Waits for a plain transaction as for a trade's: sent again until it lands or expires. */
+    suspend fun landed(out: Plain.Out): PlainEnd {
+        val sent = out.sent as Sent
+        return when (val end = awaitSig(sent) {}) {
+            is SigEnd.Landed -> if (end.err != null) {
+                PlainEnd.Failed(SolErrors.explain(end.err, sent.ixs))
+            } else {
+                var fee: BigInteger? = null
+                for (attempt in 0 until FILL_TRIES) {
+                    val meta = orNull { rpc.getTransactionMeta(sent.sig) }
+                    if (meta != null) {
+                        fee = meta.fee
+                        break
+                    }
+                    delay(FILL_WAIT_MS)
+                }
+                PlainEnd.Landed(fee)
+            }
+            SigEnd.Expired -> PlainEnd.Failed(EXPIRED)
+            SigEnd.Timeout -> PlainEnd.Failed(NOT_CONFIRMED, unknown = true)
+        }
+    }
+
+    /** Where a signature stands now: landed (with its error, if any), or null while it is not known. */
+    suspend fun statusOf(sig: String): SignatureStatus? = orNull { rpc.getSignatureStatuses(listOf(sig)) }?.firstOrNull()
 
     /** Why `wallet` cannot fund a buy of `spend` in the pay currency, or null when it can. */
     private suspend fun buyShortfall(wallet: String, pay: PayInfo, spend: BigInteger, fee: BigInteger): String? {
@@ -1000,13 +1088,43 @@ class SolTrader(
         return if ((accs.getOrNull(0)?.lamports ?: BigInteger.ZERO) < need) "Insufficient SOL for fees: about ${units(need, 9)} needed." else null
     }
 
-    private class Sent(val raw: ByteArray, val sig: String, val ixs: List<Instruction>, val lastValid: Long, val job: LegJob)
+    private class Sent(val raw: ByteArray, val sig: String, val ixs: List<Instruction>, val lastValid: Long)
+
+    private sealed interface SigEnd {
+        class Landed(val err: JsonElement?) : SigEnd
+        data object Expired : SigEnd
+        data object Timeout : SigEnd
+    }
+
+    /** Waits for a trade's transaction, then books how it ended. */
+    private suspend fun confirm(t: Ticket, i: Int, p: Sent, job: LegJob) {
+        val end = awaitSig(p) {
+            t.set(i) { it.copy(error = "Not confirmed yet. Check the explorer.") }
+            job.settled(null)
+        }
+        when (end) {
+            is SigEnd.Landed -> {
+                val err = end.err
+                if (err != null) t.fail(i, SolErrors.explain(err, p.ixs)) else t.set(i) { it.copy(status = StepStatus.CONFIRMED, error = null) }
+                fill(t, i, p.sig, job)
+            }
+            SigEnd.Expired -> {
+                t.fail(i, EXPIRED)
+                job.settled(null)
+            }
+            SigEnd.Timeout -> {
+                t.fail(i, NOT_CONFIRMED)
+                job.settled(null)
+            }
+        }
+    }
 
     /**
      * Waits for the transaction, sending it again until it lands or its blockhash expires. Past
-     * the extension's two minutes it is still watched, slowly, so the trade ends on screen.
+     * the extension's two minutes it is still watched, slowly (`onLate` says so once), so the
+     * trade ends on screen.
      */
-    private suspend fun confirm(t: Ticket, i: Int, p: Sent) {
+    private suspend fun awaitSig(p: Sent, onLate: () -> Unit): SigEnd {
         val sentAt = now()
         var lastSend = sentAt
         var heightAt = sentAt
@@ -1015,10 +1133,7 @@ class SolTrader(
             delay(if (late) LATE_POLL_MS else pollMs)
             val status = orNull { rpc.getSignatureStatuses(listOf(p.sig)) }?.firstOrNull()
             if (status != null && (status.confirmationStatus == "confirmed" || status.confirmationStatus == "finalized")) {
-                val err = status.err
-                if (err != null) t.fail(i, SolErrors.explain(err, p.ixs)) else t.set(i) { it.copy(status = StepStatus.CONFIRMED, error = null) }
-                fill(t, i, p.sig, p.job)
-                return
+                return SigEnd.Landed(status.err)
             }
             val n = now()
             if (!late && n - lastSend >= REBROADCAST_MS) {
@@ -1028,20 +1143,14 @@ class SolTrader(
             if (late || n - heightAt >= HEIGHT_CHECK_MS) {
                 heightAt = n
                 val height = orNull { rpc.getBlockHeight() }
-                if (height != null && height > p.lastValid && status == null) {
-                    t.fail(i, "Expired before it landed. Try a higher priority fee.")
-                    p.job.settled(null)
-                    return
-                }
+                if (height != null && height > p.lastValid && status == null) return SigEnd.Expired
             }
             if (!late && now() - sentAt >= CONFIRM_TIMEOUT_MS) {
                 late = true
-                t.set(i) { it.copy(error = "Not confirmed yet. Check the explorer.") }
-                p.job.settled(null)
+                onLate()
             }
         }
-        t.fail(i, "Not confirmed. Check the explorer.")
-        p.job.settled(null)
+        return SigEnd.Timeout
     }
 
     /** The fee the transaction paid, and what it delivered. Best effort. */
@@ -1188,6 +1297,8 @@ class SolTrader(
         private val MILLION: BigInteger = BigInteger.valueOf(1_000_000)
 
         const val NO_ROUTE = "No pool can trade this coin right now."
+        const val EXPIRED = "Expired before it landed. Try a higher priority fee."
+        const val NOT_CONFIRMED = "Not confirmed. Check the explorer."
         const val FEE_ACCOUNTS = "pump.fun changed its fee accounts."
         const val CURVE_COMPLETE = "The pump.fun curve is complete. Trading opens on PumpSwap once it migrates."
         const val UNTRADABLE = "Tokens with a transfer fee or hook cannot be traded here yet."

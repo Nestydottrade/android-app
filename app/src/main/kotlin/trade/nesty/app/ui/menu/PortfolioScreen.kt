@@ -12,6 +12,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import trade.nesty.app.data.Fill
+import androidx.compose.ui.platform.LocalUriHandler
+import trade.nesty.app.move.Move
+import trade.nesty.app.move.MoveKind
+import trade.nesty.app.move.MoveState
 import trade.nesty.app.data.Holding
 import trade.nesty.app.ui.CoinAvatar
 import trade.nesty.app.ui.Divider
@@ -100,15 +104,29 @@ fun PortfolioScreen() {
     val open = holdings.filter { it.open }
     val closed = holdings.filter { !it.open }
     val activity = if (wallet != null) trading.activity() else emptyList()
+    val mover = AppGraph.mover
+    val moves = if (wallet != null) mover.ofActive() else emptyList()
+    val openMoves = moves.filter { it.state.open }
+    // Buys and sells with the moves among them, newest first.
+    val entries: List<Any> = (activity + moves).sortedByDescending { if (it is Move) it.at else (it as Fill).at }.take(200)
+    val uri = LocalUriHandler.current
+    val openMove: (Move) -> Unit = { m ->
+        val c = m.toChain
+        val t = m.token
+        if (m.kind == MoveKind.BUY && c != null && t != null) {
+            nav.push(Route.Token(c, t, buy = m.state == MoveState.ASK))
+        } else {
+            // A withdrawal: its first transaction on the explorer of the chain it left.
+            m.legs.firstOrNull { it.hash != null }?.let { l -> l.fromChain?.let { fc -> runCatching { uri.openUri("${fc.explorer}/tx/${l.hash}") } } }
+        }
+    }
 
     Column(Modifier.fillMaxSize()) {
         TabHeader("Portfolio", onMenu = { nav.push(Route.Menu) })
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item(key = "balance") {
                 Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 14.dp)) {
-                    BalanceCard(wallet, balance, onDeposit = { deposit = true }) {
-                        toasts.show("Withdraw is not in this build yet", "It comes with One Balance, in a later build.")
-                    }
+                    BalanceCard(wallet, balance, onDeposit = { deposit = true }) { nav.push(Route.Withdraw) }
                 }
             }
             when {
@@ -131,6 +149,14 @@ fun PortfolioScreen() {
                     }
                 }
                 else -> {
+                    uniqueItems(openMoves, { "m:" + it.id }) { m ->
+                        Box(Modifier.padding(bottom = 10.dp)) {
+                            MoveCard(m, onBuy = { openMove(m) }) {
+                                mover.keep(m.id)
+                                toasts.show("Kept on ${m.toChain?.title ?: "its chain"}", "The funds stay in that chain's balance.")
+                            }
+                        }
+                    }
                     if (holdings.isNotEmpty()) item(key = "totals") { Totals(open, holdings) }
                     item(key = "tabs") {
                         LaneTabs(
@@ -157,11 +183,16 @@ fun PortfolioScreen() {
                                 ClosedRow(h, now) { nav.push(Route.Position(h.position.chain, h.position.token)) }
                             }
                         }
-                        else -> if (activity.isEmpty()) {
-                            item(key = "none") { EmptyNote("Nothing yet. Your buys and sells will list here.") }
+                        else -> if (entries.isEmpty()) {
+                            item(key = "none") { EmptyNote("Nothing yet. Your buys, sells and withdrawals will list here.") }
                         } else {
-                            uniqueItems(activity.take(200), { "a:" + it.tx + it.token }) { f ->
-                                ActivityRow(f, now) { f.chain?.let { c -> nav.push(Route.Position(c, f.token)) } }
+                            uniqueItems(entries, { e -> if (e is Move) "m:" + e.id else (e as Fill).let { "a:" + it.tx + it.token } }) { e ->
+                                if (e is Move) {
+                                    MoveRow(e, now, onOpen = if (e.kind == MoveKind.BUY || e.legs.any { it.hash != null }) ({ openMove(e) }) else null)
+                                } else {
+                                    val f = e as Fill
+                                    ActivityRow(f, now) { f.chain?.let { c -> nav.push(Route.Position(c, f.token)) } }
+                                }
                             }
                         }
                     }

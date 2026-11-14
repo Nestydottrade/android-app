@@ -2,6 +2,10 @@ package trade.nesty.app.data
 
 import android.content.Context
 import okhttp3.OkHttpClient
+import trade.nesty.app.move.HttpRelay
+import trade.nesty.app.move.MoveStore
+import trade.nesty.app.move.Mover
+import trade.nesty.app.move.PrefsMoveDisk
 import trade.nesty.app.BuildConfigLite
 import trade.nesty.app.vault.AndroidKeyWrap
 import trade.nesty.app.vault.FileVaultStore
@@ -27,6 +31,8 @@ object AppGraph {
         private set
     lateinit var trading: Trading
         private set
+    lateinit var mover: Mover
+        private set
 
     fun init(context: Context) {
         val agent = "Nesty-Android/${BuildConfigLite.VERSION}"
@@ -50,5 +56,9 @@ object AppGraph {
         // A wallet's balance names the coins it has traded: EVM chains cannot list what it holds.
         balances = BalanceModel(api, session) { wallet -> positions.coinsOf(wallet.evm) + positions.coinsOf(wallet.sol) }
         trading = Trading(api, session, positions, base).also { it.balances = balances }
+        // Moves of funds between chains and out of One Balance, kept on the phone; bridge quotes are
+        // asked of the bridge from the phone. A move the app was closed in is followed again.
+        mover = Mover(session, trading, balances, settings, MoveStore(PrefsMoveDisk(context.applicationContext)), HttpRelay(base), base)
+        mover.resume()
     }
 }

@@ -1,6 +1,7 @@
 package trade.nesty.app.evm
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -519,9 +520,19 @@ class EvmTrader(
         val simulate: Boolean,
         /** Fetched alongside the simulation, then applied to the gas limit that is signed. */
         val gate: Deferred<(BigInteger) -> String?>? = null,
+        /** Where its reads go; the chain's usual reader when null. */
+        val reader: ChainReader? = null,
     )
 
     private class Sent(val from: String, val nonce: Long)
+
+    /** What one transaction came to before it was watched. */
+    private sealed interface Submit {
+        class Blocked(val actions: List<BlockedAction>) : Submit
+        class Skipped(val reason: String) : Submit
+        class Failed(val error: String) : Submit
+        class Out(val hash: String, val nonce: Long) : Submit
+    }
 
     private fun vctx(
         chain: EvmChain,
@@ -536,14 +547,34 @@ class EvmTrader(
         maxValue: BigInteger,
     ) = validationContext(chain, from, own, now() / 1000, route.venue, ctx, route.pool, token, fundingAsset, maxApproval, maxPermit, maxValue)
 
-    /** Validate → simulate → sign → send. False when the step did not go out. */
-    private suspend fun execute(t: Ticket, i: Int, p: Exec): Boolean {
-        val verdict = Validator.validateTx(p.tx, p.vctx)
-        if (!verdict.ok) {
-            t.block(i, verdict.actions)
-            return false
+    /** Validate → simulate → sign → send, for a trade's step. False when the step did not go out. */
+    private suspend fun execute(t: Ticket, i: Int, p: Exec): Boolean =
+        when (val s = submit(p, onSending = { t.set(i) { it.copy(status = StepStatus.SENDING) } })) {
+            is Submit.Blocked -> {
+                t.block(i, s.actions)
+                false
+            }
+            is Submit.Skipped -> {
+                t.set(i) { it.copy(status = StepStatus.SKIPPED, error = s.reason) }
+                false
+            }
+            is Submit.Failed -> {
+                t.fail(i, s.error)
+                false
+            }
+            is Submit.Out -> {
+                t.sent[i] = Sent(p.wallet.address, s.nonce)
+                t.set(i) { it.copy(status = StepStatus.SUBMITTED, hash = s.hash, nonce = s.nonce) }
+                scope.launch { watch(t, i, p.chain) }
+                true
+            }
         }
-        val reader = reader(p.chain)
+
+    /** Validate → simulate → sign → send: nothing is signed unless the validator passed it. */
+    private suspend fun submit(p: Exec, onSending: () -> Unit, onSigned: (String) -> Unit = {}): Submit {
+        val verdict = Validator.validateTx(p.tx, p.vctx)
+        if (!verdict.ok) return Submit.Blocked(verdict.actions)
+        val reader = p.reader ?: reader(p.chain)
         var gas = TradeMath.staticGas(p.chain, p.kind)
         // The gate and the simulation are independent round trips: run them together.
         val (check, sim) = coroutineScope {
@@ -563,14 +594,8 @@ class EvmTrader(
                 refusal = check(gas)
             }
         }
-        if (refusal != null) {
-            t.set(i) { it.copy(status = StepStatus.SKIPPED, error = refusal) }
-            return false
-        }
-        if (sim != null && sim.isFailure) {
-            t.set(i) { it.copy(status = StepStatus.FAILED, error = "Simulation failed: ${shortErr(sim.exceptionOrNull()!!)}") }
-            return false
-        }
+        if (refusal != null) return Submit.Skipped(refusal)
+        if (sim != null && sim.isFailure) return Submit.Failed("Simulation failed: ${shortErr(sim.exceptionOrNull()!!)}")
         try {
             val fees = fees(p.chain, reader, p.prefs.gas)
             if (sim == null && p.chain.feeModel == FeeModel.ARBITRUM) {
@@ -579,13 +604,7 @@ class EvmTrader(
                 val balance = reader.balance(p.wallet.address)
                 val affordable = if (balance > p.tx.value) (balance - p.tx.value) / fees.maxFeePerGas else BigInteger.ZERO
                 if (affordable < TradeMath.MIN_UNSIMULATED_GAS) {
-                    t.set(i) {
-                        it.copy(
-                            status = StepStatus.SKIPPED,
-                            error = "Insufficient balance for gas: has ${TradeMath.formatToken(balance, 18)} ${p.chain.nativeSymbol}",
-                        )
-                    }
-                    return false
+                    return Submit.Skipped("Insufficient balance for gas: has ${TradeMath.formatToken(balance, 18)} ${p.chain.nativeSymbol}")
                 }
                 if (affordable < gas) gas = affordable
             }
@@ -597,11 +616,8 @@ class EvmTrader(
                 p.prefs.maxGasUsd,
                 p.chain.nativeSymbol,
             )
-            if (feeRefusal != null) {
-                t.set(i) { it.copy(status = StepStatus.SKIPPED, error = feeRefusal) }
-                return false
-            }
-            t.set(i) { it.copy(status = StepStatus.SENDING) }
+            if (feeRefusal != null) return Submit.Skipped(feeRefusal)
+            onSending()
             val signedGas = gas
             val (nonce, hash) = nonces.signAndSend(
                 p.chain,
@@ -613,21 +629,82 @@ class EvmTrader(
                     }
                 },
                 send = { raw ->
+                    // The hash of the bytes signed, whatever an endpoint answers: known before they go out.
+                    val hash = keccak256(raw).toHex()
+                    onSigned(hash)
                     sender.send(p.chain, raw)
-                    // The hash of the bytes signed, whatever an endpoint answers.
-                    keccak256(raw).toHex()
+                    hash
                 },
             )
-            t.sent[i] = Sent(p.wallet.address, nonce)
-            t.set(i) { it.copy(status = StepStatus.SUBMITTED, hash = hash, nonce = nonce) }
-            scope.launch { watch(t, i, p.chain) }
-            return true
+            return Submit.Out(hash, nonce)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            t.fail(i, shortErr(e))
-            return false
+            return Submit.Failed(shortErr(e))
         }
+    }
+
+    // ── plain transactions: a bridge deposit, its approval, a send ───────────────────────
+
+    /** What a plain transaction came to: sent with its hash, or refused (nothing was signed). */
+    sealed interface Plain {
+        data class Out(val hash: String, val nonce: Long) : Plain
+        data class Refused(val reason: String, val blocked: List<BlockedAction>? = null) : Plain
+    }
+
+    /**
+     * One plain transaction from `wallet`, on the same path as a trade's: the validator, the
+     * simulation when asked, the fee limit, the shared nonces, the chain's own RPCs for the send.
+     * `reader` sends its reads elsewhere (a send to an outside address reads the chain directly).
+     */
+    suspend fun sendPlain(
+        chainId: Long,
+        wallet: EvmSigner,
+        tx: TxDraft,
+        vctx: ValidationContext,
+        kind: GasKind,
+        prefs: TradePrefs,
+        simulate: Boolean = true,
+        gate: ((BigInteger) -> String?)? = null,
+        reader: ChainReader? = null,
+        /** The hash, right before the signed bytes are sent: a caller keeps it in case the app closes. */
+        onSigned: (String) -> Unit = {},
+    ): Plain {
+        val chain = chainOf(chainId)
+        val p = Exec(chain, prefs, wallet, tx, vctx, kind, simulate, gate?.let { CompletableDeferred(it) }, reader)
+        return when (val s = submit(p, {}, onSigned)) {
+            is Submit.Blocked -> Plain.Refused(s.actions.firstOrNull { !it.ok }?.reason ?: "Blocked", s.actions)
+            is Submit.Skipped -> Plain.Refused(s.reason)
+            is Submit.Failed -> Plain.Refused(s.error)
+            is Submit.Out -> Plain.Out(s.hash, s.nonce)
+        }
+    }
+
+    /**
+     * The receipt of a plain transaction, waited for as a trade's is: every poll for five minutes,
+     * then the nonce is read again (it may have been dropped) and it is watched slowly for an hour.
+     * Null when it never came.
+     */
+    suspend fun receiptOf(chainId: Long, hash: String, from: String, reader: ChainReader? = null): Receipt? {
+        val chain = chainOf(chainId)
+        val r = reader ?: reader(chain)
+        val started = now()
+        var late = false
+        while (now() - started < WATCH_LIMIT_MS) {
+            delay(if (late) LATE_POLL_MS else pollMs)
+            orNull { r.receipt(hash) }?.let { return it }
+            if (!late && now() - started >= RECEIPT_TIMEOUT_MS) {
+                late = true
+                nonces.reset(chain, from)
+            }
+        }
+        return null
+    }
+
+    /** What the chain's own coin costs in fees for gas now: the base fee and tip of `preset`. */
+    suspend fun gasPrice(chainId: Long, preset: GasPreset): Fees? {
+        val chain = EvmChains.byId(chainId) ?: return null
+        return orNull { fees(chain, reader(chain), preset) }
     }
 
     private suspend fun estimate(reader: ChainReader, p: Exec): Result<BigInteger> = try {

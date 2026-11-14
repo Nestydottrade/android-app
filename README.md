@@ -135,6 +135,63 @@ it does not list is asked for with `/token` on each chain it can be on
   extension. `SolEngineTest` runs buys and sells end to end on a made-up chain.
   Every signature is by a made-up key.
 
+## One Balance and Withdraw
+
+- One Balance is the wallet's own coin on each chain, in dollars, summed. The
+  coins it holds are positions, not balance. Nothing moves by itself: every move
+  starts from the user's one confirmation.
+- Buying where the chain is short: the buy sheet takes the missing amount from
+  the fullest other chain that covers it alone, and says how much is moved, what
+  it costs ("Network and move fees", also counted in Cost to get in) and how long
+  it takes. One Buy confirms both. The bridge pays the exact missing amount to
+  the wallet's own address (exact output, capped at what was shown plus 1% and
+  at what the source chain can give), then the buy goes out as usual. The move's
+  cost joins the buy's cost basis. A one-tap buy the chain cannot pay opens the
+  sheet with that amount.
+- A sale pays out on its own chain. Max and All keep a little on each chain for
+  network fees: the extension's bridge reserve, and on Solana the rent a wallet
+  needs plus two fees.
+- Moves are kept on the phone as they go (`move/Moves.kt`, never backed up) and
+  followed again after the app was closed. A send that was being signed when the
+  app closed is marked as not known, never as failed. Funds that landed for a buy
+  while the app was closed, or more than 3 minutes after the confirmation, wait
+  for the user: Portfolio shows them with Buy now (the token page opens its buy
+  sheet) and Keep on <chain>. Moves that are not done are shown at the top of
+  Portfolio and listed in Activity.
+- Withdraw sends One Balance to an EVM or Solana address, pasted or typed (a
+  mixed-case EVM address must carry a valid checksum). Taken from: all chains
+  (the arriving chain first, then the fullest) or one chain only. Arrives on: the
+  fullest chain the address works on, or the user's pick; each choice lists its
+  fee and time. The arriving chain's share is a plain send, every other share a
+  bridge paid to the receiver. The review shows the whole address in groups of
+  four and asks for the fingerprint (the password when fingerprint unlock is off).
+- The receiver is checked before the review and again right before signing: a
+  token contract on an EVM chain; on Solana an address funds are lost at (a
+  program, a mint, a token account) and a new address paid less than it needs to
+  exist.
+- Privacy: bridge quotes and status are asked by the phone, never through Nesty's
+  server. Reads that name the receiver (its code, the send's simulation and
+  receipt, the Solana account) go to the chain's own public RPCs, so Nesty's
+  server never sees whom the user pays.
+- A bridge quote passes the extension's checks before anything is signed
+  (`move/Relay.kt`: the depository, the amount, the credited wallet, the payout
+  chain and coin), and its deposit is validated and simulated like a trade. Each
+  bridge is quoted again right before it is signed.
+- Left out: QR scanning (it needs a library download, which is the user's call);
+  moving funds out of Elysium (the bridge holds no HYPE there, and the
+  extension's way out through USDC was never tried with real funds), so Elysium
+  funds are only sent on Elysium; a buy's move from several chains at once (one
+  chain covers it, or the sheet says how much it can); a buy sent just before the
+  app closed is not booked as a fill after the restart (its hash is kept, so it
+  is never asked again). Moving funds into Elysium works only if the bridge
+  quotes it.
+- Tests: `app/src/test/kotlin/trade/nesty/app/move/`. `RelayTest` checks quotes,
+  deposits, status reads and the depository's validator rules against vectors
+  the extension's own code writes (`tools/vectors/bridge.test.ts`) and a real
+  exact-output answer. `PlansTest` checks the reserves, where a withdrawal comes
+  from, a buy's shortfall and source, the cap, the cost basis, typed addresses,
+  Solana receivers and moves kept across a restart.
+
 ## Build
 
 The toolchain lives on `D:\Android` (JDK 21, Android SDK with platform 36,
@@ -171,7 +228,10 @@ D:\Android\sdk\emulator\emulator.exe -avd nesty36
 
 - `data/`: the API client (`NestyApi`, with the live stream), models, chains,
   local settings (quick buy, followed wallets, watchlist).
+- `move/`: One Balance moves: the bridge client (`Relay.kt`), the arithmetic
+  (`Plans` in `Moves.kt`), typed receivers, and the `Mover` that runs and keeps
+  each move.
 - `ui/`: one folder per screen, shared parts in `Components.kt`, figures in
-  `Format.kt`, the coin checks in `Checks.kt`.
+  `Format.kt`, the coin checks in `Checks.kt`; Withdraw in `ui/withdraw/`.
 - `app/src/test/`: unit tests; `resources/fixtures/` holds real API answers
   saved on 2026-11-13.

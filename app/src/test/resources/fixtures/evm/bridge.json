@@ -1,0 +1,5653 @@
+{
+ "depository": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+ "wallet": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+ "other": "0x00000000000000000000000000000000000Be5A1",
+ "stranger": "0x000000000000000000000000000000000000dEaD",
+ "depositId": "0x5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+ "calldata": {
+  "depositNative": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+  "depositErc20": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a"
+ },
+ "evm": [
+  {
+   "name": "good",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "recipient in another case",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "no fees",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": null,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "only the relayer fee",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "relayer": {
+      "amountUsd": "0.5"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": 0.5,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "fee not a number",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amountUsd": "abc"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": null,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "no time estimate",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": 0.061879,
+    "timeEstimateS": null,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "minimum at the floor",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19900000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19900000000000000",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "minimum two below the floor",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999998"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote allows more slippage than requested"
+  },
+  {
+   "name": "minimum zero",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "0"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote allows more slippage than requested"
+  },
+  {
+   "name": "minimum not a number",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "1e18"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Unexpected quote format"
+  },
+  {
+   "name": "two steps",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote has unexpected steps"
+  },
+  {
+   "name": "no steps",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote has unexpected steps"
+  },
+  {
+   "name": "two items",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       },
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote has unexpected steps"
+  },
+  {
+   "name": "step is a signature",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "signature",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote step is not a transaction"
+  },
+  {
+   "name": "another recipient",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x000000000000000000000000000000000000dEaD",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote recipient differs from your wallet"
+  },
+  {
+   "name": "recipient not an address",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "nobody",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote recipient differs from your wallet"
+  },
+  {
+   "name": "pays out on another chain",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 1,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote pays out on a different chain"
+  },
+  {
+   "name": "pays out a token",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote pays out a token, not the native coin"
+  },
+  {
+   "name": "deposit on another chain",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 1
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote is for a different chain"
+  },
+  {
+   "name": "another contract",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x000000000000000000000000000000000000dEaD",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote targets an unknown contract"
+  },
+  {
+   "name": "value differs",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896589",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote value differs from the amount"
+  },
+  {
+   "name": "credits another wallet",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c000000000000000000000000000000000000000000000000000000000000dead5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Deposit is not credited to your wallet"
+  },
+  {
+   "name": "not a native deposit",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000017632dfc0f7c8c5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote calldata is not a native deposit"
+  },
+  {
+   "name": "calldata not hex",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0xzz",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote calldata is not a native deposit"
+  },
+  {
+   "name": "no check, request id on the step",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "no check and no request id",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote has no request id"
+  },
+  {
+   "name": "request id not bytes32",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1234",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote has no request id"
+  },
+  {
+   "name": "status path of v3",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status/v3?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "19899999999999999",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status/v3?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "status path elsewhere",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "https://evil.example/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Unexpected status path"
+  },
+  {
+   "name": "step names another request",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1818181818181818181818181818181818181818181818181818181818181818",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote names two requests"
+  },
+  {
+   "name": "solana instructions",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "instructions": []
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote is for a different chain"
+  },
+  {
+   "name": "value missing",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Unexpected quote format"
+  },
+  {
+   "name": "amount out missing",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "from": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+         "to": "0x4cd00e387622c35bddb9b4c962c136462338bc31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x00000000000000000000000000000000000be5a1",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 56,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "minimumAmount": "19899999999999999"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Unexpected quote format"
+  },
+  {
+   "name": "to solana",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+    "fromChainId": 8453,
+    "toChainId": 792703809,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 792703809,
+       "address": "11111111111111111111111111111111",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+     "originChainId": 8453,
+     "destinationChainId": 792703809,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "11111111111111111111111111111111",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "6582973617896588",
+    "amountOut": "20000000000000000",
+    "minOut": "20000000000000000",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "6582973617896588"
+    }
+   }
+  },
+  {
+   "name": "to solana, recipient in another case",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+    "fromChainId": 8453,
+    "toChainId": 792703809,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "K7FAK87WHGVXZKAOHB7CDVPGKKDQHZ29VLDEBVBDFYN",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 792703809,
+       "address": "11111111111111111111111111111111",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+     "originChainId": 8453,
+     "destinationChainId": 792703809,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "11111111111111111111111111111111",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote recipient differs from your wallet"
+  },
+  {
+   "name": "to solana, pays an EVM native",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+    "fromChainId": 8453,
+    "toChainId": 792703809,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "6582973617896588",
+         "chainId": 8453
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 792703809,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "k7FaK87WHGVXzkaoHb7CdVPgkKDQhZ29VLDeBVbDfYn",
+     "originChainId": 8453,
+     "destinationChainId": 792703809,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "11111111111111111111111111111111",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote pays out a token, not the native coin"
+  },
+  {
+   "name": "service refuses with a message",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "message": "Amount is too low‮ to bridge\n"
+   },
+   "status": 400,
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Bridge service: Amount is too low to bridge"
+  },
+  {
+   "name": "service refuses without one",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "error": "x"
+   },
+   "status": 500,
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Bridge service error 500"
+  },
+  {
+   "name": "not a quote",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x00000000000000000000000000000000000Be5A1",
+    "fromChainId": 8453,
+    "toChainId": 56,
+    "amount": "6582973617896588"
+   },
+   "answer": {
+    "hello": "world"
+   },
+   "status": 200,
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x00000000000000000000000000000000000Be5A1",
+     "originChainId": 8453,
+     "destinationChainId": 56,
+     "originCurrency": "0x0000000000000000000000000000000000000000",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "6582973617896588",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Unexpected quote format"
+  }
+ ],
+ "token": [
+  {
+   "name": "token, approve then deposit",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "12345678",
+    "amountOut": "20000000000000000",
+    "minOut": "20000000000000000",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "0"
+    }
+   }
+  },
+  {
+   "name": "token, deposit only",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": true,
+   "result": {
+    "amountIn": "12345678",
+    "amountOut": "20000000000000000",
+    "minOut": "20000000000000000",
+    "feeUsd": 0.061879,
+    "timeEstimateS": 1,
+    "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+    "statusPath": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "tx": {
+     "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+     "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+     "value": "0"
+    }
+   }
+  },
+  {
+   "name": "token, approve step not first",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     },
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote has unexpected steps"
+  },
+  {
+   "name": "token, approve step named otherwise",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "permit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote has unexpected steps"
+  },
+  {
+   "name": "token, approves another token",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x000000000000000000000000000000000000dEaD",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote approves another token"
+  },
+  {
+   "name": "token, approves another spender",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b3000000000000000000000000000000000000000000000000000000000000dead0000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote approval is not for the deposit"
+  },
+  {
+   "name": "token, approves more",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614f",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote approval is not for the deposit"
+  },
+  {
+   "name": "token, approval not an approve",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote approval is not an approve"
+  },
+  {
+   "name": "token, approval with value",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "1",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote approval is not for the deposit"
+  },
+  {
+   "name": "token, approval on another chain",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 1
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote is for a different chain"
+  },
+  {
+   "name": "token, deposits another token",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000000000000000000000000000000000000000dead0000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote deposits another token"
+  },
+  {
+   "name": "token, deposits more",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614f5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote value differs from the amount"
+  },
+  {
+   "name": "token, credits another wallet",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe8017952000000000000000000000000000000000000000000000000000000000000dead000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Deposit is not credited to your wallet"
+  },
+  {
+   "name": "token, deposit with value",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "1",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote sends native value with a token deposit"
+  },
+  {
+   "name": "token, extra calldata",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a00",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote calldata is not a token deposit"
+  },
+  {
+   "name": "token, native deposit",
+   "ask": {
+    "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+    "fromChainId": 99901,
+    "toChainId": 8453,
+    "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "amount": "12345678"
+   },
+   "answer": {
+    "steps": [
+     {
+      "id": "approve",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0xb47c4c8f73f009cc0c0d3f92b388d13e293f0b65",
+         "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+         "value": "0",
+         "chainId": 99901
+        }
+       }
+      ]
+     },
+     {
+      "id": "deposit",
+      "kind": "transaction",
+      "requestId": "0x1717171717171717171717171717171717171717171717171717171717171717",
+      "items": [
+       {
+        "status": "incomplete",
+        "data": {
+         "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+         "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+         "value": "0",
+         "chainId": 99901
+        },
+        "check": {
+         "endpoint": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+         "method": "GET"
+        }
+       }
+      ]
+     }
+    ],
+    "fees": {
+     "gas": {
+      "amount": "213295771973",
+      "amountUsd": "0.000412"
+     },
+     "relayer": {
+      "amount": "31818526589104",
+      "amountUsd": "0.061467"
+     },
+     "relayerGas": {
+      "amount": "588364868758",
+      "amountUsd": "0.001137"
+     },
+     "relayerService": {
+      "amount": "31230161720346",
+      "amountUsd": "0.060330"
+     },
+     "app": {
+      "amount": "0",
+      "amountUsd": "0"
+     }
+    },
+    "details": {
+     "operation": "swap",
+     "sender": "made-up",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "timeEstimate": 1,
+     "currencyOut": {
+      "currency": {
+       "chainId": 8453,
+       "address": "0x0000000000000000000000000000000000000000",
+       "symbol": "X",
+       "decimals": 18
+      },
+      "amount": "20000000000000000",
+      "minimumAmount": "20000000000000000"
+     }
+    }
+   },
+   "sent": {
+    "path": "/quote",
+    "method": "POST",
+    "body": {
+     "user": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "recipient": "0x11064Ffa76d1c861e9c19b3D36F66572f16f9576",
+     "originChainId": 99901,
+     "destinationChainId": 8453,
+     "originCurrency": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+     "destinationCurrency": "0x0000000000000000000000000000000000000000",
+     "amount": "12345678",
+     "tradeType": "EXACT_INPUT",
+     "slippageTolerance": "50"
+    }
+   },
+   "ok": false,
+   "error": "Quote calldata is not a token deposit"
+  }
+ ],
+ "status": [
+  {
+   "name": "success with a payout",
+   "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+   "toChainId": 56,
+   "answer": {
+    "status": "success",
+    "txHashes": [
+     "0xabababababababababababababababababababababababababababababababab"
+    ]
+   },
+   "sent": {
+    "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "method": "GET",
+    "body": null
+   },
+   "ok": true,
+   "result": {
+    "status": "success",
+    "outHash": "0xabababababababababababababababababababababababababababababababab"
+   }
+  },
+  {
+   "name": "pending",
+   "path": "/intents/status/v2?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+   "toChainId": 56,
+   "answer": {
+    "status": "pending"
+   },
+   "sent": {
+    "path": "/intents/status/v2?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "method": "GET",
+    "body": null
+   },
+   "ok": true,
+   "result": {
+    "status": "pending"
+   }
+  },
+  {
+   "name": "no status",
+   "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+   "toChainId": 56,
+   "answer": {},
+   "sent": {
+    "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "method": "GET",
+    "body": null
+   },
+   "ok": true,
+   "result": {
+    "status": "unknown"
+   }
+  },
+  {
+   "name": "payout on solana",
+   "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+   "toChainId": 792703809,
+   "answer": {
+    "status": "success",
+    "txHashes": [
+     "0xabababababababababababababababababababababababababababababababab",
+     "5555555555555555555555555555555555555555555555555555555555555555555555555555555555555555"
+    ]
+   },
+   "sent": {
+    "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "method": "GET",
+    "body": null
+   },
+   "ok": true,
+   "result": {
+    "status": "success",
+    "outHash": "5555555555555555555555555555555555555555555555555555555555555555555555555555555555555555"
+   }
+  },
+  {
+   "name": "hashes not strings",
+   "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+   "toChainId": 56,
+   "answer": {
+    "status": "refund",
+    "txHashes": [
+     1,
+     null
+    ]
+   },
+   "sent": {
+    "path": "/intents/status?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+    "method": "GET",
+    "body": null
+   },
+   "ok": true,
+   "result": {
+    "status": "refund"
+   }
+  },
+  {
+   "name": "bad path",
+   "path": "/quote?requestId=0x1717171717171717171717171717171717171717171717171717171717171717",
+   "toChainId": 56,
+   "answer": {
+    "status": "success"
+   },
+   "sent": null,
+   "ok": false,
+   "error": "Unexpected status path"
+  }
+ ],
+ "rules": [
+  {
+   "name": "native deposit",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "6582973617896588"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": true,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x1106…",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "native deposit for another own wallet",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0x49290c1c00000000000000000000000000000000000000000000000000000000000be5a15a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "6582973617896588"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x0000…",
+     "ok": false,
+     "reason": "Deposit is not credited to the sending wallet"
+    }
+   ]
+  },
+  {
+   "name": "native deposit for a stranger",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0x49290c1c000000000000000000000000000000000000000000000000000000000000dead5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "6582973617896588"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x0000…",
+     "ok": false,
+     "reason": "Deposit is not credited to the sending wallet"
+    }
+   ]
+  },
+  {
+   "name": "native deposit of nothing",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "0"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x1106…",
+     "ok": false,
+     "reason": "Empty deposit"
+    }
+   ]
+  },
+  {
+   "name": "native deposit above the limit",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "2000000000000000000"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Value 2 ETH",
+     "ok": false,
+     "reason": "Above your per-transaction limit"
+    },
+    {
+     "label": "Bridge deposit for 0x1106…",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "token deposit to the native rule",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "0"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge call",
+     "ok": false,
+     "reason": "Only native deposits are allowed"
+    }
+   ]
+  },
+  {
+   "name": "token deposit",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "0"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": true,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x1106…",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "token deposit of another token",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000000000000000000000000000000000000000dead0000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "0"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x1106…",
+     "ok": false,
+     "reason": "Deposit is in another token"
+    }
+   ]
+  },
+  {
+   "name": "token deposit of nothing",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b6500000000000000000000000000000000000000000000000000000000000000005a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "0"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x1106…",
+     "ok": false,
+     "reason": "Empty deposit"
+    }
+   ]
+  },
+  {
+   "name": "token deposit with value",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0xe801795200000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f9576000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "1"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x1106…",
+     "ok": false,
+     "reason": "A token deposit must not carry native value"
+    }
+   ]
+  },
+  {
+   "name": "token deposit for a stranger",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0xe8017952000000000000000000000000000000000000000000000000000000000000dead000000000000000000000000b47c4c8f73f009cc0c0d3f92b388d13e293f0b650000000000000000000000000000000000000000000000000000000000bc614e5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "0"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge deposit for 0x0000…",
+     "ok": false,
+     "reason": "Deposit is not credited to the sending wallet"
+    }
+   ]
+  },
+  {
+   "name": "native deposit to the token rule",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0x4cD00E387622C35bDDB9b4c962C136462338BC31",
+    "data": "0x49290c1c00000000000000000000000011064ffa76d1c861e9c19b3d36f66572f16f95765a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a",
+    "value": "6582973617896588"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Bridge call",
+     "ok": false,
+     "reason": "Only token deposits are allowed"
+    }
+   ]
+  },
+  {
+   "name": "approve the depository",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+    "value": "0"
+   },
+   "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+   "maxApproval": "12345678",
+   "maxValue": "0",
+   "payee": null,
+   "ok": true,
+   "actions": [
+    {
+     "label": "Approve 0x4cD0…BC31 for 12345678",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "approve the depository for more",
+   "chainId": 99901,
+   "rule": "token",
+   "tx": {
+    "to": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614f",
+    "value": "0"
+   },
+   "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+   "maxApproval": "12345678",
+   "maxValue": "0",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Approve 0x4cD0…BC31 for 12345679",
+     "ok": false,
+     "reason": "Approval above the bounded amount"
+    }
+   ]
+  },
+  {
+   "name": "approve the depository under the native rule",
+   "chainId": 99901,
+   "rule": "native",
+   "tx": {
+    "to": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+    "data": "0x095ea7b30000000000000000000000004cd00e387622c35bddb9b4c962c136462338bc310000000000000000000000000000000000000000000000000000000000bc614e",
+    "value": "0"
+   },
+   "token": "0xb47c4C8F73F009CC0C0d3f92B388d13E293F0B65",
+   "maxApproval": "12345678",
+   "maxValue": "0",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Approve 0x4cD0…BC31 for 12345678",
+     "ok": false,
+     "reason": "Spender is not Permit2 or an allowlisted launchpad"
+    }
+   ]
+  },
+  {
+   "name": "send to the payee",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x000000000000000000000000000000000000dEaD",
+    "data": "0x",
+    "value": "5"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": "0x000000000000000000000000000000000000dEaD",
+   "ok": true,
+   "actions": [
+    {
+     "label": "Send 0.000000000000000005 ETH to 0x0000…dEaD",
+     "ok": true
+    }
+   ]
+  },
+  {
+   "name": "send to a stranger",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x000000000000000000000000000000000000dEaD",
+    "data": "0x",
+    "value": "5"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": null,
+   "ok": false,
+   "actions": [
+    {
+     "label": "Call to 0x0000…dEaD",
+     "ok": false,
+     "reason": "Contract is not on the allowlist"
+    }
+   ]
+  },
+  {
+   "name": "send to the payee with data",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x000000000000000000000000000000000000dEaD",
+    "data": "0x12",
+    "value": "5"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": "0x000000000000000000000000000000000000dEaD",
+   "ok": false,
+   "actions": [
+    {
+     "label": "Call to 0x0000…dEaD",
+     "ok": false,
+     "reason": "Calls with data to a wallet are not allowed"
+    }
+   ]
+  },
+  {
+   "name": "send to the payee above the limit",
+   "chainId": 8453,
+   "rule": "native",
+   "tx": {
+    "to": "0x000000000000000000000000000000000000dEaD",
+    "data": "0x",
+    "value": "2000000000000000000"
+   },
+   "token": null,
+   "maxApproval": null,
+   "maxValue": "1000000000000000000",
+   "payee": "0x000000000000000000000000000000000000dEaD",
+   "ok": false,
+   "actions": [
+    {
+     "label": "Value 2 ETH",
+     "ok": false,
+     "reason": "Above your per-transaction limit"
+    },
+    {
+     "label": "Send 2 ETH to 0x0000…dEaD",
+     "ok": true
+    }
+   ]
+  }
+ ]
+}

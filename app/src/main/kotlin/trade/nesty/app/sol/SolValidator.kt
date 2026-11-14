@@ -10,6 +10,7 @@ import trade.nesty.app.sol.SolAddr.SYSTEM_PROGRAM
 import trade.nesty.app.sol.SolAddr.TOKEN_PROGRAM
 import trade.nesty.app.sol.dex.Dex
 import trade.nesty.app.sol.dex.DexVenue
+import trade.nesty.app.move.RelaySol
 import java.math.BigInteger
 
 /** The pay currency, for amounts in the actions. */
@@ -334,4 +335,108 @@ object SolValidator {
         checkPriority(budget, ctx.maxPriorityLamports, actions)
         return SolValidationResult(actions.all { it.ok }, actions, spend, amountIn, minOut)
     }
+
+    /**
+     * A transfer of SOL or one token to one address (validator.ts validateSolanaTransfer). The
+     * transaction may hold exactly that transfer, the opening of the recipient's token account, and
+     * its compute budget. Nothing else.
+     */
+    fun validateTransfer(instructions: List<Instruction>, ctx: SolTransferContext): SolValidationResult {
+        val actions = mutableListOf<BlockedAction>()
+        val budget = Budget()
+        var moves = 0
+        val asset = ctx.asset
+        checkSigners(instructions, ctx.wallet, actions)
+        if (ctx.to == ctx.wallet) actions += act("Recipient", "This is the wallet you are sending from")
+        val sent = if (asset != null) units(ctx.amount, asset.decimals, asset.symbol) else sol(ctx.amount)
+        for (ix in instructions) {
+            val d = ix.data
+            when (ix.programId) {
+                SolAddr.COMPUTE_BUDGET_PROGRAM -> readBudget(ix, budget, actions)
+                SYSTEM_PROGRAM -> {
+                    moves++
+                    val ok = asset == null && d.size == 12 && le(d, 0, 4) == BigInteger.valueOf(Spl.SYSTEM_TRANSFER.toLong()) &&
+                        le(d, 4, 8) == ctx.amount &&
+                        ix.keys == listOf(AccountMeta(ctx.wallet, isSigner = true, isWritable = true), AccountMeta(ctx.to, isSigner = false, isWritable = true))
+                    actions += if (ok) act("Send $sent to ${shortAddress(ctx.to)}") else act("System program", "Not the transfer you asked for")
+                }
+                ATA_PROGRAM -> {
+                    val ok = asset != null && d.size == 1 && d[0].toInt() == Spl.ATA_CREATE_IDEMPOTENT &&
+                        ix.keys == ataCreateKeys(ctx.wallet, ctx.to, asset.mint, asset.program)
+                    actions += if (ok) act("Open the recipient's ${asset!!.symbol} account") else act("Token account", "Not the recipient's account for this token")
+                }
+                TOKEN_PROGRAM, SolAddr.TOKEN_2022_PROGRAM -> {
+                    moves++
+                    val ok = asset != null && ix.programId == asset.program && d.size == 10 && d[0].toInt() == Spl.TOKEN_TRANSFER_CHECKED &&
+                        le(d, 1, 8) == ctx.amount && (d[9].toInt() and 0xff) == asset.decimals &&
+                        ix.keys == listOf(
+                            AccountMeta(SolAddr.associatedTokenAddress(ctx.wallet, asset.mint, asset.program), isSigner = false, isWritable = true),
+                            AccountMeta(asset.mint, isSigner = false, isWritable = false),
+                            AccountMeta(SolAddr.associatedTokenAddress(ctx.to, asset.mint, asset.program), isSigner = false, isWritable = true),
+                            AccountMeta(ctx.wallet, isSigner = true, isWritable = false),
+                        )
+                    actions += if (ok) act("Send $sent to ${shortAddress(ctx.to)}") else act("Token program", "Not the transfer you asked for")
+                }
+                else -> actions += act("Program ${shortAddress(ix.programId)}", "Program is not on the allowlist")
+            }
+        }
+        if (moves != 1) actions += act("Transfer", "Exactly one transfer per transaction")
+        checkPriority(budget, ctx.maxPriorityLamports, actions)
+        return SolValidationResult(actions.all { it.ok }, actions, ctx.amount, ctx.amount, BigInteger.ZERO)
+    }
+
+    /**
+     * A bridge deposit into Relay's vault (validator.ts validateRelayDeposit): exactly the deposit
+     * the app builds from the wallet, the amount and the id Relay quoted, and its compute budget.
+     */
+    fun validateRelayDeposit(instructions: List<Instruction>, ctx: RelayDepositContext): SolValidationResult {
+        val actions = mutableListOf<BlockedAction>()
+        val budget = Budget()
+        val want = RelaySol.depositNative(ctx.wallet, ctx.amount, ctx.id)
+        var deposits = 0
+        checkSigners(instructions, ctx.wallet, actions)
+        for (ix in instructions) {
+            when (ix.programId) {
+                SolAddr.COMPUTE_BUDGET_PROGRAM -> readBudget(ix, budget, actions)
+                RelaySol.PROGRAM -> {
+                    deposits++
+                    val label = "Bridge deposit of ${sol(ctx.amount)}"
+                    actions += when {
+                        ix.keys.getOrNull(2)?.pubkey != ctx.wallet -> act(label, "Deposit is not credited to the sending wallet")
+                        ix.keys != want.keys || !ix.data.contentEquals(want.data) -> act(label, "Not the deposit you asked for")
+                        ctx.amount.signum() == 0 -> act(label, "Empty deposit")
+                        else -> act(label, if (ctx.amount > ctx.maxSpend) "Above your per-transaction limit" else null)
+                    }
+                }
+                else -> actions += act("Program ${shortAddress(ix.programId)}", "Program is not on the allowlist")
+            }
+        }
+        if (deposits != 1) actions += act("Bridge deposit", "Exactly one deposit per transaction")
+        checkPriority(budget, ctx.maxPriorityLamports, actions)
+        return SolValidationResult(actions.all { it.ok }, actions, ctx.amount, ctx.amount, BigInteger.ZERO)
+    }
 }
+
+/** A token a transfer sends; null in the context for SOL. */
+data class SolAsset(val mint: String, val program: String, val decimals: Int, val symbol: String)
+
+/** What one transfer may do: send exactly `amount` from `wallet` to `to`. */
+data class SolTransferContext(
+    val wallet: String,
+    val to: String,
+    val asset: SolAsset?,
+    val amount: BigInteger,
+    /** Most lamports the priority fee may cost (from the max network fee). */
+    val maxPriorityLamports: BigInteger,
+)
+
+/** What one bridge deposit may do: put exactly `amount` lamports into Relay's vault under `id`. */
+class RelayDepositContext(
+    val wallet: String,
+    val amount: BigInteger,
+    /** The deposit id from Relay's quote: it ties the deposit to the request. */
+    val id: ByteArray,
+    /** Most the deposit may be (from the per-transaction limit). */
+    val maxSpend: BigInteger,
+    val maxPriorityLamports: BigInteger,
+)

@@ -48,6 +48,11 @@ fun interface EvmRpc {
 class HttpRpc(
     private val http: OkHttpClient,
     private val base: String = "https://nesty.trade/api/v1/",
+    /**
+     * Only the chain's own public RPCs, never Nesty's /rpc: for reads that name an address the user
+     * typed (a withdrawal's receiver), which Nesty's server must not see.
+     */
+    private val direct: Boolean = false,
 ) : EvmRpc {
     private val json = "application/json".toMediaType()
 
@@ -60,7 +65,8 @@ class HttpRpc(
             put("params", params)
         }.toString()
         var last: Exception? = null
-        for (url in listOf("${base}rpc/${chain.id}") + chain.rpcUrls) {
+        val urls = if (direct) chain.rpcUrls else listOf("${base}rpc/${chain.id}") + chain.rpcUrls
+        for (url in urls) {
             try {
                 return post(url, body)
             } catch (e: RpcError) {

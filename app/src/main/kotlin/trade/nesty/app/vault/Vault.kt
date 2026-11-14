@@ -185,6 +185,13 @@ class Vault(
         return k.copyOf()
     }
 
+    /** The password again, to confirm a send that cannot be undone; a wrong one counts as a failed unlock. */
+    @Synchronized
+    fun checkPassword(password: String) {
+        val k = key ?: throw VaultException(VaultError.LOCKED)
+        recheck(password, k, requireRecord())
+    }
+
     /** Whether [candidate] is the open vault's key: how a fingerprint confirms a send. */
     @Synchronized
     fun isKey(candidate: ByteArray): Boolean {

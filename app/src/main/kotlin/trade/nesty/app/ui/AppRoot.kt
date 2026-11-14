@@ -51,6 +51,9 @@ import trade.nesty.app.ui.tracker.TrackerModel
 import trade.nesty.app.ui.tracker.TrackerScreen
 import trade.nesty.app.ui.trade.PositionScreen
 import trade.nesty.app.ui.wallet.WalletScreen
+import trade.nesty.app.ui.withdraw.WithdrawScreen
+import trade.nesty.app.move.MoveKind
+import trade.nesty.app.move.MoveState
 
 /** The models of the four tabs, kept while the app runs so a tab comes back as it was left. */
 class RootModels {
@@ -104,6 +107,20 @@ fun AppRoot() {
             val here = (nav.top.route as? Route.Position)?.let { it.chain == n.chain && it.address.equals(n.token, ignoreCase = true) } == true
             if (n.ok && !here) {
                 toasts.show(n.title, n.detail, action = "View") { nav.push(Route.Position(n.chain, n.token)) }
+            } else {
+                toasts.show(n.title, n.detail, bad = !n.ok)
+            }
+        }
+    }
+
+    // Each move that ended, or that waits on the user, says so too, unless a screen shows it.
+    LaunchedEffect(Unit) {
+        val mover = AppGraph.mover
+        mover.notes.collect { n ->
+            if (n.moveId in mover.quiet) return@collect
+            val m = mover.get(n.moveId)
+            if (m?.kind == MoveKind.BUY && m.state == MoveState.ASK) {
+                toasts.show(n.title, n.detail, action = "View") { nav.tab(Route.Portfolio) }
             } else {
                 toasts.show(n.title, n.detail, bad = !n.ok)
             }
@@ -173,7 +190,7 @@ private fun Screen(route: Route) {
         is Route.Smart -> SmartScreen(route.leaderboard)
         Route.Tracker -> TrackerScreen()
         Route.Portfolio -> PortfolioScreen()
-        is Route.Token -> TokenScreen(route.chain, route.address)
+        is Route.Token -> TokenScreen(route.chain, route.address, route.buy)
         is Route.TradesHolders -> TradesHoldersScreen(route.chain, route.address)
         is Route.Position -> PositionScreen(route.chain, route.address)
         is Route.Wallet -> WalletScreen(route.chain, route.address)
@@ -181,6 +198,7 @@ private fun Screen(route: Route) {
         Route.Menu -> MenuScreen()
         Route.Stats -> StatsScreen()
         Route.Updates -> UpdatesScreen()
+        Route.Withdraw -> WithdrawScreen()
         Route.Setup -> SetupScreen()
         is Route.Wallets -> WalletsScreen(route.adding)
     }

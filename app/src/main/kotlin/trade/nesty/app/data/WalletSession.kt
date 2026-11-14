@@ -93,6 +93,9 @@ class WalletSession(private val vault: Vault, private val settings: Settings, pr
     /** Whether a key a fingerprint released is this vault's: a send's confirmation. */
     fun isKey(key: ByteArray): Boolean = vault.isKey(key)
 
+    /** Throws VaultException when `password` is not the vault's (a send's confirmation without a fingerprint). */
+    suspend fun checkPassword(password: String) = change { vault.checkPassword(password) }
+
     fun fingerprintChanged() {
         fingerprintOn = fingerprint.isOn
     }

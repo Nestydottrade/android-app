@@ -92,7 +92,8 @@ data class CoinInfo(
  * Solana its own (SolTrader). Reads go through Nesty's /rpc, sends straight to each chain's own
  * RPCs, then the fill of each landed trade (/fill) is kept as the position's entry on this phone.
  *
- * Funds never move between chains here: a buy is paid from the chain's own balance.
+ * A buy is paid from the chain's own balance; when that is short, the Mover moves funds there first
+ * (on the user's one confirmation) and its cost joins the buy's.
  */
 class Trading(
     private val api: NestyApi,
@@ -131,7 +132,8 @@ class Trading(
         onLanded = { t -> landed(t) },
     )
 
-    private class Pending(val chain: Chain, val info: CoinInfo, val title: String, val price: Double?)
+    /** `extraFeeUsd`: what moving funds here for this buy cost, kept in its cost basis. */
+    private class Pending(val chain: Chain, val info: CoinInfo, val title: String, val price: Double?, val extraFeeUsd: Double = 0.0)
 
     fun evmOf(chain: Chain): EvmChain? = if (chain.isEvm) chain.feed.toLongOrNull()?.let { EvmChains.byId(it) } else null
 
@@ -201,8 +203,11 @@ class Trading(
 
     fun usdOf(raw: BigInteger, decimals: Int, price: Double): Double = BigDecimal(raw).movePointLeft(decimals).toDouble() * price
 
-    /** Buys `usd` of a coin from the chain's own balance. Throws TradeRefused when it cannot start. */
-    suspend fun buy(chain: Chain, token: String, usd: Double, preset: Preset, info: CoinInfo): StateFlow<EngineTrade> {
+    /**
+     * Buys `usd` of a coin from the chain's own balance. Throws TradeRefused when it cannot start.
+     * `extraFeeUsd`: what moving funds to the chain for it cost, added to its network fee.
+     */
+    suspend fun buy(chain: Chain, token: String, usd: Double, preset: Preset, info: CoinInfo, extraFeeUsd: Double = 0.0): StateFlow<EngineTrade> {
         val send = if (chain == Chain.SOLANA) solBuyer(token, preset, info) else evmBuyer(chain, token, preset, info)
         if (usd <= 0 || usd.isNaN()) throw TradeRefused("Enter an amount.")
         val price = priceOf(chain) ?: throw TradeRefused("The ${chain.native} price is not read yet. Try again in a moment.")
@@ -213,7 +218,7 @@ class Trading(
             throw TradeRefused("More than your ${chain.title} balance of ${Fmt.usdFull(balance.chains[chain] ?: 0.0)}.")
         }
         val flow = start { send(wei) }
-        follow(flow, Pending(chain, info, "Bought ${Fmt.usdFull(usd)} of ${info.label}", price))
+        follow(flow, Pending(chain, info, "Bought ${Fmt.usdFull(usd)} of ${info.label}", price, extraFeeUsd.coerceAtLeast(0.0)))
         return flow
     }
 
@@ -406,7 +411,7 @@ class Trading(
             raw = raw.toString(),
             decimals = decimals,
             usd = usd,
-            feeUsd = feeUsd(t, chain, price),
+            feeUsd = withExtra(feeUsd(t, chain, price), p),
             mcapUsd = if (usd != null && tokens > 0 && supply != null) usd / tokens * supply else null,
             exact = false,
         )
@@ -423,10 +428,16 @@ class Trading(
         raw = f.raw ?: "0",
         decimals = f.decimals ?: decimalsOf(t, p),
         usd = f.usd,
-        feeUsd = feeUsd(t, chain, f.nativeUsd ?: price),
+        feeUsd = withExtra(feeUsd(t, chain, f.nativeUsd ?: price), p),
         mcapUsd = f.mcapUsd,
         exact = true,
     )
+
+    /** The network fee with what moving funds for the trade cost: both are part of what it cost to get in. */
+    private fun withExtra(fee: Double?, p: Pending?): Double? {
+        val extra = p?.extraFeeUsd ?: 0.0
+        return if (extra > 0) (fee ?: 0.0) + extra else fee
+    }
 
     // ── positions ───────────────────────────────────────────────────────────────────
 

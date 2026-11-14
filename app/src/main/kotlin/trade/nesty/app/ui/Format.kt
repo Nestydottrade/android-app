@@ -138,6 +138,13 @@ object Fmt {
 
     private fun plural(n: Long, word: String) = "$n $word" + if (n == 1L) "" else "s"
 
+    /** How long a move takes, from the bridge's estimate: a few seconds, about 20 s, about 2 minutes. */
+    fun eta(seconds: Double?): String = when {
+        seconds == null || seconds.isNaN() || seconds <= 10 -> "a few seconds"
+        seconds < 60 -> "about ${seconds.roundToLong()} s"
+        else -> "about " + duration(seconds * 1000)
+    }
+
     fun count(n: Long): String = if (n >= 10_000) compact(n.toDouble()) else String.format(Locale.US, "%,d", n)
 
     /** 1 holder, 2 holders, 12.4K trades. */
