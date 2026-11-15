@@ -302,8 +302,12 @@ The release key is the user's own: it is never in this repository, on the
 server or with Claude. Create it once, outside this folder:
 
 ```
-keytool -genkeypair -v -keystore D:\NestyKeys\nesty-release.jks -alias nesty -keyalg RSA -keysize 4096 -validity 36500
+keytool -genkeypair -v -keystore D:\NestyKeys\nesty-release.jks -alias nesty -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Nesty"
 ```
+
+`-dname "CN=Nesty"` names the certificate Nesty: anyone can read it from the
+APK, so it carries no person's name. The first key, made 2026-11-16, is
+`CN=Nesty`; its SHA-256 is pinned in `release/signer.sha256`.
 
 Keep a copy of the keystore and its password somewhere safe: every update must
 be signed with the same key, so a lost key means no more updates for anyone.
@@ -330,19 +334,27 @@ For tests only: `-Pnesty.versionCode=N -Pnesty.versionName=x.y.z` builds test
 versions for the emulator, and `-Pnesty.testSigning=debug` signs the shrunk
 release build with the debug key to try it there. Neither is ever published.
 
-Before the first release:
+Around the release:
 
-- Google's developer verification. As of Google's FAQ (updated 2026-07-15),
-  what Indonesia enforces since 2026-09-30 covers installs from participating
-  stores; an APK downloaded from nesty.trade is not covered yet. The worldwide
-  rollout in 2027 needs `trade.nesty.app` and its key registered in the
-  Android Developer Console, or each install and update needs the phone's
-  advanced flow (a one-day wait) or adb. Re-check it before the release.
-- A daily spending cap on the X routes, which use a paid key.
-- The app's privacy policy, which must say the server sees the wallets a phone
-  asks about.
-- An `app` tag in the updates list (`website/src/lib/updates.ts`,
-  `website/api/updates-list.ts`).
+- Google's developer verification, checked 2026-11-16 against Google's FAQ
+  (updated 2026-07-15): what Indonesia enforces since 2026-09-30 covers
+  installs from participating stores; an APK downloaded from nesty.trade is
+  not covered yet. The worldwide rollout in 2027 needs `trade.nesty.app` and
+  its key registered in the Android Developer Console, or each install and
+  update needs the phone's advanced flow (a one-day wait) or adb.
+- The X routes' daily spend is capped by the X service itself
+  (`website/xcard`: `XCARD_DAILY_CALLS` 3,000 lookups, about $0.54, and
+  `XCARD_DAILY_POSTS` 5,000 posts, about $0.75, a UTC day, counted on disk,
+  for the site and the API alike). This app does not call them yet.
+- The download page is `https://nesty.trade/#/install/android`: it offers what
+  `/api/v1/app` names, with the APK's and the signing key's SHA-256.
+- The app's privacy policy is `https://nesty.trade/#/privacy/android`: what the
+  server sees (the wallets a phone asks about), what it keeps, who else sees
+  what. A version that changes what the app sends changes that page with it.
+  The app links to it only from a later version: 0.1.0 has no link.
+- The updates list has an `app` tag (`website/src/lib/updates.ts`,
+  `website/api/updates-list.ts`); the Updates screen files those entries under
+  App. A release gets an entry there, served after the next API deploy.
 
 ## Build
 
