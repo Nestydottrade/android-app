@@ -31,6 +31,7 @@ object Notifier {
     private const val YOURS = "yours"
     private const val TRACKER = "tracker"
     private const val SIGNALS = "signals"
+    private const val UPDATES = "updates"
 
     /** What a notification opens, as a route the app's screens read. */
     const val EXTRA_LINK = "trade.nesty.app.link"
@@ -45,6 +46,10 @@ object Notifier {
     private const val SUMMARY_ID = 2
     private const val SUMMARY_REQUEST = 1
 
+    /** The app's own updates: one line, replaced by the next. */
+    private const val UPDATE_ID = 3
+    private const val UPDATE_REQUEST = 2
+
     fun channels(context: Context) {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannels(
@@ -54,6 +59,7 @@ object Notifier {
                 NotificationChannel(YOURS, "Your trades", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "Your buys, sells and moves that end while Nesty is closed" },
                 NotificationChannel(TRACKER, "Tracked wallets", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "Buys and sells by the wallets you follow" },
                 NotificationChannel(SIGNALS, "Signals", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "When proven wallets buy the same coin" },
+                NotificationChannel(UPDATES, "App updates", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "A new version of Nesty is ready to install" },
                 NotificationChannel(WATCH, "Watching", NotificationManager.IMPORTANCE_LOW).apply {
                     description = "Shown while Nesty watches your exit plans and alerts"
                     setShowBadge(false)
@@ -138,6 +144,41 @@ object Notifier {
             .setAutoCancel(true)
             .setContentIntent(open(context, AlertLink(AlertLink.ALERTS), SUMMARY_REQUEST))
             .build()
+
+    /** A checked update is ready to install: a tap opens the Update screen. */
+    fun updateReady(context: Context, version: String) =
+        postUpdate(context, "Nesty $version is ready to install", "Downloaded and checked. Tap to install it.", AlertLink(AlertLink.UPDATE))
+
+    /** The new version's first start after an update. */
+    fun updated(context: Context, version: String) =
+        postUpdate(context, "Nesty $version is installed", "Your wallets, positions and exit plans are as you left them.", null)
+
+    /** Nesty is open: its own screen says what the update line said. */
+    fun clearUpdate(context: Context) = NotificationManagerCompat.from(context).cancel(UPDATE_ID)
+
+    @SuppressLint("MissingPermission") // allowed() asks first.
+    private fun postUpdate(context: Context, title: String, text: String, link: AlertLink?) {
+        if (!allowed(context)) return
+        val intent = Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        if (link != null) intent.putExtra(EXTRA_LINK, linkText(link))
+        val open = PendingIntent.getActivity(context, UPDATE_REQUEST, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
+        val n = NotificationCompat.Builder(context, UPDATES)
+            .setSmallIcon(R.drawable.nesty_egg)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setAutoCancel(true)
+            .setOnlyAlertOnce(true)
+            .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+            .setContentIntent(open)
+            .build()
+        try {
+            NotificationManagerCompat.from(context).notify(UPDATE_ID, n)
+        } catch (_: SecurityException) {
+            // Notifications were turned off in the meantime.
+        }
+    }
 
     /** The watch service's own notification, which Android shows while it runs. */
     fun watching(context: Context, title: String, text: String): Notification =

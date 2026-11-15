@@ -560,8 +560,21 @@ data class PriceRow(val feed: String = "", val address: String = "", val priceUs
 @Serializable
 data class PricesAnswer(val prices: List<PriceRow> = emptyList())
 
+/** One thing a release brings: a few words, and a line under them. */
 @Serializable
-data class AppRelease(val version: String = "", val code: Int = 0, val url: String = "", val sha256: String = "", val size: Long = 0)
+data class ReleaseNote(val title: String = "", val text: String = "")
+
+/** The newest APK (/app). The phone checks its size, hash and signer before Android installs it. */
+@Serializable
+data class AppRelease(
+    val version: String = "",
+    /** The APK's version code, always rising. */
+    val code: Int = 0,
+    val url: String = "",
+    val sha256: String = "",
+    val size: Long = 0,
+    val notes: List<ReleaseNote> = emptyList(),
+)
 
 /** One chain of /balances: the coin in its smallest unit, and what a whole one is worth. */
 @Serializable

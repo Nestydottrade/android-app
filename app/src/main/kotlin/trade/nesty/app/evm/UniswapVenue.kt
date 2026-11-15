@@ -123,6 +123,9 @@ object UniswapVenue : Venue {
     /** Fixed hook configurations, paired with wrapped native (Stockereum). */
     private val LAUNCH_HOOKS = mapOf(1L to listOf(LaunchHook("0x322dcec4958c14e021a9f1cd49df11b9457968cc", 0, 200)))
 
+    /** Whether this build trades Stockereum's launch pools on `chainId`. */
+    fun launchHooksOn(chainId: Long): Boolean = chainId in LAUNCH_HOOKS
+
     private const val NATIVE = UniversalRouter.NATIVE
     private const val ADDRESS_THIS = UniversalRouter.ADDRESS_THIS
     private val OPEN_DELTA = UniversalRouter.OPEN_DELTA

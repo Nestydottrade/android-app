@@ -151,6 +151,13 @@ class Trading(
     /** Whether this build can trade on `chain`. */
     fun canTrade(chain: Chain): Boolean = chain == Chain.SOLANA || evmOf(chain) != null
 
+    /**
+     * Whether trading `coin` needs a newer Nesty: its chain is not built in, or it is still on a
+     * launchpad curve this build does not know. One that left its curve for a pool trades
+     * wherever this build knows the pool.
+     */
+    fun needsUpdate(chain: Chain, coin: Coin?): Boolean = !canTrade(chain) || !KnownCurves.tradable(chain, coin)
+
     /** The wallet that trades' address on `chain`: its EVM address, or its Solana one. */
     fun addressOn(chain: Chain): String? = session.active?.let { if (chain.isEvm) it.evm else it.sol }
 

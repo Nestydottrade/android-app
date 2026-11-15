@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import trade.nesty.app.alerts.AlertLink
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
@@ -46,7 +47,12 @@ object QuickTrade {
         toasts.show("Buying ${Fmt.usdFull(usd)} of $label", "P1: ${presetWords(chain, preset)}")
         scope.launch {
             try {
-                val info = coin?.let { CoinInfo.of(it) } ?: coinInfo(chain, token, symbol)
+                val read = coin ?: readCoin(chain, token)
+                if (trading.needsUpdate(chain, read)) {
+                    toasts.show("Buy not sent", NEEDS_UPDATE, bad = true, action = "Update") { AppGraph.pendingLink = AlertLink(AlertLink.UPDATE) }
+                    return@launch
+                }
+                val info = read?.let { CoinInfo.of(it) } ?: CoinInfo(symbol = symbol)
                 withContext(Dispatchers.Default) { trading.buy(chain, token, usd, preset, info) }
             } catch (e: CancellationException) {
                 throw e
@@ -83,15 +89,19 @@ object QuickTrade {
         }
     }
 
-    /** What the server knows of a coin: decimals, supply, pools. Only the coin's address is asked. */
-    private suspend fun coinInfo(chain: Chain, token: String, symbol: String?): CoinInfo {
-        val coin = try {
-            withTimeoutOrNull(3_000) { AppGraph.api.token(chain, token) }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            null
-        }
-        return coin?.let { CoinInfo.of(it) } ?: CoinInfo(symbol = symbol)
+    /** What the server knows of a coin: decimals, supply, pools, its launchpad. Only the coin's address is asked. */
+    private suspend fun readCoin(chain: Chain, token: String): Coin? = try {
+        withTimeoutOrNull(3_000) { AppGraph.api.token(chain, token) }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
     }
+
+    /** What a one-tap buy says of a coin this build cannot trade. */
+    const val NEEDS_UPDATE = "This version of Nesty cannot trade this coin yet."
+
+    /** What the server knows of a coin, for a trade. */
+    private suspend fun coinInfo(chain: Chain, token: String, symbol: String?): CoinInfo =
+        readCoin(chain, token)?.let { CoinInfo.of(it) } ?: CoinInfo(symbol = symbol)
 }

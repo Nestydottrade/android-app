@@ -11,3 +11,5 @@ captures/
 *.jks
 *.keystore
 keystore.properties
+# Release builds and what publish.sh reads; the signer's pin (release/signer.sha256) is kept.
+release/out/

@@ -37,6 +37,9 @@ sealed interface Route {
     data object Stats : Route
     data object Updates : Route
 
+    /** The app's own update: the newest version, fetched and checked, to install. */
+    data object AppUpdate : Route
+
     /** Sending One Balance to an address. */
     data object Withdraw : Route
 

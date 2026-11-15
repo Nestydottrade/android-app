@@ -2,6 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Whether the network is Wi-Fi or mobile data: updates fetch by themselves on Wi-Fi only. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Fingerprint unlock: the system's own prompt; Nesty never sees a fingerprint. -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <!-- Exit plans and alerts with Nesty closed: a foreground service with its notification. -->
@@ -11,6 +13,10 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- Android's own question to let Nesty run in the background; the user answers it. -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Updates: Nesty hands its own new APK to Android's installer, which asks the user. -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+    <!-- Android 12 and later: without that question, only if the user turns it on. -->
+    <uses-permission android:name="android.permission.UPDATE_PACKAGES_WITHOUT_USER_ACTION" />
 
     <application
         android:name=".NestyApp"
@@ -41,5 +47,19 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Watches the user's exit plans (take profit, trailing stop, stop loss) and sells when a step is due, with the app closed." />
         </service>
+
+        <!-- Android's answers to an update Nesty handed it: its question, or how it ended. -->
+        <receiver
+            android:name=".update.InstallReceiver"
+            android:exported="false" />
+
+        <!-- The new version's first start after an update. -->
+        <receiver
+            android:name=".update.ReplacedReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

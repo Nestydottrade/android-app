@@ -126,7 +126,7 @@ fun usdText(v: Double): String = if (v == floor(v) && v < 1e7) v.toLong().toStri
 @Composable
 fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChecks: () -> Unit, onClose: () -> Unit, startUsd: Double? = null) {
     val trading = AppGraph.trading
-    if (!trading.canTrade(chain)) return
+    if (trading.needsUpdate(chain, coin)) return
     val mover = AppGraph.mover
     val settings = AppGraph.settings
     val nav = LocalNavigator.current

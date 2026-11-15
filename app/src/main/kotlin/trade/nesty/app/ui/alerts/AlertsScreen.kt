@@ -76,6 +76,7 @@ fun routeOf(link: AlertLink): Route? {
         AlertLink.TOKEN -> if (chain != null && token != null) Route.Token(chain, token) else null
         AlertLink.PORTFOLIO -> Route.Portfolio
         AlertLink.ALERTS -> Route.Alerts
+        AlertLink.UPDATE -> Route.AppUpdate
         else -> null
     }
 }

@@ -44,6 +44,8 @@ data class AlertLink(val to: String, val feed: String? = null, val token: String
         const val TOKEN = "token"
         const val PORTFOLIO = "portfolio"
         const val ALERTS = "alerts"
+        /** The app's Update screen. */
+        const val UPDATE = "update"
 
         fun position(feed: String, token: String) = AlertLink(POSITION, feed, token)
         fun token(feed: String, token: String) = AlertLink(TOKEN, feed, token)

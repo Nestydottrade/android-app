@@ -13,8 +13,25 @@ android {
         applicationId = "trade.nesty.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "0.1.0"
+        // Raised for each release. A test build may raise them on the command line instead
+        // (-Pnesty.versionCode=2 -Pnesty.versionName=0.1.1), to try the updater in the emulator.
+        versionCode = providers.gradleProperty("nesty.versionCode").orNull?.toInt() ?: 1
+        versionName = providers.gradleProperty("nesty.versionName").orNull ?: "0.1.0"
+    }
+
+    signingConfigs {
+        // The user's own release key, named by the build's environment only (release/build.sh
+        // asks for it). It is never in this repository, on the server or with Claude.
+        val store = providers.environmentVariable("NESTY_KEYSTORE").orNull
+        if (!store.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(store)
+                storePassword = providers.environmentVariable("NESTY_KEYSTORE_PASSWORD").orNull
+                keyAlias = providers.environmentVariable("NESTY_KEY_ALIAS").orNull ?: "nesty"
+                keyPassword = providers.environmentVariable("NESTY_KEY_PASSWORD").orNull
+                    ?: providers.environmentVariable("NESTY_KEYSTORE_PASSWORD").orNull
+            }
+        }
     }
 
     buildTypes {
@@ -22,6 +39,11 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Signed with the user's key when the build names it. Without it, Gradle makes an
+            // unsigned APK, except for a test of the shrunk build in the emulator, which may use
+            // this computer's debug key (-Pnesty.testSigning=debug): never one to publish.
+            signingConfig = signingConfigs.findByName("release")
+                ?: if (providers.gradleProperty("nesty.testSigning").orNull == "debug") signingConfigs.getByName("debug") else null
         }
     }
 
@@ -32,6 +54,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     testOptions {

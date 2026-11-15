@@ -248,6 +248,102 @@ it does not list is asked for with `/token` on each chain it can be on
   where an alert shows, its texts, the tracker and signal reads on a fake
   server).
 
+## Updates and releases
+
+- **Reads follow the server, trading follows the APK.** Lists, charts and coin
+  pages come from `/api/v1/`, so a launchpad the server adds later shows
+  without an update. What trading needs (routers, launchpad contracts, venue
+  adapters, the validator, bridge rules) is built into the APK. A coin still on
+  a curve this build does not know (`data/KnownCurves.kt`, by the server's
+  `launchpad` names, per chain) shows "Update the app to trade here" in place
+  of its trade bar, and a one-tap buy on a list says so with an Update link.
+  Once the coin has left its curve it trades in any pool this build knows. A
+  new chain still needs an update even to show: the chain list is built in
+  (`data/Chains.kt`).
+- **The updater** (`update/`) asks `https://nesty.trade/api/v1/app` on start
+  and on each return to the app (at most every 6 hours), and when the menu or
+  the Update screen opens (once a minute at most). It takes only a version code above its own, on
+  `https://nesty.trade/` itself (`Releases.kt`). On Wi-Fi it fetches the APK
+  into its cache by itself, going on from a cut download; on mobile data it
+  waits for the Update screen. It checks the size, the SHA-256 against the
+  published one, and through Android's package manager that the file is
+  `trade.nesty.app` at that version, signed with the installed app's key (a
+  key rotated with APK Signature Scheme v3 is taken). A file that fails is
+  deleted. A checked update says so once in a notification while Nesty is
+  away, and on the menu's card ("Version X is ready to install", Update).
+- **The Update screen** (AppUpdate board): the version, its size and whether it
+  is downloaded, "New in this version" (`notes` of `/app`), "Checked on this
+  phone", Install update and Later. Install update checks the file once more
+  and hands it to Android's package installer, which asks "Update Nesty?"
+  (and, the first time, to let Nesty install apps). Cancelling that question
+  leaves the update ready; a refusal says so on the screen. The new version clears the old files, starts the watch service again
+  (exit plans wait for the unlock: the vault's watch key was in memory only),
+  posts "Nesty X is installed", and says so on its first screen after the
+  unlock.
+- **Install without Android's question** (Android 12 and later, off by
+  default) asks Android to skip its question (`USER_ACTION_NOT_REQUIRED`,
+  allowed by the `UPDATE_PACKAGES_WITHOUT_USER_ACTION` permission). Measured
+  on the Android 16 emulator: the first update still asks, once to let Nesty
+  install apps and then "Update Nesty?"; every update after that installed at
+  once, for a copy a file manager had installed as well as once Nesty had
+  installed itself. Android then closes Nesty, and its notification opens the
+  new version. Untested on Xiaomi, Oppo and Vivo, whose own installers may ask
+  anyway.
+- Nothing is ever downloaded to run inside the app: an update is a whole APK,
+  installed by Android.
+- A debug build can point the updater at a test server on this computer, for
+  the emulator: `files/update-test-base` holding `http://10.0.2.2:<port>/`,
+  written with `adb exec-in run-as`; plain http to 10.0.2.2 is allowed in debug
+  builds only (`app/src/debug`). The release build has no such file.
+
+### Releasing
+
+The release key is the user's own: it is never in this repository, on the
+server or with Claude. Create it once, outside this folder:
+
+```
+keytool -genkeypair -v -keystore D:\NestyKeys\nesty-release.jks -alias nesty -keyalg RSA -keysize 4096 -validity 36500
+```
+
+Keep a copy of the keystore and its password somewhere safe: every update must
+be signed with the same key, so a lost key means no more updates for anyone.
+
+1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`.
+2. `bash android/release/build.sh D:/NestyKeys/nesty-release.jks` asks for the
+   password, runs the tests and builds the shrunk APK signed with that key. It
+   refuses the debug key, and a key other than the earlier releases'
+   (`release/signer.sha256`, pinned by the first release: commit it). It
+   writes `release/out/nesty-<version>.apk` and `release.json`.
+3. Publishing is a deploy, so only with the user's yes:
+   `bash android/release/publish.sh [notes.json]` uploads the APK to the VPS
+   (108.61.156.56) into `/var/www/nesty-app/`, checks its hash there and as
+   `https://nesty.trade/app/<file>` serves it, then writes
+   `/var/lib/nesty-api/app.json`. Caddy's `/app/` route is set up once by hand
+   (`website/api/README.md`).
+
+A phone with a debug build (signed with this computer's debug key) cannot take
+a release-signed update: Android refuses another key. It needs the app
+uninstalled first, which deletes its wallets, so each wallet's recovery phrase
+or key is backed up first.
+
+For tests only: `-Pnesty.versionCode=N -Pnesty.versionName=x.y.z` builds test
+versions for the emulator, and `-Pnesty.testSigning=debug` signs the shrunk
+release build with the debug key to try it there. Neither is ever published.
+
+Before the first release:
+
+- Google's developer verification. As of Google's FAQ (updated 2026-07-15),
+  what Indonesia enforces since 2026-09-30 covers installs from participating
+  stores; an APK downloaded from nesty.trade is not covered yet. The worldwide
+  rollout in 2027 needs `trade.nesty.app` and its key registered in the
+  Android Developer Console, or each install and update needs the phone's
+  advanced flow (a one-day wait) or adb. Re-check it before the release.
+- A daily spending cap on the X routes, which use a paid key.
+- The app's privacy policy, which must say the server sees the wallets a phone
+  asks about.
+- An `app` tag in the updates list (`website/src/lib/updates.ts`,
+  `website/api/updates-list.ts`).
+
 ## Build
 
 The toolchain lives on `D:\Android` (JDK 21, Android SDK with platform 36,
@@ -288,6 +384,8 @@ D:\Android\sdk\emulator\emulator.exe -avd nesty36
   market on the engines.
 - `alerts/`: alerts and notifications: the list, the tracker and signal reads,
   Android's channels, and the watch service.
+- `update/`: the app's own updates: which release is taken, the download, the
+  checks, Android's installer and its answers.
 - `move/`: One Balance moves: the bridge client (`Relay.kt`), the arithmetic
   (`Plans` in `Moves.kt`), typed receivers, and the `Mover` that runs and keeps
   each move.

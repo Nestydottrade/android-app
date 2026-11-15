@@ -23,6 +23,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import trade.nesty.app.BuildConfigLite
 import trade.nesty.app.data.AppGraph
-import trade.nesty.app.data.AppRelease
 import trade.nesty.app.data.Settings
 import trade.nesty.app.data.VaultState
 import trade.nesty.app.ui.Fmt
@@ -59,6 +59,7 @@ import trade.nesty.app.ui.Route
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
+import trade.nesty.app.update.UpdateState
 
 /** `atAlerts`: scrolled to the Alerts section, for "Choose what alerts you". */
 @OptIn(ExperimentalFoundationApi::class)
@@ -68,12 +69,8 @@ fun MenuScreen(atAlerts: Boolean = false) {
     val settings = AppGraph.settings
     val session = AppGraph.session
     val wallet = session.active
-    var release by remember { mutableStateOf<AppRelease?>(null) }
-    var asked by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        release = runCatching { AppGraph.api.app() }.getOrNull()
-        asked = true
-    }
+    val update by AppGraph.updater.state.collectAsState()
+    LaunchedEffect(Unit) { AppGraph.updater.look(fetchNow = false) }
     val alerts = remember { BringIntoViewRequester() }
     // Once: coming back to the menu from Stats or Updates keeps where the user scrolled.
     var placed by rememberSaveable { mutableStateOf(false) }
@@ -163,17 +160,33 @@ fun MenuScreen(atAlerts: Boolean = false) {
             }
 
             Card {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Nesty for Android ${BuildConfigLite.VERSION}", style = text(15, FontWeight.SemiBold))
-                    val r = release
-                    Text(
-                        when {
-                            r != null && r.code > BuildConfigLite.CODE -> "Version ${r.version} is ready to install"
-                            asked -> "This build buys and sells on every chain."
-                            else -> " "
-                        },
-                        style = text(13, color = Ink.muted, lineHeight = 18.sp),
-                    )
+                val r = update.release
+                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text("Nesty for Android ${BuildConfigLite.VERSION}", style = text(15, FontWeight.SemiBold))
+                        Text(
+                            when {
+                                update is UpdateState.Ready -> "Version ${r?.version} is ready to install"
+                                r != null -> "Version ${r.version} is out"
+                                update is UpdateState.Newest -> "This is the newest version"
+                                else -> " "
+                            },
+                            style = text(13, color = Ink.muted, lineHeight = 18.sp),
+                        )
+                    }
+                    if (r != null) {
+                        Box(
+                            Modifier
+                                .heightIn(min = 44.dp)
+                                .clip(RoundedCornerShape(22.dp))
+                                .background(Ink.green)
+                                .clickable(role = Role.Button) { nav.push(Route.AppUpdate) }
+                                .padding(horizontal = 18.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text("Update", style = text(14, FontWeight.Bold, Ink.greenInk))
+                        }
+                    }
                 }
             }
         }

@@ -31,6 +31,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import trade.nesty.app.alerts.AlertTone
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.data.VaultState
+import trade.nesty.app.move.MoveKind
+import trade.nesty.app.move.MoveState
 import trade.nesty.app.ui.alerts.AlertsScreen
 import trade.nesty.app.ui.alerts.open
 import trade.nesty.app.ui.alerts.routeOf
@@ -38,6 +41,7 @@ import trade.nesty.app.ui.discover.DiscoverModel
 import trade.nesty.app.ui.discover.DiscoverScreen
 import trade.nesty.app.ui.discover.SearchScreen
 import trade.nesty.app.ui.holders.TradesHoldersScreen
+import trade.nesty.app.ui.menu.AppUpdateScreen
 import trade.nesty.app.ui.menu.MenuScreen
 import trade.nesty.app.ui.menu.PortfolioScreen
 import trade.nesty.app.ui.menu.StatsScreen
@@ -45,19 +49,16 @@ import trade.nesty.app.ui.menu.UpdatesScreen
 import trade.nesty.app.ui.smart.LeadersModel
 import trade.nesty.app.ui.smart.SignalsModel
 import trade.nesty.app.ui.smart.SmartScreen
-import trade.nesty.app.data.VaultState
 import trade.nesty.app.ui.theme.Ink
-import trade.nesty.app.ui.vault.SetupScreen
-import trade.nesty.app.ui.vault.UnlockScreen
-import trade.nesty.app.ui.vault.WalletsScreen
 import trade.nesty.app.ui.token.TokenScreen
 import trade.nesty.app.ui.tracker.TrackerModel
 import trade.nesty.app.ui.tracker.TrackerScreen
 import trade.nesty.app.ui.trade.PositionScreen
+import trade.nesty.app.ui.vault.SetupScreen
+import trade.nesty.app.ui.vault.UnlockScreen
+import trade.nesty.app.ui.vault.WalletsScreen
 import trade.nesty.app.ui.wallet.WalletScreen
 import trade.nesty.app.ui.withdraw.WithdrawScreen
-import trade.nesty.app.move.MoveKind
-import trade.nesty.app.move.MoveState
 
 /** The models of the four tabs, kept while the app runs so a tab comes back as it was left. */
 class RootModels {
@@ -170,7 +171,7 @@ fun AppRoot() {
                         .weight(1f)
                         .fillMaxWidth()
                         // The trade bars of the token and position pages keep themselves above the system bar.
-                        .then(if (tab == null && top.route !is Route.Token && top.route !is Route.Position) Modifier.navigationBarsPadding() else Modifier),
+                        .then(if (tab == null && top.route !is Route.Token && top.route !is Route.Position && top.route != Route.AppUpdate) Modifier.navigationBarsPadding() else Modifier),
                 ) {
                     saved.SaveableStateProvider(top.id) {
                         CompositionLocalProvider(LocalEntry provides top) {
@@ -228,6 +229,7 @@ private fun Screen(route: Route) {
         is Route.Menu -> MenuScreen(atAlerts = route.alerts)
         Route.Stats -> StatsScreen()
         Route.Updates -> UpdatesScreen()
+        Route.AppUpdate -> AppUpdateScreen()
         Route.Withdraw -> WithdrawScreen()
         Route.Alerts -> AlertsScreen()
         Route.Setup -> SetupScreen()

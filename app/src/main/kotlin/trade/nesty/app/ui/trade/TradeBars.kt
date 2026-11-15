@@ -40,6 +40,7 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
 import trade.nesty.app.data.Holding
 import trade.nesty.app.data.Trading
+import trade.nesty.app.evm.EvmTrader
 import trade.nesty.app.ui.Check
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.Fmt
@@ -47,8 +48,6 @@ import trade.nesty.app.ui.GreenButton
 import trade.nesty.app.ui.LocalNavigator
 import trade.nesty.app.ui.LocalToasts
 import trade.nesty.app.ui.Route
-import trade.nesty.app.ui.Tone
-import trade.nesty.app.ui.ToneMark
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
@@ -96,7 +95,7 @@ fun TradeBar(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
     val trading = AppGraph.trading
     var sheet by rememberSaveable { mutableStateOf(openBuy) }
     var sheetUsd by rememberSaveable { mutableStateOf<Double?>(null) }
-    if (!trading.canTrade(chain)) {
+    if (trading.needsUpdate(chain, coin)) {
         LockedBar()
         return
     }
@@ -122,13 +121,13 @@ private fun shortOn(chain: Chain, usd: Double): Boolean {
     return have < trading.weiOf(usd, chain, price)
 }
 
+/** A coin this build cannot trade: the rest of the page works, and the update is one tap away. */
 @Composable
 private fun LockedBar() {
+    val nav = LocalNavigator.current
     BottomBarFrame {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ToneMark(Tone.INFO, 18.dp)
-            Text(Trading.LOCKED, style = text(13, color = Ink.text2, lineHeight = 18.sp), modifier = Modifier.weight(1f))
-        }
+        Text(Trading.LOCKED, style = text(13, color = Ink.text2, lineHeight = 19.sp))
+        GreenButton(EvmTrader.UPDATE_APP, onClick = { nav.push(Route.AppUpdate) }, modifier = Modifier.fillMaxWidth(), solid = true, fontSize = 16)
     }
 }
 

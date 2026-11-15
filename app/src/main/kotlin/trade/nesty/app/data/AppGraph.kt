@@ -8,7 +8,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
+import trade.nesty.app.BuildConfigLite
 import trade.nesty.app.alerts.AlertLink
 import trade.nesty.app.alerts.AlertStore
 import trade.nesty.app.alerts.AlertTexts
@@ -27,11 +29,19 @@ import trade.nesty.app.move.HttpRelay
 import trade.nesty.app.move.MoveStore
 import trade.nesty.app.move.Mover
 import trade.nesty.app.move.PrefsMoveDisk
-import trade.nesty.app.BuildConfigLite
+import trade.nesty.app.update.AndroidUpdatePhone
+import trade.nesty.app.update.ApkFetch
+import trade.nesty.app.update.HttpApkSource
+import trade.nesty.app.update.Installer
+import trade.nesty.app.update.PrefsUpdateDisk
+import trade.nesty.app.update.Releases
+import trade.nesty.app.update.UpdateHost
+import trade.nesty.app.update.Updater
 import trade.nesty.app.vault.AndroidKeyWrap
 import trade.nesty.app.vault.FileVaultStore
 import trade.nesty.app.vault.FingerprintKey
 import trade.nesty.app.vault.Vault
+import java.io.File
 import java.util.concurrent.TimeUnit
 
 /** The app's few long-lived pieces. */
@@ -63,6 +73,8 @@ object AppGraph {
     lateinit var alertStore: AlertStore
         private set
     lateinit var alerts: Alerts
+        private set
+    lateinit var updater: Updater
         private set
     private lateinit var app: Context
 
@@ -135,6 +147,24 @@ object AppGraph {
         scope.launch {
             mover.notes.collect { n -> alerts.push(AlertTexts.move(n, System.currentTimeMillis()), toast = false) }
         }
+
+        // The app's own updates, from nesty.trade only (a debug build may name a test server on this
+        // computer). The APK is fetched and checked here; Android installs it when the user says so.
+        val testBase = UpdateHost.testBase(app)
+        val releases = if (testBase != null) NestyApi(base, stream, "${testBase}api/v1/".toHttpUrl()) else api
+        updater = Updater(
+            scope = scope,
+            ask = { releases.app() },
+            fetch = ApkFetch(HttpApkSource(base.newBuilder().readTimeout(30, TimeUnit.SECONDS).build())),
+            phone = AndroidUpdatePhone(app),
+            dir = File(app.cacheDir, "update"),
+            disk = PrefsUpdateDisk(app),
+            install = { file, quiet -> Installer.commit(app, file, quiet) },
+            host = testBase?.toHttpUrl()?.host ?: Releases.HOST,
+            onReady = { r -> if (!alerts.visible) Notifier.updateReady(app, r.version) },
+        )
+        // The first start of a new version says so once its screens are open.
+        if (updater.justUpdated != null) pendingLink = AlertLink(AlertLink.UPDATE)
     }
 
     /** The active wallet's exit plan for a coin. */

@@ -46,6 +46,8 @@ class MainActivity : ComponentActivity() {
         AppGraph.session.onStart()
         AppGraph.alerts.visible = true
         AppGraph.syncWatch()
+        AppGraph.updater.checkSoon()
+        if (AppGraph.updater.justUpdated != null) Notifier.clearUpdate(this)
     }
 
     override fun onStop() {
