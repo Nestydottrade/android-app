@@ -15,11 +15,29 @@ data class Followed(val address: String, val name: String = "")
 @Serializable
 data class Preset(val slippage: Int, val speed: String)
 
+/** The menu's alert switches. */
+enum class AlertSwitch(val key: String, val default: Boolean) {
+    TRACKER("alertTracker", true),
+    SIGNALS("alertSignals", true),
+    PLANS("alertPlans", true),
+    HELD("alertHeld", true),
+
+    /** Alerts with Nesty closed: the watch service then runs for them too. */
+    CLOSED("alertClosed", false),
+}
+
+/** What the alerts read of the settings; tests stand in for it. */
+interface AlertPrefs {
+    fun alert(which: AlertSwitch): Boolean
+    fun isMuted(address: String?): Boolean
+    fun followedWallets(): List<Followed>
+}
+
 /**
  * What the user picked, kept on the phone only: the quick buy amount, followed wallets, the
  * watchlist and the trade presets. Nothing here is sent anywhere.
  */
-class Settings(context: Context) {
+class Settings(context: Context) : AlertPrefs {
     private val prefs: SharedPreferences = context.getSharedPreferences("nesty", Context.MODE_PRIVATE)
 
     var quickBuy by mutableStateOf(prefs.getInt(KEY_QUICK, 25))
@@ -37,6 +55,29 @@ class Settings(context: Context) {
 
     var presets by mutableStateOf(readList<Preset>(KEY_PRESETS).takeIf { it.size == 3 } ?: DEFAULT_PRESETS)
         private set
+
+    private val alertOn = AlertSwitch.entries.associateWith { mutableStateOf(prefs.getBoolean(it.key, it.default)) }
+
+    /** Followed wallets whose trades still show in the Tracker, with no alerts. */
+    var muted by mutableStateOf(prefs.getStringSet(KEY_MUTED, emptySet())!!.toSet())
+        private set
+
+    override fun alert(which: AlertSwitch): Boolean = alertOn.getValue(which).value
+
+    override fun followedWallets(): List<Followed> = followed
+
+    fun setAlert(which: AlertSwitch, on: Boolean) {
+        alertOn.getValue(which).value = on
+        prefs.edit().putBoolean(which.key, on).apply()
+    }
+
+    override fun isMuted(address: String?): Boolean = address != null && address.lowercase() in muted
+
+    fun mute(address: String, on: Boolean) {
+        val a = address.lowercase()
+        muted = if (on) muted + a else muted - a
+        prefs.edit().putStringSet(KEY_MUTED, muted).apply()
+    }
 
     fun pickQuickBuy(usd: Int) {
         quickBuy = usd
@@ -107,5 +148,6 @@ class Settings(context: Context) {
         private const val KEY_FOLLOWED = "followed"
         private const val KEY_WATCH = "watchlist"
         private const val KEY_PRESETS = "presets"
+        private const val KEY_MUTED = "muted"
     }
 }

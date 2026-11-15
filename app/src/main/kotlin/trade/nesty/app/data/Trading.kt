@@ -15,6 +15,8 @@ import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import trade.nesty.app.evm.Broadcast
 import trade.nesty.app.evm.BuyRequest
+import trade.nesty.app.evm.ChainReader
+import trade.nesty.app.evm.Erc20
 import trade.nesty.app.evm.EvmChain
 import trade.nesty.app.evm.EvmChains
 import trade.nesty.app.evm.EvmSigner
@@ -38,6 +40,7 @@ import trade.nesty.app.sol.SolBroadcast
 import trade.nesty.app.sol.SolBuyRequest
 import trade.nesty.app.sol.SolPrefs
 import trade.nesty.app.sol.SolRpc
+import trade.nesty.app.sol.SolRpcs
 import trade.nesty.app.sol.SolSellRequest
 import trade.nesty.app.sol.SolSigner
 import trade.nesty.app.sol.SolTrader
@@ -113,6 +116,9 @@ class Trading(
     /** Trades whose screen shows how they ended itself: no note at the bottom for them. */
     val quiet: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
+    /** Sells by an exit plan: the plan's own alert says how they went. */
+    val byPlan: MutableSet<String> = ConcurrentHashMap.newKeySet()
+
     /** Prices of the coins of positions, by Balances.tokenKey. */
     val prices = mutableStateMapOf<String, Double>()
 
@@ -125,6 +131,11 @@ class Trading(
         nativeUsd = { chain -> Chain.of(chain.id.toString())?.let { priceOf(it) } },
         onLanded = { t -> landed(t) },
     )
+
+    /** The chains' public RPCs only, for reads that name one of the user's wallets over and over. */
+    private val directRpc = HttpRpc(http, direct = true)
+    private val directReaders = ConcurrentHashMap<Long, ChainReader>()
+    private val solDirect = SolTrader(SolRpc(HttpSolCall(http, urls = SolRpcs.PUBLIC), SolBroadcast(http)), knownSolUsd = { priceOf(Chain.SOLANA) })
 
     val sol = SolTrader(
         rpc = SolRpc(HttpSolCall(http, api.base.toString()), SolBroadcast(http)),
@@ -273,6 +284,82 @@ class Trading(
     /** Why no pool trades `token` right now, when a venue knows. */
     suspend fun whyNone(chain: Chain, token: String, info: CoinInfo): String? =
         if (chain == Chain.SOLANA) sol.whyNone(token, info.hints) else evmOf(chain)?.let { engine.whyNone(it.id, token, info.hints) }
+
+    /**
+     * What `wallet` holds of a coin, read from the chain's own public RPCs, never through Nesty's
+     * server: an exit plan reads it every few seconds, for any of the user's wallets. Null when it
+     * could not be read.
+     */
+    suspend fun heldOf(chain: Chain, token: String, wallet: String): BigInteger? = try {
+        if (chain == Chain.SOLANA) {
+            solDirect.heldOf(wallet, token)
+        } else {
+            evmOf(chain)?.let { evm -> directReaders.getOrPut(evm.id) { ChainReader(evm, directRpc) }.read1(token.lowercase(), Erc20.balanceOf, wallet) as? BigInteger }
+        }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
+
+    /**
+     * What selling `amount` of a coin pays now, in dollars, price impact and tax included; null
+     * when nothing sells it. Exit plans measure with it. Throws when the chain could not be read.
+     */
+    suspend fun sellValueUsd(chain: Chain, token: String, amount: BigInteger, info: CoinInfo): Double? {
+        if (chain == Chain.SOLANA) return sol.sellValueUsd(token, amount, info.hints)
+        val evm = evmOf(chain) ?: return null
+        val out = engine.quotes(evm.id, token.lowercase(), Side.SELL, listOf(amount), info.hints).firstOrNull()?.out ?: return null
+        val price = nativeUsd(chain) ?: return null
+        return usdOf(out, chain.decimals, price)
+    }
+
+    private val nativeRead = ConcurrentHashMap<Chain, Pair<Long, Double>>()
+
+    /**
+     * The chain's own coin in dollars, read again after a minute: exit plans run with no screen
+     * reading balances. The last price read stands in while a new one cannot be read.
+     */
+    suspend fun nativeUsd(chain: Chain): Double? {
+        val now = System.currentTimeMillis()
+        nativeRead[chain]?.let { (at, usd) -> if (now - at < NATIVE_TTL_MS) return usd }
+        val read = if (chain == Chain.SOLANA) {
+            orNull { sol.price.usd() }
+        } else {
+            evmOf(chain)?.let { evm -> orNull { api.prices(listOf(chain to evm.wrappedNative)).prices.firstOrNull()?.priceUsd } }
+        }
+        val usd = read?.takeIf { it > 0 } ?: return priceOf(chain) ?: nativeRead[chain]?.second
+        nativeRead[chain] = now to usd
+        return usd
+    }
+
+    /**
+     * An exit plan's sell: `bps` of what one of the user's wallets holds, signed for that wallet
+     * whether it is the one that trades or not, also while Nesty is locked with the watch kept.
+     * The plan says how it went, so the usual note at the bottom of the screen is left out.
+     */
+    suspend fun sellForWatch(walletId: String, wallet: String, chain: Chain, token: String, bps: Int, preset: Preset, info: CoinInfo, title: String): StateFlow<EngineTrade> {
+        val share = bps.coerceIn(1, 10_000)
+        val flow = if (chain == Chain.SOLANA) {
+            val signer = session.watchSolSigner(walletId, wallet)
+            start { sol.sell(SolSellRequest(token, share, solPrefsOf(preset), info.symbol, info.hints), signer) }
+        } else {
+            val evm = evm(chain)
+            val signer = session.watchSigner(walletId, wallet)
+            start { engine.sell(SellRequest(evm.id, token.lowercase(), share, prefsOf(evm, preset), info.symbol, info.hints), signer, listOf(wallet.lowercase())) }
+        }
+        quiet += flow.value.id
+        byPlan += flow.value.id
+        follow(flow, Pending(chain, info, title, priceOf(chain) ?: nativeUsd(chain)))
+        return flow
+    }
+
+    /** What a finished sell paid, in dollars: in the chain's coin, or the token it paid in. */
+    fun proceedsUsd(t: EngineTrade, chain: Chain, nativePrice: Double?): Double? {
+        val out = t.swap.amountOut ?: return null
+        val payout = t.payout
+        return if (payout != null) payout.usd?.let { usdOf(out, payout.decimals, it) } else nativePrice?.let { usdOf(out, chain.decimals, it) }
+    }
 
     /**
      * The network fee of a buy now, in dollars: the swap, and on the EVM chains the approval for
@@ -484,6 +571,9 @@ class Trading(
         const val LOCKED = "This version of Nesty cannot trade this coin yet. Everything else on this page still works."
         const val NO_EVM = "This wallet was made from a Solana key: it has no EVM address."
         const val NO_SOL = "This wallet was made from an EVM key: it has no Solana address."
+
+        /** How long a read of a chain's own coin price stands. */
+        private const val NATIVE_TTL_MS = 60_000L
 
         /** What a Solana buy keeps back for the accounts it opens (the engine's own headroom). */
         private val SOL_RESERVE: BigInteger = BigInteger.valueOf(6_000_000L)

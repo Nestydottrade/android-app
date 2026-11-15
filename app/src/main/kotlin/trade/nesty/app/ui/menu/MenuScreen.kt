@@ -1,5 +1,6 @@
 package trade.nesty.app.ui.menu
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -22,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,6 +45,7 @@ import trade.nesty.app.data.AppRelease
 import trade.nesty.app.data.Settings
 import trade.nesty.app.data.VaultState
 import trade.nesty.app.ui.Fmt
+import trade.nesty.app.ui.alerts.AlertSettings
 import trade.nesty.app.ui.vault.ExportForm
 import trade.nesty.app.ui.vault.Fingerprint
 import trade.nesty.app.ui.vault.FingerprintSetting
@@ -55,8 +60,10 @@ import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
 
+/** `atAlerts`: scrolled to the Alerts section, for "Choose what alerts you". */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MenuScreen() {
+fun MenuScreen(atAlerts: Boolean = false) {
     val nav = LocalNavigator.current
     val settings = AppGraph.settings
     val session = AppGraph.session
@@ -66,6 +73,13 @@ fun MenuScreen() {
     LaunchedEffect(Unit) {
         release = runCatching { AppGraph.api.app() }.getOrNull()
         asked = true
+    }
+    val alerts = remember { BringIntoViewRequester() }
+    // Once: coming back to the menu from Stats or Updates keeps where the user scrolled.
+    var placed by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(Unit) {
+        if (atAlerts && !placed) alerts.bringIntoView()
+        placed = true
     }
 
     Column(Modifier.fillMaxSize()) {
@@ -135,6 +149,8 @@ fun MenuScreen() {
                     }
                 }
             }
+
+            Section("Alerts", Modifier.bringIntoViewRequester(alerts)) { Column { AlertSettings() } }
 
             Section("More") {
                 MenuLink("Stats", "Launches and trades on each chain, from 1 hour to 7 days") { nav.push(Route.Stats) }
@@ -240,8 +256,8 @@ private fun Security(wallet: WalletInfo?) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+private fun Section(title: String, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(title, style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.padding(horizontal = 4.dp).semantics { heading() })
         Card { content() }
     }

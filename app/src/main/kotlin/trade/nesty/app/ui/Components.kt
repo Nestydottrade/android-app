@@ -58,6 +58,7 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import trade.nesty.app.R
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.ui.alerts.BellButton
 import trade.nesty.app.data.Chain
 import trade.nesty.app.ui.theme.Figures
 import trade.nesty.app.ui.theme.Ink
@@ -171,7 +172,7 @@ fun EggButton(onClick: () -> Unit) {
     }
 }
 
-/** A tab screen's top bar: the egg, a title and its buttons. */
+/** A tab screen's top bar: the egg, a title, its buttons and the bell. */
 @Composable
 fun TabHeader(title: String, onMenu: () -> Unit, actions: @Composable RowScope.() -> Unit = {}) {
     Row(
@@ -188,6 +189,7 @@ fun TabHeader(title: String, onMenu: () -> Unit, actions: @Composable RowScope.(
             overflow = TextOverflow.Ellipsis,
         )
         actions()
+        BellButton()
     }
 }
 

@@ -606,6 +606,32 @@ class SolTrader(
         }
     }
 
+    /**
+     * What selling `amount` of `mint` pays now, in dollars, price impact and pool fees included:
+     * in SOL through its pools, or in the token it is priced in when no pool turns that into SOL.
+     * Null when nothing sells it now. Exit plans measure with it.
+     */
+    suspend fun sellValueUsd(mint: String, amount: BigInteger, hints: List<String> = emptyList()): Double? {
+        if (amount.signum() <= 0) return null
+        val m = market(mint, VENUE_TTL_MS, hints)
+        if (m.routes.isEmpty() || m.idle != null) return null
+        val funding = m.funding
+        if (funding != null) {
+            val out = SolRoutes.fundedBest(m.routes, funding, Side.SELL, amount)?.out ?: return null
+            return solUsd()?.let { BigDecimal(out).movePointLeft(SOL_DECIMALS).toDouble() * it }
+        }
+        val best = SolRoutes.bestRoute(m.routes, Side.SELL, amount) ?: return null
+        val pay = payInfo(best.route)
+        val usd = pay.usd ?: return null
+        return BigDecimal(best.out).movePointLeft(pay.decimals).toDouble() * usd
+    }
+
+    /** What `owner` holds of `mint`; null when the coin cannot be read. */
+    suspend fun heldOf(owner: String, mint: String): BigInteger? {
+        val meta = tokenMeta(mint) ?: return null
+        return tokenBalance(owner, mint, meta.tokenProgram)
+    }
+
     /** Why `mint` cannot be bought right now, when more can be said than that nothing quotes it. */
     suspend fun whyNone(mint: String, hints: List<String> = emptyList()): String? {
         val m = orNull { market(mint, VENUE_TTL_MS, hints) } ?: return null
@@ -1251,6 +1277,7 @@ class SolTrader(
         const val CHAIN_ID = 792_703_809L
 
         const val VENUE_TTL_MS = 400L
+        private const val SOL_DECIMALS = 9
 
         /** A trade reads its route at most this old: the sheet quotes about every few seconds. */
         const val MAX_QUOTE_AGE_MS = 2_000L

@@ -100,14 +100,25 @@ class Vault(
     private val now: () -> Long = System::currentTimeMillis,
     /** Tests pass small parameters; the phone measures its own. */
     private val newKdf: (SecureRandom) -> KdfParams = { VaultCrypto.calibrate(it) },
+    /**
+     * A phone key that seals the vault's key while exit plans watch a locked vault; null where the
+     * watch cannot sign with the vault locked.
+     */
+    private val watchWrap: KeyWrap? = null,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
     private var key: ByteArray? = null
     private var record: VaultRecord? = null
     private var public: PublicPart = PublicPart()
 
+    /** The vault's key sealed by [watchWrap] while it is locked with exit plans on. In memory only. */
+    private var sealed: ByteArray? = null
+
     val exists: Boolean @Synchronized get() = store.read() != null
     val unlocked: Boolean @Synchronized get() = key != null
+
+    /** Locked for the screens, with the key kept sealed so exit plans can still sell. */
+    val watching: Boolean @Synchronized get() = key == null && sealed != null
 
     @Synchronized
     fun wallets(): List<WalletInfo> = if (key == null) emptyList() else public.wallets
@@ -149,6 +160,7 @@ class Vault(
         key = k
         record = rec
         public = part
+        sealed = null
     }
 
     /**
@@ -172,6 +184,7 @@ class Vault(
         key = k
         record = rec
         public = part
+        sealed = null
     }
 
     /**
@@ -205,6 +218,35 @@ class Vault(
         key = null
         record = null
         public = PublicPart()
+        sealed.wipe()
+        sealed = null
+    }
+
+    /**
+     * Locks the vault for the screens but keeps its key sealed by a phone key, so the exit plans'
+     * sells can still be signed ([signEvmForWatch], [signSolForWatch]) and nothing else can. Nothing
+     * is written anywhere: the sealed key is gone when Android ends the app or [lock] runs. Without
+     * a phone key for it, this is [lock].
+     */
+    @Synchronized
+    fun lockKeepingWatch() {
+        val k = key ?: return
+        val w = watchWrap ?: return lock()
+        sealed = w.wrap(k)
+        key.wipe()
+        key = null
+    }
+
+    /** The open key, or the sealed one opened for one use and wiped after it. */
+    private inline fun <T> withWatchKey(use: (ByteArray) -> T): T {
+        key?.let { return use(it) }
+        val s = sealed ?: throw VaultException(VaultError.LOCKED)
+        val k = checkNotNull(watchWrap).unwrap(s)
+        try {
+            return use(k)
+        } finally {
+            k.wipe()
+        }
     }
 
     /** A new wallet with its own fresh phrase: a new EVM address and a new Solana address. */
@@ -280,8 +322,13 @@ class Vault(
      * the wallet the trade was checked for: a vault that has changed since refuses.
      */
     @Synchronized
-    fun signEvm(id: String, address: String, hash: ByteArray): EcSignature {
-        val k = key ?: throw VaultException(VaultError.LOCKED)
+    fun signEvm(id: String, address: String, hash: ByteArray): EcSignature = signEvmWith(key ?: throw VaultException(VaultError.LOCKED), id, address, hash)
+
+    /** [signEvm] for an exit plan's sell: also while the vault is locked with the watch kept. */
+    @Synchronized
+    fun signEvmForWatch(id: String, address: String, hash: ByteArray): EcSignature = withWatchKey { k -> signEvmWith(k, id, address, hash) }
+
+    private fun signEvmWith(k: ByteArray, id: String, address: String, hash: ByteArray): EcSignature {
         val rec = requireRecord()
         val wallet = public.wallets.firstOrNull { it.id == id } ?: throw VaultException(VaultError.NOT_FOUND)
         if (wallet.evm == null || !wallet.evm.equals(address, ignoreCase = true)) throw VaultException(VaultError.NO_SUCH_KEY)
@@ -309,8 +356,13 @@ class Vault(
      * and wiped after it. The address must be the wallet's own Solana address.
      */
     @Synchronized
-    fun signSol(id: String, address: String, message: ByteArray): ByteArray {
-        val k = key ?: throw VaultException(VaultError.LOCKED)
+    fun signSol(id: String, address: String, message: ByteArray): ByteArray = signSolWith(key ?: throw VaultException(VaultError.LOCKED), id, address, message)
+
+    /** [signSol] for an exit plan's sell: also while the vault is locked with the watch kept. */
+    @Synchronized
+    fun signSolForWatch(id: String, address: String, message: ByteArray): ByteArray = withWatchKey { k -> signSolWith(k, id, address, message) }
+
+    private fun signSolWith(k: ByteArray, id: String, address: String, message: ByteArray): ByteArray {
         val rec = requireRecord()
         val wallet = public.wallets.firstOrNull { it.id == id } ?: throw VaultException(VaultError.NOT_FOUND)
         if (wallet.sol == null || wallet.sol != address) throw VaultException(VaultError.NO_SUCH_KEY)
@@ -459,4 +511,13 @@ class VaultSigner(private val vault: Vault, private val walletId: String, overri
 /** The Solana engine's signer for one wallet, the same way: opened per signature, then wiped. */
 class VaultSolSigner(private val vault: Vault, private val walletId: String, override val address: String) : SolSigner {
     override fun signMessage(message: ByteArray): ByteArray = vault.signSol(walletId, address, message)
+}
+
+/** An exit plan's signer: works while the vault is open, or locked with the watch kept. */
+class WatchSigner(private val vault: Vault, private val walletId: String, override val address: String) : EvmSigner {
+    override fun signHash(hash: ByteArray): EcSignature = vault.signEvmForWatch(walletId, address, hash)
+}
+
+class WatchSolSigner(private val vault: Vault, private val walletId: String, override val address: String) : SolSigner {
+    override fun signMessage(message: ByteArray): ByteArray = vault.signSolForWatch(walletId, address, message)
 }

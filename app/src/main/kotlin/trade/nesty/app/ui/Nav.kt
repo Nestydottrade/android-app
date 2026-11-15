@@ -32,12 +32,16 @@ sealed interface Route {
     data class Position(val chain: Chain, val address: String) : Route
     data class Wallet(val chain: Chain, val address: String) : Route
     data object Search : Route
-    data object Menu : Route
+    /** `alerts`: open at the Alerts section. */
+    data class Menu(val alerts: Boolean = false) : Route
     data object Stats : Route
     data object Updates : Route
 
     /** Sending One Balance to an address. */
     data object Withdraw : Route
+
+    /** The alerts kept on the phone: New and Seen. */
+    data object Alerts : Route
 
     /** Making the password, before the first wallet. */
     data object Setup : Route

@@ -89,7 +89,7 @@ private const val LIVE_MS = 60 * 60_000L
 fun SmartScreen(leaderboard: Boolean) {
     val nav = LocalNavigator.current
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Smart money", onMenu = { nav.push(Route.Menu) })
+        TabHeader("Smart money", onMenu = { nav.push(Route.Menu()) })
         LaneTabs(listOf("Signals", "Leaderboard"), if (leaderboard) 1 else 0, { nav.tab(Route.Smart(leaderboard = it == 1)) }, Modifier.padding(horizontal = 16.dp))
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (leaderboard) LeadersTab() else SignalsTab()

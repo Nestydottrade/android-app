@@ -29,7 +29,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import trade.nesty.app.alerts.AlertTone
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.ui.alerts.AlertsScreen
+import trade.nesty.app.ui.alerts.open
+import trade.nesty.app.ui.alerts.routeOf
 import trade.nesty.app.ui.discover.DiscoverModel
 import trade.nesty.app.ui.discover.DiscoverScreen
 import trade.nesty.app.ui.discover.SearchScreen
@@ -127,6 +131,32 @@ fun AppRoot() {
         }
     }
 
+    // Alerts while Nesty is in front: an exit plan's step, a followed wallet selling a coin you hold.
+    LaunchedEffect(Unit) {
+        AppGraph.alerts.shown.collect { a ->
+            val l = a.link
+            val to = l?.let { routeOf(it) }
+            val bad = a.tone == AlertTone.BAD
+            if (l != null && to != null && nav.top.route != to) {
+                toasts.show(a.title, a.body, bad = bad, action = "View") {
+                    AppGraph.alertStore.markRead(a.id)
+                    nav.open(l)
+                }
+            } else {
+                toasts.show(a.title, a.body, bad = bad)
+            }
+        }
+    }
+
+    // A tapped notification opens its screen once the wallets are open.
+    val link = AppGraph.pendingLink
+    LaunchedEffect(link, session.state) {
+        if (link != null && session.state != VaultState.LOCKED) {
+            AppGraph.pendingLink = null
+            nav.open(link)
+        }
+    }
+
     CompositionLocalProvider(LocalNavigator provides nav, LocalToasts provides toasts, LocalRoot provides root) {
         Box(Modifier.fillMaxSize().background(Ink.ground)) {
             // Closed wallets close the whole app: the lock is all there is until the password opens it.
@@ -195,10 +225,11 @@ private fun Screen(route: Route) {
         is Route.Position -> PositionScreen(route.chain, route.address)
         is Route.Wallet -> WalletScreen(route.chain, route.address)
         Route.Search -> SearchScreen()
-        Route.Menu -> MenuScreen()
+        is Route.Menu -> MenuScreen(atAlerts = route.alerts)
         Route.Stats -> StatsScreen()
         Route.Updates -> UpdatesScreen()
         Route.Withdraw -> WithdrawScreen()
+        Route.Alerts -> AlertsScreen()
         Route.Setup -> SetupScreen()
         is Route.Wallets -> WalletsScreen(route.adding)
     }

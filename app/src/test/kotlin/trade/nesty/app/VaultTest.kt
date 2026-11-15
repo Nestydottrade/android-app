@@ -23,6 +23,8 @@ import trade.nesty.app.vault.VaultError
 import trade.nesty.app.vault.VaultException
 import trade.nesty.app.vault.VaultStore
 import trade.nesty.app.vault.WalletKind
+import trade.nesty.app.vault.WatchSigner
+import trade.nesty.app.vault.WatchSolSigner
 import java.security.SecureRandom
 
 /**
@@ -299,6 +301,46 @@ class VaultTest {
         refused(VaultError.NOT_FOUND) { v.signEvm("nope", k.evm!!, hash) }
         v.lock()
         refused(VaultError.LOCKED) { v.signEvm(k.id, k.evm!!, hash) }
+    }
+
+    @Test
+    fun lockingWithExitPlansOnKeepsOnlyTheirSellsSignable() {
+        val watch = PhoneKey()
+        val v = Vault(store, phone, now = { clock }, newKdf = { r -> KdfParams(memoryKiB = 64, iterations = 1, salt = VaultCrypto.b64(ByteArray(16).also(r::nextBytes))) }, watchWrap = watch)
+        v.create(password)
+        val hash = ByteArray(32) { 7 }
+        val k = v.importKey("Key", sampleKey.getValue("privateKey").jsonPrimitive.content)
+        val sol = v.importKey("Sol", phrase(0, "solSecretBase58"))
+        val open = v.signEvm(k.id, k.evm!!, hash)
+        v.lockKeepingWatch()
+        // Locked for the screens: no wallets, no plain signature, no export.
+        assertFalse(v.unlocked)
+        assertTrue(v.watching)
+        assertTrue(v.wallets().isEmpty())
+        refused(VaultError.LOCKED) { v.signEvm(k.id, k.evm!!, hash) }
+        refused(VaultError.LOCKED) { v.export(password, k.id, ExportKind.EVM_KEY) }
+        // The watch still signs, the same signature, for the wallet it was checked for only.
+        val kept = WatchSigner(v, k.id, k.evm!!).signHash(hash)
+        assertEquals(open.r, kept.r)
+        assertEquals(open.s, kept.s)
+        refused(VaultError.NO_SUCH_KEY) { v.signEvmForWatch(k.id, "0x000000000000000000000000000000000000dead", hash) }
+        assertEquals(64, WatchSolSigner(v, sol.id, sol.sol!!).signMessage(ByteArray(10)).size)
+        // The password opens it as before, and a full lock drops the sealed key too.
+        v.unlock(password)
+        assertFalse(v.watching)
+        v.lockKeepingWatch()
+        v.lock()
+        assertFalse(v.watching)
+        refused(VaultError.LOCKED) { v.signEvmForWatch(k.id, k.evm!!, hash) }
+    }
+
+    @Test
+    fun withoutAPhoneKeyForTheWatchLockingLocksAll() {
+        val v = vault().apply { create(password) }
+        val k = v.importKey("Key", sampleKey.getValue("privateKey").jsonPrimitive.content)
+        v.lockKeepingWatch()
+        assertFalse(v.watching)
+        refused(VaultError.LOCKED) { v.signEvmForWatch(k.id, k.evm!!, ByteArray(32) { 1 }) }
     }
 
     @Test

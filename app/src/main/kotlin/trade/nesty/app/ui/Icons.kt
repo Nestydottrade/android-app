@@ -60,5 +60,10 @@ object NIcons {
     val toneWallets = line("M9 9a2.2 2.2 0 1 0 0-4.4A2.2 2.2 0 0 0 9 9zM5.2 13.4c.7-1.7 2.1-2.5 3.8-2.5s3.1.8 3.8 2.5", box = 18f)
     val toneInfo = line("M6 9h6", box = 18f)
     val toneOk = line("M5.5 9.3l2.3 2.3 4.7-5", box = 18f)
+    val toneSignal = line("M3.5 9h2.5l1.5-3.5 2.5 7 1.5-3.5h3", box = 18f)
+    val tonePlan = line("M6 5.5h6M6 9h6M6 12.5h6", box = 18f)
+    val stepUp = line("M9 13V5.5M5.8 8.6L9 5.4l3.2 3.2", box = 18f)
+    val stepTrail = line("M4.6 6.8l3 3 2-2 3.8 3.8", box = 18f)
+    val stepDown = line("M9 5v7.5M5.8 9.4L9 12.6l3.2-3.2", box = 18f)
     val toneNone = line("M7 7.2a2 2 0 1 1 2.8 1.8c-.5.2-.8.6-.8 1.1v.3M9 12.8v.01", box = 18f)
 }

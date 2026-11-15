@@ -47,7 +47,7 @@ import trade.nesty.app.ui.venueName
 
 /**
  * The wallet's position in one coin, as the lean AppPosition board draws it: what it holds and
- * its result, then selling or buying more. The chart, the exit plan and "since you bought" come
+ * its result, its exit plan, then selling or buying more. The chart and "since you bought" come
  * in later steps.
  */
 @Composable
@@ -80,6 +80,7 @@ fun PositionScreen(chain: Chain, address: String) {
                 EmptyNote("No trades of $symbol from this wallet yet.")
             } else {
                 Yours(holding, symbol, coin, now)
+                if (holding.open) ExitPlanCard(chain, address, symbol, holding, coin, now)
             }
             Card {
                 NavRow("Coin checks and details", onClick = openToken)

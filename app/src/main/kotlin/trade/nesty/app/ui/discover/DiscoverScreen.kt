@@ -77,7 +77,7 @@ fun DiscoverScreen() {
     LaunchedEffect(model.lane, model.chain) { list.scrollToItem(0) }
 
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Discover", onMenu = { nav.push(Route.Menu) }) {
+        TabHeader("Discover", onMenu = { nav.push(Route.Menu()) }) {
             IconButton48(NIcons.search, "Search coins or paste an address") { nav.push(Route.Search) }
         }
         LaneTabs(Lane.entries.map { it.label }, model.lane.ordinal, { model.lane = Lane.entries[it] })

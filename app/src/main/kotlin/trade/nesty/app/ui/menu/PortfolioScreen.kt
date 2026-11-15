@@ -122,7 +122,7 @@ fun PortfolioScreen() {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Portfolio", onMenu = { nav.push(Route.Menu) })
+        TabHeader("Portfolio", onMenu = { nav.push(Route.Menu()) })
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item(key = "balance") {
                 Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 14.dp)) {

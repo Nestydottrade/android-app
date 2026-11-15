@@ -200,7 +200,7 @@ fun TrackerScreen() {
     val followed = settings.followed
 
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Tracker", onMenu = { nav.push(Route.Menu) })
+        TabHeader("Tracker", onMenu = { nav.push(Route.Menu()) })
         LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
             item {
                 Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {

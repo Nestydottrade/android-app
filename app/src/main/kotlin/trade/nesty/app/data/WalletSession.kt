@@ -18,6 +18,8 @@ import trade.nesty.app.vault.Vault
 import trade.nesty.app.vault.VaultSigner
 import trade.nesty.app.vault.VaultSolSigner
 import trade.nesty.app.vault.WalletInfo
+import trade.nesty.app.vault.WatchSigner
+import trade.nesty.app.vault.WatchSolSigner
 
 enum class VaultState {
     /** No password and no wallet yet: the app only reads. */
@@ -33,7 +35,9 @@ enum class VaultState {
  * the screens read is refreshed after every change.
  *
  * The keys live in memory only while it is open. It locks when the app has been away for the
- * time picked in the menu, and whenever Android ends the app's process.
+ * time picked in the menu, and whenever Android ends the app's process. While an exit plan is on,
+ * locking keeps the vault's key sealed by a phone key in memory, so the plan can still sell; the
+ * screens are locked all the same.
  */
 @Stable
 class WalletSession(private val vault: Vault, private val settings: Settings, private val fingerprint: FingerprintKey) {
@@ -47,6 +51,9 @@ class WalletSession(private val vault: Vault, private val settings: Settings, pr
         private set
     var active by mutableStateOf<WalletInfo?>(null)
         private set
+
+    /** Whether exit plans are on: then locking keeps what their sells need. */
+    var keepWatch: () -> Boolean = { false }
 
     private val handler = Handler(Looper.getMainLooper())
     private val lockLater = Runnable { lock() }
@@ -124,12 +131,26 @@ class WalletSession(private val vault: Vault, private val settings: Settings, pr
         return VaultSolSigner(vault, wallet.id, address)
     }
 
+    /** Whether an exit plan's sell can be signed now: the vault open, or locked with the watch kept. */
+    fun canSignForWatch(): Boolean = vault.unlocked || vault.watching
+
+    /** An exit plan's signer for one of the wallets, on its EVM side. */
+    fun watchSigner(walletId: String, address: String): EvmSigner = WatchSigner(vault, walletId, address.lowercase())
+
+    /** The same on its Solana side. */
+    fun watchSolSigner(walletId: String, address: String): SolSigner = WatchSolSigner(vault, walletId, address)
+
+    /** The last exit plan ended while locked: the sealed key goes too. */
+    fun dropWatch() {
+        if (vault.watching) vault.lock()
+    }
+
     /** Every EVM address of the user's wallets: a trade may only come from one of these. */
     fun ownEvm(): List<String> = wallets.mapNotNull { it.evm?.lowercase() }
 
     fun lock() {
         handler.removeCallbacks(lockLater)
-        vault.lock()
+        if (keepWatch()) vault.lockKeepingWatch() else vault.lock()
         refresh()
     }
 

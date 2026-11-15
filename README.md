@@ -192,6 +192,62 @@ it does not list is asked for with `/token` on each chain it can be on
   from, a buy's shortfall and source, the cap, the cost basis, typed addresses,
   Solana receivers and moves kept across a restart.
 
+## Exit plans and notifications
+
+- An exit plan belongs to one wallet's position in one coin, on every chain the
+  app trades (all six). The Position screen sets it from the board: a take
+  profit (sell 25, 50 or 100% at 2, 3, 5 or 10×), a trailing stop that can be off
+  (sell all after a fall of 20, 30 or 40% from the high since the plan was set)
+  and a stop loss (sell all at −30, −50 or −70%). Off, it is a suggestion; each
+  step's choices open under its row. Ported from the extension's `exits.ts`
+  (`exit/ExitPlans.kt`, `exit/ExitWatcher.kt`).
+- The multiple is what selling the whole holding pays now (a sell quote, price
+  impact and tax included) against what the held tokens cost through Nesty,
+  network and move fees included, on an average-cost basis. Tokens without a
+  cost on record are left out. One step per check, stops before take profits; a
+  step is marked before it sells, so a slow sell is never sent twice. A failed
+  sell is tried 3 times; one that was sent and may still land is not sent again.
+- Each plan is checked every 3 seconds. A sell goes through the usual engine,
+  validator and simulation, from the plan's own wallet (not only the active
+  one), with the first preset. Plans are kept on the phone only (prefs "exits").
+- With Nesty closed a foreground service (`alerts/WatchService.kt`, type
+  `specialUse`) keeps the process running with a partial wake lock, and shows
+  "Watching N exit plans" in the shade. It runs while a plan is on, or while the
+  menu's "With Nesty closed" is on, and stops by itself. Its line shows at once
+  (Android otherwise holds it back up to 10 seconds) and again as soon as
+  notifications are allowed. WorkManager's 15-minute floor is too slow for a
+  stop loss.
+- Locked with a plan on, the vault's key stays in memory sealed by a third
+  phone key (`nesty.watch.v1`, never written to disk): the screens are locked,
+  only an exit plan's sell can sign. When Android ends the app the sealed key is
+  gone: plans then wait for the password or a finger ("Exit plans paused"), and
+  a step that comes due says so once.
+- Alerts are kept on the phone (`alerts/Alerts.kt`, the last 150) and listed on
+  the Notifications screen (the bell on each tab, New and Seen, filters, Mark all
+  read with Undo, Mute a followed wallet with Undo). While Nesty is in front an
+  exit plan's step and a followed wallet selling a coin you hold show at the
+  bottom of the screen; away, every alert is an Android notification on its own
+  channel, and a tap opens its screen. They sit under one summary of Nesty's own,
+  which opens the Notifications screen (Android's own bundle would only open the
+  app and clear them all). The menu's switches pick which alerts
+  come; Android 13 and later ask for the notification permission when a plan or
+  "With Nesty closed" is turned on. "Choose what alerts you" opens the menu at
+  its Alerts.
+- Tracker alerts read each followed wallet's trades of the last day from Nesty's
+  server once a minute (as the Tracker screen does: the server sees the wallets
+  asked about, never the list); signals of three proven wallets every 30 seconds
+  on the five chains with signals (Solana has none).
+  The first read only marks where things stand; trades more than 30 minutes old
+  when first seen say nothing. Tracker alerts cover the five EVM chains: the
+  Tracker follows no Solana wallet yet (the server's book has no Solana).
+- Left out: the chart's plan lines and "Since you bought" (the Position screen
+  has no chart yet), "farmers move in", "Deposit arrived", Share links on
+  alerts (step 10).
+- Tests: `app/src/test/kotlin/trade/nesty/app/exit/` (the math against the
+  extension's cases, the watcher with a fake market) and `alerts/` (the store,
+  where an alert shows, its texts, the tracker and signal reads on a fake
+  server).
+
 ## Build
 
 The toolchain lives on `D:\Android` (JDK 21, Android SDK with platform 36,
@@ -228,6 +284,10 @@ D:\Android\sdk\emulator\emulator.exe -avd nesty36
 
 - `data/`: the API client (`NestyApi`, with the live stream), models, chains,
   local settings (quick buy, followed wallets, watchlist).
+- `exit/`: exit plans: the math (`ExitPlans.kt`), the store, the watcher and its
+  market on the engines.
+- `alerts/`: alerts and notifications: the list, the tracker and signal reads,
+  Android's channels, and the watch service.
 - `move/`: One Balance moves: the bridge client (`Relay.kt`), the arithmetic
   (`Plans` in `Moves.kt`), typed receivers, and the `Mover` that runs and keeps
   each move.
