@@ -172,6 +172,8 @@ class SearchTest {
     @Test
     fun launchpadsKeepTheirOwnSpelling() {
         assertEquals("Flap", venueName("Flap"))
+        // A listing's venue id for Flap is its site's name.
+        assertEquals("Flap", venueName("flapsh"))
         assertEquals("Pons", venueName("Pons"))
         assertEquals("four.meme", venueName("four.meme"))
         assertEquals("pump.fun", venueName("pumpfun"))

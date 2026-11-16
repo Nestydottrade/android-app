@@ -577,6 +577,8 @@ fun venueName(slug: String?): String? {
         "pumpfun", "pump.fun" -> "pump.fun"
         "fourmeme", "four.meme" -> "four.meme"
         "bags" -> "Bags"
+        // The coin's page names its launchpad Flap; listings call the venue after its site, flap.sh.
+        "flapsh", "flap.sh", "flap" -> "Flap"
         else -> slug.replaceFirstChar { it.uppercase() }
     }
 }
