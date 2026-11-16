@@ -61,6 +61,17 @@ class ParsingTest {
     }
 
     @Test
+    fun candlesCarryTheAllTimeHigh() {
+        // The 1s answer holds no candle and still carries the high.
+        val a = NestyJson.decodeFromString<CandlesAnswer>("""{"interval":"1s","supply":1e9,"candles":[],"partial":false,"ath":0.0000123}""")
+        assertEquals(0.0000123, a.ath!!, 0.0)
+        assertTrue(a.parsed().isEmpty())
+        assertNull(NestyJson.decodeFromString<CandlesAnswer>("""{"interval":"1m","candles":[],"partial":false,"ath":null}""").ath)
+        // An answer saved before the field: none.
+        assertNull(Fixtures.read<CandlesAnswer>("candlesB").ath)
+    }
+
+    @Test
     fun candlesSkipARowThatIsNotWhole() {
         val a = NestyJson.decodeFromString<CandlesAnswer>("""{"interval":"1m","supply":1e9,"candles":[[1,2,3,1,2,10],[2,2,null,1,2,0],[3,1]]}""")
         assertEquals(1, a.parsed().size)

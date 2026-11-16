@@ -194,14 +194,24 @@ private enum class Touch { UNDECIDED, PAN, ZOOM, PAGE }
 
 /**
  * Market cap candles: each price times [supply]. The newest at the right, about thirty in view,
- * three round levels and a tag at the last close. A sideways drag scrolls back through the candles,
- * two fingers zoom; an up or down drag is left to the page.
+ * three round levels and a tag at the last close. [ath], the all-time high in dollars per token,
+ * is a dotted line where it falls in view, as on the site. A sideways drag scrolls back through
+ * the candles, two fingers zoom; an up or down drag is left to the page.
  */
 @Composable
-fun CandleChart(candles: List<Candle>, supply: Double, description: String, view: ChartView, modifier: Modifier = Modifier) {
+fun CandleChart(
+    candles: List<Candle>,
+    supply: Double,
+    description: String,
+    view: ChartView,
+    modifier: Modifier = Modifier,
+    ath: Double? = null,
+) {
     val measurer = rememberTextMeasurer()
     val labelStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Ink.muted) }
     val tagStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Ink.greenInk) }
+    val athStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Ink.text2) }
+    val athTagStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Ink.ground) }
     val latest by rememberUpdatedState(candles)
     val scope = rememberCoroutineScope()
     val scrolledBack by remember(view) { derivedStateOf { view.pin != null } }
@@ -310,7 +320,11 @@ fun CandleChart(candles: List<Candle>, supply: Double, description: String, view
             hi += pad
             fun y(v: Double) = (bottom - (v - lo) / (hi - lo) * (bottom - top)).toFloat()
 
-            // Three round levels; a label the last-price tag would cover is left out.
+            // The all-time high's market cap, and its place where it falls in view.
+            val athMc = ath?.let { it * supply }
+            val athY = athMc?.let { y(it) }?.takeIf { it in top..bottom }
+
+            // Three round levels; a label the last-price tag or the all-time high's would cover is left out.
             val last = candles.last().close * supply
             val tagBandY = y(last).coerceIn(0f, size.height)
             val step = CandleMath.niceStep(hi - lo, 3)
@@ -320,7 +334,7 @@ fun CandleChart(candles: List<Candle>, supply: Double, description: String, view
                 val ly = y(level)
                 if (ly > top + 6.dp.toPx() && ly < bottom - 2.dp.toPx()) {
                     drawLine(Ink.line, Offset(0f, ly), Offset(plotW - 4.dp.toPx(), ly), strokeWidth = 1.dp.toPx(), pathEffect = dash)
-                    if (abs(ly - tagBandY) > 18.dp.toPx()) {
+                    if (abs(ly - tagBandY) > 18.dp.toPx() && (athY == null || abs(ly - athY) > 18.dp.toPx())) {
                         val t = measurer.measure(Fmt.usd(level), labelStyle)
                         drawText(t, topLeft = Offset(size.width - t.size.width - 2.dp.toPx(), ly - t.size.height / 2f))
                     }
@@ -343,18 +357,40 @@ fun CandleChart(candles: List<Candle>, supply: Double, description: String, view
                 }
             }
 
-            // The last close, with its tag; scrolled back, the tag waits at the edge it is past.
+            // The last close's tag; scrolled back, it waits at the edge it is past.
             val ly = y(last)
+            val t = measurer.measure(Fmt.usd(last), tagStyle)
+            val tagW = max(t.size.width + 12.dp.toPx(), 46.dp.toPx())
+            val tagH = 18.dp.toPx()
+            val tagY = (ly - tagH / 2).coerceIn(0f, size.height - tagH)
+
+            // The all-time high: a dotted line, its name over the line's start (under it at the top
+            // edge) and its value at the axis, unless the last close's tag sits there.
+            if (athMc != null && athY != null) {
+                drawLine(
+                    Ink.text2.copy(alpha = 0.8f), Offset(0f, athY), Offset(plotW, athY),
+                    strokeWidth = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(1.dp.toPx(), 3.dp.toPx())),
+                )
+                val name = measurer.measure("All-time high", athStyle)
+                val gap = 2.dp.toPx()
+                val nameY = if (athY - gap - name.size.height >= 0f) athY - gap - name.size.height else athY + gap
+                drawText(name, topLeft = Offset(4.dp.toPx(), nameY))
+                val athTagY = (athY - tagH / 2).coerceIn(0f, size.height - tagH)
+                if (abs(athTagY - tagY) >= tagH) {
+                    val a = measurer.measure(Fmt.usd(athMc), athTagStyle)
+                    val aW = max(a.size.width + 12.dp.toPx(), 46.dp.toPx())
+                    drawRoundRect(Ink.text2, topLeft = Offset(size.width - aW, athTagY), size = Size(aW, tagH), cornerRadius = CornerRadius(tagH / 2))
+                    drawText(a, topLeft = Offset(size.width - aW / 2 - a.size.width / 2f, athTagY + (tagH - a.size.height) / 2f))
+                }
+            }
+
+            // The last close, over everything else.
             if (ly in 0f..size.height) {
                 drawLine(
                     Ink.green.copy(alpha = 0.45f), Offset(0f, ly), Offset(plotW, ly),
                     strokeWidth = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 3.dp.toPx())),
                 )
             }
-            val t = measurer.measure(Fmt.usd(last), tagStyle)
-            val tagW = max(t.size.width + 12.dp.toPx(), 46.dp.toPx())
-            val tagH = 18.dp.toPx()
-            val tagY = (ly - tagH / 2).coerceIn(0f, size.height - tagH)
             drawRoundRect(Ink.green, topLeft = Offset(size.width - tagW, tagY), size = Size(tagW, tagH), cornerRadius = CornerRadius(tagH / 2))
             drawText(t, topLeft = Offset(size.width - tagW / 2 - t.size.width / 2f, tagY + (tagH - t.size.height) / 2f))
         }

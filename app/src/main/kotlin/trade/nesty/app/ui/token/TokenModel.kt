@@ -24,6 +24,7 @@ import trade.nesty.app.data.Trade
 import trade.nesty.app.data.TradersAnswer
 import trade.nesty.app.ui.signal.SignalHead
 import trade.nesty.app.ui.signal.SignalWallets
+import kotlin.math.min
 
 enum class Phase { LOADING, READY, EMPTY, FAILED }
 
@@ -40,6 +41,15 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
     var supply by mutableStateOf<Double?>(null)
         private set
     var chartPhase by mutableStateOf(Phase.LOADING)
+        private set
+    /**
+     * The most it traded at, in dollars per token, once a chart answer said its whole life is
+     * known; null until then. Kept across lengths while the page is open, raised by new candles.
+     */
+    var ath by mutableStateOf<Double?>(null)
+        private set
+    /** The oldest candle read on the page (Unix seconds): the coin is at least this old. */
+    var firstCandleAt by mutableStateOf<Long?>(null)
         private set
 
     /** Newest first. */
@@ -139,6 +149,8 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
                 raw = a.parsed()
                 rawFrame = f
                 a.supply?.let { supply = it }
+                ath = Ath.raise(ath, a.ath, raw)
+                raw.firstOrNull()?.time?.let { t -> firstCandleAt = firstCandleAt?.let { min(it, t) } ?: t }
                 chartPhase = if (raw.isEmpty()) Phase.EMPTY else Phase.READY
                 // A partial chart fills in a little later; an empty one can be a coin the
                 // server only starts to follow on this first ask, so it is asked again too.
@@ -173,7 +185,9 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
                         }
                         is StreamEvent.NewTrade -> addTrade(e.trade)
                         is StreamEvent.NewCandle -> if (f != null && e.candle.interval == interval && rawFrame?.interval == interval) {
-                            raw = CandleMath.upsert(raw, e.candle.toCandle(), f.limit)
+                            val c = e.candle.toCandle()
+                            raw = CandleMath.upsert(raw, c, f.limit)
+                            ath = Ath.raise(ath, null, listOf(c))
                             if (chartPhase != Phase.READY) chartPhase = Phase.READY
                         }
                         is StreamEvent.MarketUpdate -> coin = coin?.let { c ->

@@ -140,6 +140,11 @@ data class CandlesAnswer(
     val supply: Double? = null,
     val candles: List<JsonArray> = emptyList(),
     val partial: Boolean = false,
+    /**
+     * The most it ever traded at, in dollars per token, where its whole life is known; null
+     * otherwise. It can be above every candle sent, as the server keeps the high past `limit`.
+     */
+    val ath: Double? = null,
 ) {
     /** The candles that are whole: six numbers each. */
     fun parsed(): List<Candle> = candles.mapNotNull { row ->

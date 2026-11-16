@@ -128,6 +128,8 @@ fun TokenScreen(chain: Chain, address: String, openBuy: Boolean = false) {
                 val head = model.signalHead
                 var signalOpen by rememberSaveable { mutableStateOf(false) }
                 LaunchedEffect(head == null) { if (head == null) signalOpen = false }
+                // The all-time high, in dollars per token, once it is worth showing.
+                val ath = Ath.shown(model.ath, model.supply ?: coin.supply, model.firstCandleAt, now / 1000)
 
                 Column(
                     Modifier
@@ -137,10 +139,10 @@ fun TokenScreen(chain: Chain, address: String, openBuy: Boolean = false) {
                         .padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    Market(coin, model, checks, onChecks = { scope.launch { scroll.animateScrollTo(checksY.toInt()) } }) {
+                    Market(coin, model, checks, ath, onChecks = { scope.launch { scroll.animateScrollTo(checksY.toInt()) } }) {
                         signalOpen = true
                     }
-                    ChartSection(model, coin)
+                    ChartSection(model, coin, ath)
                     Box(Modifier.onGloballyPositioned { checksY = it.positionInParent().y }) { ChecksCard(checks) }
                     if (head != null || followedTrades.isNotEmpty()) {
                         WalletsCard(model, head, followedTrades, now) { signalOpen = true }
@@ -267,7 +269,7 @@ private fun MenuText(title: String, note: String? = null) {
 }
 
 @Composable
-private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, onChecks: () -> Unit, onWallets: () -> Unit) {
+private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Double?, onChecks: () -> Unit, onWallets: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(Fmt.usd(coin.mcapUsd), style = figure(44, FontWeight.SemiBold, Ink.green).copy(lineHeight = 44.sp))
@@ -276,6 +278,11 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, onChecks:
             Text(if (m5 != null) "market cap, 5m" else "market cap", style = text(13, color = Ink.muted), modifier = Modifier.padding(bottom = 5.dp))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Its all-time high right after its market cap: a market cap where the supply is known, else a price.
+            if (ath != null) {
+                val supply = model.supply ?: coin.supply
+                Stat("ATH", if (supply != null && supply > 0) Fmt.usd(ath * supply) else "$" + Fmt.amount(ath), Modifier.weight(1f))
+            }
             Stat("Liquidity", Fmt.usd(coin.liquidityUsd), Modifier.weight(1f))
             Stat("Volume 5m", Fmt.usd(coin.volume5), Modifier.weight(1f))
             Stat("Holders", model.holderCount?.let { Fmt.count(it.toLong()) } ?: Fmt.DASH, Modifier.weight(1f))
@@ -303,7 +310,7 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, onChecks:
 }
 
 @Composable
-private fun ChartSection(model: TokenModel, coin: Coin) {
+private fun ChartSection(model: TokenModel, coin: Coin, ath: Double?) {
     val candles = model.candles()
     val supply = model.supply ?: coin.supply
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -321,8 +328,10 @@ private fun ChartSection(model: TokenModel, coin: Coin) {
                 CandleChart(
                     candles,
                     supply,
-                    "$symbol market cap in ${model.frame.words} candles, from about ${Fmt.usd(from)} to ${Fmt.usd(to)}",
+                    "$symbol market cap in ${model.frame.words} candles, from about ${Fmt.usd(from)} to ${Fmt.usd(to)}" +
+                        (ath?.let { ", all-time high ${Fmt.usd(it * supply)}" } ?: ""),
                     view,
+                    ath = ath,
                 )
             }
             model.chartPhase == Phase.LOADING -> ChartNote("Loading the chart…")
