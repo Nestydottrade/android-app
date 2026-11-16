@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Clearer buy costs",
+    "text": "The buy sheet splits the cost to get in into price impact, fees, tax and the route, and no longer counts a curve's fee twice"
+  },
+  {
+    "title": "MEV protection on Solana",
+    "text": "Solana trades go out privately with a small tip set by speed, away from sandwich bots"
+  },
+  {
+    "title": "Your quick buy amounts",
+    "text": "Set the four quick buy amounts in the menu"
+  },
+  {
+    "title": "Buy buttons on request",
+    "text": "On a coin's page the buy amounts show after you tap Buy, so a stray tap buys nothing"
+  },
+  {
+    "title": "Trade details",
+    "text": "Each trade in Activity opens a page with what it cost, where the money came from, its route and its transactions, failed trades too"
+  },
+  {
+    "title": "Both sides for every wallet",
+    "text": "A wallet imported from one key can create or import its missing EVM or Solana address"
+  }
+]
