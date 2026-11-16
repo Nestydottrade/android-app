@@ -19,9 +19,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -34,6 +38,8 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Holder
 import trade.nesty.app.data.Trade
@@ -57,11 +63,15 @@ import trade.nesty.app.ui.uniqueItems
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
+import trade.nesty.app.ui.token.Older
 import trade.nesty.app.ui.token.Phase
 import trade.nesty.app.ui.token.TokenModel
 import trade.nesty.app.ui.token.rememberTokenModel
 
 private val TABS = listOf("Trades", "Holders", "Top traders", "Early buyers")
+
+/** Rows from the end of the Trades list at which the page before it is read. */
+private const val NEAR_END = 15
 
 @Composable
 fun TradesHoldersScreen(chain: Chain, address: String) {
@@ -91,16 +101,45 @@ fun TradesHoldersScreen(chain: Chain, address: String) {
 @Composable
 private fun TradesList(model: TokenModel, only: String?, setOnly: (String?) -> Unit, open: (String) -> Unit) {
     val now = rememberNow()
-    val shown = if (only == null) model.trades.toList() else model.trades.filter { it.wallet.equals(only, ignoreCase = true) }
+    val shown by remember(only) {
+        derivedStateOf { if (only == null) model.trades.toList() else model.walletTrades(only) }
+    }
+    // A filtered list holds every trade of its wallet, read whole by the server.
+    LaunchedEffect(only) {
+        if (only == null) model.clearWallet() else model.readWallet(only)
+    }
+    val read = model.walletRead?.takeIf { it.wallet == only }
     val tradeList = rememberLazyListState()
     StickToTop(tradeList, shown.firstOrNull()?.id)
+    // The page before the oldest trade is read as the list's end comes into view, and again while it stays there.
+    val nearEnd by remember(tradeList) {
+        derivedStateOf {
+            val info = tradeList.layoutInfo
+            val last = info.visibleItemsInfo.lastOrNull()?.index
+            last != null && last >= info.totalItemsCount - NEAR_END
+        }
+    }
+    LaunchedEffect(nearEnd, only, model.olderPages) {
+        if (!nearEnd || only != null) return@LaunchedEffect
+        while (true) {
+            model.loadOlder()
+            if (model.older != Older.FAILED) break
+            delay(5_000)
+        }
+    }
+    val scope = rememberCoroutineScope()
     Column(Modifier.fillMaxSize()) {
         if (only != null) {
             Row(
                 Modifier.fillMaxWidth().background(Ink.violetBg).padding(start = 16.dp, end = 8.dp).heightIn(min = 48.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("All ${shown.size} trades from ${Fmt.address(only)}", style = text(13, FontWeight.SemiBold), modifier = Modifier.weight(1f))
+                val whole = read?.phase == Phase.READY && read.all
+                Text(
+                    "${if (whole) "All " else ""}${shown.size} trades from ${Fmt.address(only)}",
+                    style = text(13, FontWeight.SemiBold),
+                    modifier = Modifier.weight(1f),
+                )
                 Text(
                     "Show all trades",
                     style = text(13, FontWeight.Bold, Ink.green),
@@ -111,11 +150,31 @@ private fun TradesList(model: TokenModel, only: String?, setOnly: (String?) -> U
         when {
             shown.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize(), state = tradeList) {
                 uniqueItems(shown, { it.id }) { t -> TradeRow(t, now, only, setOnly, open) }
+                if (only == null) item(key = "older") { OlderEnd(model.older) { scope.launch { model.loadOlder() } } }
             }
+            only != null && read?.phase == Phase.FAILED -> EmptyNote("Could not read its trades. Trying again.")
+            only != null && read?.phase != Phase.READY -> EmptyNote("Reading its trades…")
             model.tradesPhase == Phase.LOADING || model.tradesReading -> EmptyNote("Reading its trades…")
             model.tradesPhase == Phase.FAILED -> EmptyNote("Could not read its trades. Trying again.")
             else -> EmptyNote("No trades yet.")
         }
+    }
+}
+
+/** The end of the Trades list: the page before it being read, or a way to ask for it after empty ones. */
+@Composable
+private fun OlderEnd(state: Older, ask: () -> Unit) {
+    val line = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)
+    when (state) {
+        Older.LOADING -> Text("Reading older trades…", style = text(12, color = Ink.muted), textAlign = TextAlign.Center, modifier = line)
+        Older.FAILED -> Text("Could not read older trades. Trying again.", style = text(12, color = Ink.muted), textAlign = TextAlign.Center, modifier = line)
+        Older.STALLED -> Text(
+            "Show older trades",
+            style = text(13, FontWeight.Bold, Ink.green),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = ask).padding(horizontal = 24.dp, vertical = 16.dp),
+        )
+        Older.IDLE, Older.DONE -> Unit
     }
 }
 

@@ -174,7 +174,14 @@ data class Trade(
 }
 
 @Serializable
-data class TradesAnswer(val trades: List<Trade> = emptyList(), val reading: Boolean = false)
+data class TradesAnswer(
+    val trades: List<Trade> = emptyList(),
+    val reading: Boolean = false,
+    /** Where the page before these starts, to ask for as it is; null once none older can be read. */
+    val older: String? = null,
+    /** One wallet's answer: every trade it made of the coin is among them. */
+    val all: Boolean = false,
+)
 
 /** The stream's `candle` event: the newest candle of the stream's interval. */
 @Serializable

@@ -1,6 +1,7 @@
 package trade.nesty.app.ui.token
 
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -22,11 +23,40 @@ import trade.nesty.app.data.SignalRow
 import trade.nesty.app.data.StreamEvent
 import trade.nesty.app.data.Trade
 import trade.nesty.app.data.TradersAnswer
+import trade.nesty.app.data.TradesAnswer
 import trade.nesty.app.ui.signal.SignalHead
 import trade.nesty.app.ui.signal.SignalWallets
 import kotlin.math.min
 
 enum class Phase { LOADING, READY, EMPTY, FAILED }
+
+/** How far back the Trades list reaches: the page before its oldest trade is read as its end comes into view. */
+enum class Older {
+    IDLE,
+    LOADING,
+    /** Pages of a quiet stretch came back empty: the next is read on the person's move. */
+    STALLED,
+    FAILED,
+    /** Its first trade is in the list, or the list is full. */
+    DONE,
+}
+
+/** One wallet's every trade of the coin, as the server read them for the filtered list. */
+data class WalletRead(
+    val wallet: String,
+    val trades: List<Trade> = emptyList(),
+    /** Every trade the wallet made of the coin is among them. */
+    val all: Boolean = false,
+    val phase: Phase = Phase.LOADING,
+)
+
+/** Trades the newest page asks for, and each page before it. */
+private const val NEWEST_PAGE = 100
+private const val OLDER_PAGE = 100
+/** Empty pages in a row before the list waits for the person. */
+private const val EMPTY_PAGES = 3
+/** Trades the list holds at most: past them the oldest go. */
+const val MAX_TRADES = 5_000
 
 /** Everything the token page and its Trades and holders page read of one coin. */
 class TokenModel(private val api: NestyApi, val chain: Chain, val address: String) {
@@ -59,6 +89,21 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
         private set
     /** The server's first read of the coin still runs: no trades yet means none read yet. */
     var tradesReading by mutableStateOf(false)
+        private set
+    var older by mutableStateOf(Older.IDLE)
+        private set
+    /** Counts the older pages that added trades, so a list whose end stays in view asks again. */
+    var olderPages by mutableIntStateOf(0)
+        private set
+    /** Where the page before the list starts, as the server told it. */
+    private var olderCursor: String? = null
+    /** An older page was added: a newest page read again then leaves the cursor as it is. */
+    private var paged = false
+    /** Counts the times the list started again, so an older page asked for before is dropped. */
+    private var listEpoch = 0
+
+    /** The wallet the list is filtered to, with its trades read whole; null while it is not. */
+    var walletRead by mutableStateOf<WalletRead?>(null)
         private set
 
     var live by mutableStateOf(false)
@@ -211,11 +256,10 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
         }
     }
 
-    private suspend fun loadTrades() {
+    /** The newest page, at each (re)opened stream and while it is down: internal for its tests. */
+    internal suspend fun loadTrades() {
         try {
-            val a = api.trades(chain, address, 100)
-            a.trades.forEach { addTrade(it) }
-            tradesReading = a.reading
+            takeNewest(api.trades(chain, address, NEWEST_PAGE))
             tradesPhase = if (trades.isEmpty()) Phase.EMPTY else Phase.READY
         } catch (e: CancellationException) {
             throw e
@@ -226,12 +270,135 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
         }
     }
 
+    /** The newest page: its trades, and where the page before it starts while no older page is in the list. */
+    private fun takeNewest(a: TradesAnswer) {
+        // More than a page traded while the stream was down: what lies between was not read, so the
+        // list starts again from this page.
+        if (trades.isNotEmpty() && a.trades.size >= NEWEST_PAGE && a.trades.none { it.id in tradeIds }) {
+            trades.clear()
+            tradeIds.clear()
+            paged = false
+            listEpoch++
+        }
+        a.trades.forEach { addTrade(it) }
+        tradesReading = a.reading
+        if (!paged && !a.reading) {
+            olderCursor = a.older
+            if (older != Older.LOADING) older = if (a.older == null) Older.DONE else Older.IDLE
+        }
+    }
+
+    /**
+     * Adds the page before the list's oldest trade. A quiet stretch of the chain can answer empty
+     * pages: past EMPTY_PAGES of them in a row the list waits (STALLED) for the person to scroll
+     * back to its end or ask.
+     */
+    suspend fun loadOlder() {
+        if (older == Older.LOADING || older == Older.DONE) return
+        older = Older.LOADING
+        try {
+            if (olderCursor == null) {
+                // The newest page tells where the one before it starts, once the coin's first read is done.
+                val a = api.trades(chain, address, NEWEST_PAGE)
+                takeNewest(a)
+                if (olderCursor == null) {
+                    older = if (a.reading) Older.IDLE else Older.DONE
+                    return
+                }
+            }
+            val epoch = listEpoch
+            repeat(EMPTY_PAGES) {
+                val cursor = olderCursor ?: return
+                val a = api.trades(chain, address, OLDER_PAGE, before = cursor)
+                // The list started again meanwhile, or filled up.
+                if (epoch != listEpoch || older != Older.LOADING) return
+                val added = addOlder(a.trades)
+                paged = true
+                val full = trades.size >= MAX_TRADES
+                olderCursor = if (full) null else a.older
+                if (added > 0) olderPages++
+                if (olderCursor == null) {
+                    older = Older.DONE
+                    return
+                }
+                if (added > 0) {
+                    older = Older.IDLE
+                    return
+                }
+            }
+            older = Older.STALLED
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            if (older == Older.LOADING) older = Older.FAILED
+        } finally {
+            if (older == Older.LOADING) older = Older.IDLE
+        }
+    }
+
     private fun addTrade(t: Trade) {
         if (t.id.isEmpty() || !tradeIds.add(t.id)) return
         val i = trades.indexOfFirst { it.at < t.at }
         if (i < 0) trades.add(t) else trades.add(i, t)
-        while (trades.size > 300) tradeIds.remove(trades.removeAt(trades.lastIndex).id)
+        if (trades.size > MAX_TRADES) {
+            // The oldest go, and with them the way back past them.
+            while (trades.size > MAX_TRADES) tradeIds.remove(trades.removeAt(trades.lastIndex).id)
+            olderCursor = null
+            paged = true
+            listEpoch++
+            older = Older.DONE
+        }
         if (tradesPhase != Phase.READY) tradesPhase = Phase.READY
+    }
+
+    /** An older page's trades below the list's, each once, up to MAX_TRADES; how many were new. */
+    private fun addOlder(page: List<Trade>): Int {
+        var added = 0
+        for (t in page) {
+            if (trades.size >= MAX_TRADES) break
+            if (t.id.isEmpty() || !tradeIds.add(t.id)) continue
+            val last = trades.lastOrNull()
+            if (last == null || last.at >= t.at) {
+                trades.add(t)
+            } else {
+                val i = trades.indexOfFirst { it.at < t.at }
+                if (i < 0) trades.add(t) else trades.add(i, t)
+            }
+            added++
+        }
+        if (added > 0 && tradesPhase != Phase.READY) tradesPhase = Phase.READY
+        return added
+    }
+
+    /** Reads every trade [wallet] made of the coin for the filtered list, asking again until it answers. */
+    suspend fun readWallet(wallet: String) {
+        walletRead = WalletRead(wallet)
+        var wait = 5_000L
+        while (true) {
+            try {
+                val a = api.walletTrades(chain, address, wallet)
+                walletRead = WalletRead(wallet, a.trades, a.all, Phase.READY)
+                return
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                walletRead = WalletRead(wallet, phase = Phase.FAILED)
+            }
+            delay(wait)
+            wait = (wait * 2).coerceAtMost(30_000)
+        }
+    }
+
+    fun clearWallet() {
+        walletRead = null
+    }
+
+    /** The list filtered to [wallet]: its trades read whole and those heard since, each once, newest first. */
+    fun walletTrades(wallet: String): List<Trade> {
+        val mine = { t: Trade -> t.wallet.equals(wallet, ignoreCase = true) }
+        // Its own only: a server from before the wallet read answers the coin's newest trades instead.
+        val read = walletRead?.takeIf { it.wallet == wallet }?.trades.orEmpty().filter(mine)
+        return (trades.filter(mine) + read).distinctBy { it.id }.sortedByDescending { it.at }
     }
 
     /** Holder shares, the holder list, the trader tables and the chain's signals: every 30 seconds. */

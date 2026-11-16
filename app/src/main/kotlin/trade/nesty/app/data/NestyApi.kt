@@ -68,8 +68,16 @@ class NestyApi(
     suspend fun candles(chain: Chain, address: String, interval: String, limit: Int = 500): CandlesAnswer =
         get("candles/${chain.feed}/$address", "interval" to interval, "limit" to limit)
 
-    suspend fun trades(chain: Chain, address: String, limit: Int = 100): TradesAnswer =
-        get("trades/${chain.feed}/$address", "limit" to limit)
+    /** The newest trades, or with `before` (an answer's `older`, given back as it came) the page before it. */
+    suspend fun trades(chain: Chain, address: String, limit: Int = 100, before: String? = null): TradesAnswer =
+        get("trades/${chain.feed}/$address", "limit" to limit, "before" to before)
+
+    /**
+     * One wallet's every trade of a coin, 2,000 at most. The server sees the coin and that one
+     * wallet, as for its wallet page; never a list of wallets.
+     */
+    suspend fun walletTrades(chain: Chain, address: String, wallet: String): TradesAnswer =
+        get("trades/${chain.feed}/$address", "wallet" to wallet)
 
     suspend fun holders(chain: Chain, address: String, limit: Int = 100): HoldersAnswer =
         get("holders/${chain.feed}/$address", "limit" to limit)
