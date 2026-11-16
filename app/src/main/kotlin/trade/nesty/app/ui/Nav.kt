@@ -24,12 +24,18 @@ sealed interface Route {
     data object Tracker : Route
     data object Portfolio : Route
 
-    /** `buy`: open its buy sheet at once (a buy whose moved funds wait for the user). */
-    data class Token(val chain: Chain, val address: String, val buy: Boolean = false) : Route
+    /**
+     * `buy`: open its buy sheet at once (a buy whose moved funds wait for the user, a failed buy
+     * tried again), at `buyUsd` when given.
+     */
+    data class Token(val chain: Chain, val address: String, val buy: Boolean = false, val buyUsd: Double? = null) : Route
     data class TradesHolders(val chain: Chain, val address: String) : Route
 
     /** The wallet's position in a coin: what it holds, its result, selling. */
     data class Position(val chain: Chain, val address: String) : Route
+
+    /** One trade of Activity: its costs, route, settings and transactions. `wallet` as its entry keeps it. */
+    data class Trade(val wallet: String, val tx: String) : Route
     data class Wallet(val chain: Chain, val address: String) : Route
     data object Search : Route
     /** `alerts`: open at the Alerts section. */

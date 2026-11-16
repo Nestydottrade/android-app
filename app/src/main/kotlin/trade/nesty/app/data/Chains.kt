@@ -38,6 +38,9 @@ enum class Chain(
     fun tokenUrl(address: String): String =
         if (this == SOLANA) "$explorer/token/$address" else "$explorer/token/$address"
 
+    /** The explorer's page of a transaction: /tx/ on every chain's explorer, Solscan too. */
+    fun txUrl(hash: String): String = "$explorer/tx/$hash"
+
     companion object {
         fun of(feed: String?): Chain? = entries.firstOrNull { it.feed == feed }
 

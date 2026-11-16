@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import kotlinx.serialization.Serializable
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.NestyJson
+import trade.nesty.app.data.Tax
 import trade.nesty.app.evm.parseEther
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -130,6 +131,10 @@ data class Move(
     val decimals: Int? = null,
     val supply: Double? = null,
     val hints: List<String> = emptyList(),
+    /** Its listed tax, whether it trades on its curve, its launchpad: for the buy's page. */
+    val tax: Tax? = null,
+    val onCurve: Boolean = false,
+    val launchpad: String? = null,
     val preset: Int = 0,
     /** The buy's swap, once sent, or why it was not made. */
     val buyTx: String? = null,

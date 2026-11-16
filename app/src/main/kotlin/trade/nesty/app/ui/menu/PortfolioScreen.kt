@@ -77,6 +77,8 @@ import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
 import trade.nesty.app.ui.token.copyText
 import trade.nesty.app.vault.WalletInfo
+import trade.nesty.app.vault.WalletKind
+import trade.nesty.app.vault.missingSide
 
 /** One Balance as a figure: dollars once it is read, a dash until then, $0.00 with no wallet. */
 fun oneBalanceText(wallet: WalletInfo?, balance: WalletBalance?): String = when {
@@ -192,7 +194,7 @@ fun PortfolioScreen() {
                                     MoveRow(e, now, onOpen = if (e.kind == MoveKind.BUY || e.legs.any { it.hash != null }) ({ openMove(e) }) else null)
                                 } else {
                                     val f = e as Fill
-                                    ActivityRow(f, now) { f.chain?.let { c -> nav.push(Route.Position(c, f.token)) } }
+                                    ActivityRow(f, now) { nav.push(Route.Trade(f.wallet, f.tx)) }
                                 }
                             }
                         }
@@ -202,7 +204,7 @@ fun PortfolioScreen() {
         }
     }
 
-    if (deposit && wallet != null) DepositSheet(wallet, onClose = { deposit = false }, onBackUp = {
+    if (deposit && wallet != null) DepositSheet(wallet, onClose = { deposit = false }, onWallets = {
         deposit = false
         nav.push(Route.Wallets())
     })
@@ -352,19 +354,23 @@ private fun ActivityRow(f: Fill, now: Long, onOpen: () -> Unit) {
     ) {
         Text(
             if (f.isBuy) "Buy" else "Sell",
-            style = text(13, FontWeight.Bold, if (f.isBuy) Ink.green else Ink.pinkSoft),
+            style = text(13, FontWeight.Bold, if (f.failed) Ink.muted else if (f.isBuy) Ink.green else Ink.pinkSoft),
             modifier = Modifier.widthIn(min = 36.dp),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
                 Text(symbol, style = text(15, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
-                f.usd?.let { Text(Fmt.usdFull(it), style = figure(15, FontWeight.SemiBold)) }
+                f.usd?.let { Text(Fmt.usdFull(it), style = figure(15, FontWeight.SemiBold, if (f.failed) Ink.muted else Ink.text)) }
             }
-            Text(
-                listOfNotNull(Fmt.amount(f.tokens), f.mcapUsd?.let { "at MC ${Fmt.usd(it)}" }).joinToString(" "),
-                style = text(13, color = Ink.muted),
-                maxLines = 1,
-            )
+            if (f.failed) {
+                Text("Failed", style = text(13, FontWeight.SemiBold, Ink.pinkSoft), maxLines = 1)
+            } else {
+                Text(
+                    listOfNotNull(Fmt.amount(f.tokens), f.mcapUsd?.let { "at MC ${Fmt.usd(it)}" }).joinToString(" "),
+                    style = text(13, color = Ink.muted),
+                    maxLines = 1,
+                )
+            }
         }
         Text(Fmt.age(now - f.at), style = text(12, color = Ink.muted))
     }
@@ -401,7 +407,7 @@ fun inFours(address: String): String =
 
 /** The wallet's own addresses to send coins to. Nothing is asked of the server here. */
 @Composable
-private fun DepositSheet(wallet: WalletInfo, onClose: () -> Unit, onBackUp: () -> Unit) {
+private fun DepositSheet(wallet: WalletInfo, onClose: () -> Unit, onWallets: () -> Unit) {
     val context = LocalContext.current
     val toasts = LocalToasts.current
     NestySheet("Deposit to One Balance", onClose) {
@@ -415,7 +421,7 @@ private fun DepositSheet(wallet: WalletInfo, onClose: () -> Unit, onBackUp: () -
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(14.dp))
                         .background(Ink.raised)
-                        .clickable(role = Role.Button, onClick = onBackUp)
+                        .clickable(role = Role.Button, onClick = onWallets)
                         .padding(horizontal = 14.dp, vertical = 12.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -441,8 +447,26 @@ private fun DepositSheet(wallet: WalletInfo, onClose: () -> Unit, onBackUp: () -
                     toasts.show("Solana address copied", Fmt.address(address))
                 }
             }
-            if (wallet.evm == null) Text("This wallet was made from a Solana key: it has no EVM address.", style = text(13, color = Ink.muted))
-            if (wallet.sol == null) Text("This wallet was made from an EVM key: it has no Solana address.", style = text(13, color = Ink.muted))
+            // The side it lacks is added on the Wallets screen, made there or imported.
+            wallet.missingSide?.let { side ->
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(Ink.raised)
+                        .clickable(role = Role.Button, onClick = onWallets)
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    Text(
+                        if (side == WalletKind.EVM_KEY) "This wallet was made from a Solana key: it has no EVM address." else "This wallet was made from an EVM key: it has no Solana address.",
+                        style = text(13, color = Ink.text2, lineHeight = 18.sp),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text("Add", style = text(14, FontWeight.Bold, Ink.green))
+                }
+            }
         }
     }
 }

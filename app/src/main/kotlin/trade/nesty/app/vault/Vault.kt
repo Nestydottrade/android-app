@@ -12,10 +12,14 @@ import trade.nesty.app.keys.Hd
 import trade.nesty.app.keys.Hex
 import trade.nesty.app.keys.Sol
 import trade.nesty.app.keys.wipe
+import java.math.BigInteger
 import java.security.MessageDigest
 import java.security.SecureRandom
 
-/** What a wallet was made from: a phrase gives both sides, a key only its own. */
+/**
+ * What a wallet was made from: a phrase gives both sides, a key only its own until a key for the
+ * other side is added ([Vault.createSide], [Vault.importSide]).
+ */
 enum class WalletKind { PHRASE, EVM_KEY, SOL_KEY }
 
 /** A wallet as the screens know it: nothing in it is secret. */
@@ -24,14 +28,25 @@ data class WalletInfo(
     val id: String,
     val name: String,
     val kind: WalletKind,
-    /** Null for a wallet made from a Solana key. */
+    /** Null for a wallet made from a Solana key, until an EVM key is added to it. */
     val evm: String? = null,
-    /** Null for a wallet made from an EVM key. */
+    /** Null for a wallet made from an EVM key, until a Solana key is added to it. */
     val sol: String? = null,
     val createdAt: Long = 0,
     /** False until its key was shown for a backup; an imported wallet is backed up already. */
     val backedUp: Boolean = false,
 )
+
+/**
+ * The side a wallet made from one key lacks: SOL_KEY for an EVM key's wallet, EVM_KEY for a
+ * Solana key's. Null once it has both.
+ */
+val WalletInfo.missingSide: WalletKind?
+    get() = when {
+        evm == null -> WalletKind.EVM_KEY
+        sol == null -> WalletKind.SOL_KEY
+        else -> null
+    }
 
 /** Which secret of a wallet to show. */
 enum class ExportKind { PHRASE, EVM_KEY, SOL_KEY }
@@ -80,11 +95,13 @@ private data class VaultRecord(
     val public: Sealed,
     /** Each wallet's secret, sealed on its own and opened only when it is used. */
     val secrets: Map<String, Sealed> = emptyMap(),
+    /** The key of the side added later to a wallet made from one key, sealed the same way. */
+    val added: Map<String, Sealed> = emptyMap(),
 )
 
 /**
  * The phone's keys. Every wallet has its own secret (a recovery phrase or one private key),
- * all under one password.
+ * all under one password. A wallet made from one key can get a second key for the side it lacks.
  *
  * - The password goes through Argon2id; AES-256-GCM seals with that key. The KDF's parameters
  *   are bound into every seal, so they cannot be weakened in the file.
@@ -275,6 +292,30 @@ class Vault(
         throw VaultException(VaultError.BAD_KEY)
     }
 
+    /**
+     * Gives a wallet made from one key the side it lacks, with a new key made here. That key
+     * has no backup yet, so the wallet asks for one again.
+     */
+    @Synchronized
+    fun createSide(id: String): WalletInfo {
+        val (wallet, side) = lacking(id)
+        val secret = if (side == WalletKind.EVM_KEY) newEvmKey() else ByteArray(32).also(random::nextBytes)
+        return attach(wallet, side, secret, backedUp = false)
+    }
+
+    /**
+     * The side a wallet lacks from the user's own key, or from a recovery phrase: its first
+     * address on that side, the one other wallets show for it. Only that side's key is kept.
+     */
+    @Synchronized
+    fun importSide(id: String, input: String): WalletInfo {
+        val (wallet, side) = lacking(id)
+        val secret = (if (side == WalletKind.EVM_KEY) Evm.parsePrivateKey(input) else Sol.parseSecretKey(input))
+            ?: phraseSideKey(input, side)
+            ?: throw VaultException(VaultError.BAD_KEY)
+        return attach(wallet, side, secret, backedUp = true)
+    }
+
     /** The wallet that trades from now on. Nothing moves between wallets. */
     @Synchronized
     fun setActive(id: String) {
@@ -293,28 +334,31 @@ class Vault(
         val rec = requireRecord()
         recheck(password, k, rec)
         val wallet = public.wallets.firstOrNull { it.id == id } ?: throw VaultException(VaultError.NOT_FOUND)
-        val secret = openSecret(k, rec, wallet.id)
-        try {
-            val out = when (wallet.kind) {
-                WalletKind.PHRASE -> {
-                    val phrase = String(secret, Charsets.UTF_8)
-                    when (what) {
-                        ExportKind.PHRASE -> phrase
-                        ExportKind.EVM_KEY -> withSeed(phrase) { seed -> Hd.evmKey(seed).let { pk -> "0x" + Hex.encode(pk).also { pk.wipe() } } }
-                        ExportKind.SOL_KEY -> withSeed(phrase) { seed -> Hd.solSeed(seed).let { s -> Sol.secretKey(s).also { s.wipe() } } }
-                    }
+        val out = when (what) {
+            ExportKind.PHRASE -> {
+                if (wallet.kind != WalletKind.PHRASE) throw VaultException(VaultError.NO_SUCH_KEY)
+                val secret = openSecret(k, rec, wallet.id)
+                try {
+                    String(secret, Charsets.UTF_8)
+                } finally {
+                    secret.wipe()
                 }
-                WalletKind.EVM_KEY -> if (what == ExportKind.EVM_KEY) "0x" + Hex.encode(secret) else throw VaultException(VaultError.NO_SUCH_KEY)
-                WalletKind.SOL_KEY -> if (what == ExportKind.SOL_KEY) Sol.secretKey(secret) else throw VaultException(VaultError.NO_SUCH_KEY)
             }
-            if (!wallet.backedUp) {
-                savePublic(k, public.copy(wallets = public.wallets.map { if (it.id == id) it.copy(backedUp = true) else it }), rec.secrets)
-            }
-            return out
-        } finally {
-            secret.wipe()
+            ExportKind.EVM_KEY -> sideKey(k, rec, wallet, WalletKind.EVM_KEY).let { pk -> "0x" + Hex.encode(pk).also { pk.wipe() } }
+            ExportKind.SOL_KEY -> sideKey(k, rec, wallet, WalletKind.SOL_KEY).let { s -> Sol.secretKey(s).also { s.wipe() } }
         }
+        // The backup is done once what it waits for was shown: any secret of a phrase's wallet,
+        // or the key made here for a side added later.
+        val waitsFor = addedSide(wallet)?.let { exportOf(it) }
+        if (!wallet.backedUp && (waitsFor == null || waitsFor == what)) {
+            savePublic(k, public.copy(wallets = public.wallets.map { if (it.id == id) it.copy(backedUp = true) else it }), rec.secrets)
+        }
+        return out
     }
+
+    /** What the export form shows first: the key a backup still waits for, else the wallet's first secret. */
+    fun firstExport(wallet: WalletInfo): ExportKind =
+        addedSide(wallet)?.takeIf { !wallet.backedUp }?.let { exportOf(it) } ?: exportKinds(wallet).first()
 
     /**
      * Signs a 32-byte hash with a wallet's EVM key, for a trade the engine has checked. The key
@@ -332,22 +376,11 @@ class Vault(
         val rec = requireRecord()
         val wallet = public.wallets.firstOrNull { it.id == id } ?: throw VaultException(VaultError.NOT_FOUND)
         if (wallet.evm == null || !wallet.evm.equals(address, ignoreCase = true)) throw VaultException(VaultError.NO_SUCH_KEY)
-        val secret = openSecret(k, rec, wallet.id)
+        val pk = sideKey(k, rec, wallet, WalletKind.EVM_KEY)
         try {
-            return when (wallet.kind) {
-                WalletKind.PHRASE -> withSeed(String(secret, Charsets.UTF_8)) { seed ->
-                    val pk = Hd.evmKey(seed)
-                    try {
-                        Secp256k1.sign(hash, pk)
-                    } finally {
-                        pk.wipe()
-                    }
-                }
-                WalletKind.EVM_KEY -> Secp256k1.sign(hash, secret)
-                WalletKind.SOL_KEY -> throw VaultException(VaultError.NO_SUCH_KEY)
-            }
+            return Secp256k1.sign(hash, pk)
         } finally {
-            secret.wipe()
+            pk.wipe()
         }
     }
 
@@ -366,22 +399,11 @@ class Vault(
         val rec = requireRecord()
         val wallet = public.wallets.firstOrNull { it.id == id } ?: throw VaultException(VaultError.NOT_FOUND)
         if (wallet.sol == null || wallet.sol != address) throw VaultException(VaultError.NO_SUCH_KEY)
-        val secret = openSecret(k, rec, wallet.id)
+        val sk = sideKey(k, rec, wallet, WalletKind.SOL_KEY)
         try {
-            return when (wallet.kind) {
-                WalletKind.PHRASE -> withSeed(String(secret, Charsets.UTF_8)) { seed ->
-                    val sk = Hd.solSeed(seed)
-                    try {
-                        Sol.sign(message, sk, address)
-                    } finally {
-                        sk.wipe()
-                    }
-                }
-                WalletKind.SOL_KEY -> Sol.sign(message, secret, address)
-                WalletKind.EVM_KEY -> throw VaultException(VaultError.NO_SUCH_KEY)
-            }
+            return Sol.sign(message, sk, address)
         } finally {
-            secret.wipe()
+            sk.wipe()
         }
     }
 
@@ -410,6 +432,87 @@ class Vault(
             return info
         } finally {
             secret.wipe()
+        }
+    }
+
+    /** The wallet `id` and the side it lacks; refused while locked, or when it has both (EXISTS). */
+    private fun lacking(id: String): Pair<WalletInfo, WalletKind> {
+        if (key == null) throw VaultException(VaultError.LOCKED)
+        val wallet = public.wallets.firstOrNull { it.id == id } ?: throw VaultException(VaultError.NOT_FOUND)
+        return wallet to (wallet.missingSide ?: throw VaultException(VaultError.EXISTS))
+    }
+
+    /** Seals the key of the side a wallet lacked and gives the wallet that side's address. Wipes `secret`. */
+    private fun attach(wallet: WalletInfo, side: WalletKind, secret: ByteArray, backedUp: Boolean): WalletInfo {
+        try {
+            val k = key ?: throw VaultException(VaultError.LOCKED)
+            val rec = requireRecord()
+            val evm = if (side == WalletKind.EVM_KEY) Evm.address(secret) else null
+            val sol = if (side == WalletKind.SOL_KEY) Sol.address(secret) else null
+            // An address another wallet has would be one wallet listed twice.
+            if (public.wallets.any { (evm != null && it.evm.equals(evm, ignoreCase = true)) || (sol != null && it.sol == sol) }) {
+                throw VaultException(VaultError.DUPLICATE)
+            }
+            val info = wallet.copy(evm = evm ?: wallet.evm, sol = sol ?: wallet.sol, backedUp = wallet.backedUp && backedUp)
+            val added = rec.added + (wallet.id to VaultCrypto.seal(k, secret, aad(rec.kdf, addedRole(wallet.id, side)), random))
+            savePublic(k, public.copy(wallets = public.wallets.map { if (it.id == wallet.id) info else it }), rec.secrets, added)
+            return info
+        } finally {
+            secret.wipe()
+        }
+    }
+
+    /** The side added later to a wallet made from one key, once it has one. */
+    private fun addedSide(w: WalletInfo): WalletKind? = when (w.kind) {
+        WalletKind.PHRASE -> null
+        WalletKind.EVM_KEY -> WalletKind.SOL_KEY.takeIf { w.sol != null }
+        WalletKind.SOL_KEY -> WalletKind.EVM_KEY.takeIf { w.evm != null }
+    }
+
+    private fun exportOf(side: WalletKind): ExportKind = if (side == WalletKind.EVM_KEY) ExportKind.EVM_KEY else ExportKind.SOL_KEY
+
+    private fun addedRole(id: String, side: WalletKind): String = "added|$id|${if (side == WalletKind.EVM_KEY) "evm" else "sol"}"
+
+    /**
+     * One side's key of a wallet: from its phrase, its own key, or the key added later for the
+     * side it lacked. Refused for a side it does not have. The caller wipes it.
+     */
+    private fun sideKey(k: ByteArray, rec: VaultRecord, wallet: WalletInfo, side: WalletKind): ByteArray {
+        if ((if (side == WalletKind.EVM_KEY) wallet.evm else wallet.sol) == null) throw VaultException(VaultError.NO_SUCH_KEY)
+        return when (wallet.kind) {
+            WalletKind.PHRASE -> {
+                val secret = openSecret(k, rec, wallet.id)
+                try {
+                    withSeed(String(secret, Charsets.UTF_8)) { seed -> if (side == WalletKind.EVM_KEY) Hd.evmKey(seed) else Hd.solSeed(seed) }
+                } finally {
+                    secret.wipe()
+                }
+            }
+            side -> openSecret(k, rec, wallet.id)
+            else -> {
+                val sealed = rec.added[wallet.id] ?: throw VaultException(VaultError.CORRUPT)
+                try {
+                    VaultCrypto.open(k, sealed, aad(rec.kdf, addedRole(wallet.id, side)))
+                } catch (_: Exception) {
+                    throw VaultException(VaultError.CORRUPT)
+                }
+            }
+        }
+    }
+
+    /** A recovery phrase's first key on one side; null when the input is not a phrase. The caller wipes it. */
+    private fun phraseSideKey(input: String, side: WalletKind): ByteArray? {
+        if (!Bip39.isValid(input)) return null
+        return withSeed(Bip39.normalize(input)) { seed -> if (side == WalletKind.EVM_KEY) Hd.evmKey(seed) else Hd.solSeed(seed) }
+    }
+
+    /** 32 random bytes that make an EVM key: above zero and below the curve's order. */
+    private fun newEvmKey(): ByteArray {
+        while (true) {
+            val b = ByteArray(32).also(random::nextBytes)
+            val d = BigInteger(1, b)
+            if (d.signum() > 0 && d < Evm.N) return b
+            b.wipe()
         }
     }
 
@@ -443,8 +546,8 @@ class Vault(
     private fun sealPublic(k: ByteArray, kdf: KdfParams, part: PublicPart): Sealed =
         VaultCrypto.seal(k, json.encodeToString(PublicPart.serializer(), part).toByteArray(Charsets.UTF_8), aad(kdf, "public"), random)
 
-    private fun savePublic(k: ByteArray, part: PublicPart, secrets: Map<String, Sealed>) {
-        val rec = requireRecord().copy(public = sealPublic(k, requireRecord().kdf, part), secrets = secrets)
+    private fun savePublic(k: ByteArray, part: PublicPart, secrets: Map<String, Sealed>, added: Map<String, Sealed> = requireRecord().added) {
+        val rec = requireRecord().copy(public = sealPublic(k, requireRecord().kdf, part), secrets = secrets, added = added)
         persist(rec)
         record = rec
         public = part

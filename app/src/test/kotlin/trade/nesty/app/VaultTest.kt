@@ -10,9 +10,12 @@ import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Test
 import trade.nesty.app.data.NestyJson
+import trade.nesty.app.evm.Secp256k1
 import trade.nesty.app.keys.Bip39
 import trade.nesty.app.keys.Evm
 import trade.nesty.app.keys.Hd
+import trade.nesty.app.keys.Sol
+import trade.nesty.app.keys.keccak256
 import trade.nesty.app.vault.ExportKind
 import trade.nesty.app.vault.Fails
 import trade.nesty.app.vault.KdfParams
@@ -25,6 +28,7 @@ import trade.nesty.app.vault.VaultStore
 import trade.nesty.app.vault.WalletKind
 import trade.nesty.app.vault.WatchSigner
 import trade.nesty.app.vault.WatchSolSigner
+import trade.nesty.app.vault.missingSide
 import java.security.SecureRandom
 
 /**
@@ -383,6 +387,93 @@ class VaultTest {
         // And the password still opens it.
         v.unlock(password)
         assertTrue(v.unlocked)
+    }
+
+    @Test
+    fun aKeyWalletGetsANewKeyForTheSideItLacks() {
+        val v = vault().apply { create(password) }
+        val key = sampleKey.getValue("privateKey").jsonPrimitive.content
+        val evm = v.importKey("EVM only", key)
+        assertEquals(WalletKind.SOL_KEY, evm.missingSide)
+        val both = v.createSide(evm.id)
+        // The same wallet, now with a Solana address of its own; the new key waits for its backup.
+        assertEquals(evm.id, both.id)
+        assertEquals(WalletKind.EVM_KEY, both.kind)
+        assertEquals(evm.evm, both.evm)
+        assertTrue(Sol.isAddress(both.sol!!))
+        assertNull(both.missingSide)
+        assertFalse(both.backedUp)
+        assertEquals(listOf(ExportKind.EVM_KEY, ExportKind.SOL_KEY), v.exportKinds(both))
+        assertEquals(ExportKind.SOL_KEY, v.firstExport(both))
+        refused(VaultError.EXISTS) { v.createSide(evm.id) }
+        refused(VaultError.EXISTS) { v.importSide(evm.id, phrase(0, "solSecretBase58")) }
+        // Both sides sign: the EVM key as before, the new key for its own address.
+        val hash = keccak256("a trade".toByteArray())
+        assertEquals(evm.evm!!.lowercase(), Secp256k1.recoverAddress(hash, v.signEvm(both.id, both.evm!!, hash))?.lowercase())
+        assertEquals(64, v.signSol(both.id, both.sol!!, ByteArray(10)).size)
+        // Showing the EVM key is no backup of the new key; showing the new key is.
+        assertEquals(key, v.export(password, both.id, ExportKind.EVM_KEY))
+        assertFalse(v.wallets().single().backedUp)
+        val made = Sol.parseSecretKey(v.export(password, both.id, ExportKind.SOL_KEY))!!
+        assertEquals(both.sol, Sol.address(made))
+        made.fill(0)
+        assertTrue(v.wallets().single().backedUp)
+        assertEquals(ExportKind.EVM_KEY, v.firstExport(v.wallets().single()))
+
+        // A Solana key's wallet gets a new EVM key the same way.
+        val sol = v.importKey("Sol only", phrase(0, "solSecretBase58"))
+        val withEvm = v.createSide(sol.id)
+        assertTrue(Evm.isAddress(withEvm.evm!!))
+        assertEquals(sol.sol, withEvm.sol)
+        assertEquals(withEvm.evm!!.lowercase(), Secp256k1.recoverAddress(hash, v.signEvm(sol.id, withEvm.evm!!, hash))?.lowercase())
+        assertEquals(phrase(0, "solSecretBase58"), v.export(password, sol.id, ExportKind.SOL_KEY))
+        val evmKey = Evm.parsePrivateKey(v.export(password, sol.id, ExportKind.EVM_KEY))!!
+        assertEquals(withEvm.evm, Evm.address(evmKey))
+        evmKey.fill(0)
+
+        // It is in the file: another start of the app has both, and still signs with them.
+        val again = vault().apply { unlock(password) }
+        assertEquals(listOf(both.sol, withEvm.sol), again.wallets().map { it.sol })
+        assertEquals(64, again.signSol(both.id, both.sol!!, ByteArray(10)).size)
+        again.lock()
+        refused(VaultError.LOCKED) { again.createSide(both.id) }
+    }
+
+    @Test
+    fun theSideItLacksCanBeTheUsersOwnKeyOrPhrase() {
+        val v = vault().apply { create(password) }
+        // A Solana key's wallet takes an EVM key for its EVM side, and nothing else.
+        val sol = v.importKey("Sol", phrase(0, "solSecretBase58"))
+        refused(VaultError.BAD_KEY) { v.importSide(sol.id, phrase(1, "solSecretBase58")) }
+        refused(VaultError.BAD_KEY) { v.importSide(sol.id, "0x1234") }
+        refused(VaultError.BAD_KEY) { v.importSide(sol.id, "abandon abandon abandon") }
+        val key = sampleKey.getValue("privateKey").jsonPrimitive.content
+        val both = v.importSide(sol.id, key)
+        assertEquals(sampleKey.getValue("address").jsonPrimitive.content, both.evm)
+        assertEquals(phrase(0, "solAddress"), both.sol)
+        // The user's own key: backed up already.
+        assertTrue(both.backedUp)
+        assertEquals(key, v.export(password, sol.id, ExportKind.EVM_KEY))
+        assertEquals(phrase(0, "solSecretBase58"), v.export(password, sol.id, ExportKind.SOL_KEY))
+        // Its address is taken now: a wallet of that key alone would be the same wallet twice.
+        refused(VaultError.DUPLICATE) { v.importKey("Again", key) }
+
+        // An EVM key's wallet takes a phrase for its Solana side: the phrase's first Solana
+        // address, whose key alone is kept.
+        val evm = v.importKey("EVM", phrase(2, "evmPrivateKey"))
+        val fromPhrase = v.importSide(evm.id, phrase(3, "mnemonic"))
+        assertEquals(phrase(2, "evmAddress"), fromPhrase.evm)
+        assertEquals(phrase(3, "solAddress"), fromPhrase.sol)
+        assertEquals(phrase(3, "solSecretBase58"), v.export(password, evm.id, ExportKind.SOL_KEY))
+        refused(VaultError.NO_SUCH_KEY) { v.export(password, evm.id, ExportKind.PHRASE) }
+
+        // An address another wallet has is refused, and the wallet stays as it was.
+        v.importPhrase("Phrase", phrase(1, "mnemonic"))
+        val lone = v.importKey("Lone", phrase(0, "evmPrivateKey"))
+        refused(VaultError.DUPLICATE) { v.importSide(lone.id, phrase(1, "solSecretBase58")) }
+        refused(VaultError.DUPLICATE) { v.importSide(lone.id, phrase(3, "mnemonic")) }
+        assertNull(v.wallets().first { it.id == lone.id }.sol)
+        assertEquals(4, v.wallets().size)
     }
 
     @Test

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import trade.nesty.app.evm.Broadcast
@@ -35,6 +36,7 @@ import trade.nesty.app.evm.TradeStatus
 import trade.nesty.app.evm.orNull
 import trade.nesty.app.evm.shortErr
 import trade.nesty.app.sol.HttpSolCall
+import trade.nesty.app.sol.Jito
 import trade.nesty.app.sol.SolAddr
 import trade.nesty.app.sol.SolBroadcast
 import trade.nesty.app.sol.SolBuyRequest
@@ -65,6 +67,13 @@ data class CoinInfo(
     val supply: Double? = null,
     /** Pools the server named for this coin (v4 pool ids, or Solana pool accounts); the engine checks each on chain. */
     val hints: List<String> = emptyList(),
+    /** The coin's tax as its launchpad lists it. */
+    val tax: Tax? = null,
+    /** Whether it trades on its launchpad's curve, whose venue takes that tax inside its quotes. */
+    val onCurve: Boolean = false,
+    /** Its price when the screen read it, and the launchpad it started on: for the trade's page. */
+    val priceUsd: Double? = null,
+    val launchpad: String? = null,
 ) {
     val label: String get() = symbol?.takeIf { it.isNotBlank() } ?: "this coin"
 
@@ -85,6 +94,10 @@ data class CoinInfo(
                 } else {
                     named.filter { POOL_ID.matches(it) }.map { it.lowercase() }.distinct()
                 },
+                tax = coin.tax,
+                onCurve = coin.onCurve,
+                priceUsd = coin.priceUsd?.takeIf { it > 0 && it.isFinite() },
+                launchpad = coin.launchpad,
             )
         }
     }
@@ -138,13 +151,47 @@ class Trading(
     private val solDirect = SolTrader(SolRpc(HttpSolCall(http, urls = SolRpcs.PUBLIC), SolBroadcast(http)), knownSolUsd = { priceOf(Chain.SOLANA) })
 
     val sol = SolTrader(
-        rpc = SolRpc(HttpSolCall(http, api.base.toString()), SolBroadcast(http)),
+        // Trades with a tip go to the block engines only (MEV protection); the rest to the public RPCs.
+        rpc = SolRpc(HttpSolCall(http, api.base.toString()), SolBroadcast(http), SolBroadcast(http, Jito.ENGINES, engines = true)),
         knownSolUsd = { priceOf(Chain.SOLANA) },
         onLanded = { t -> landed(t) },
     )
 
-    /** `extraFeeUsd`: what moving funds here for this buy cost, kept in its cost basis. */
-    private class Pending(val chain: Chain, val info: CoinInfo, val title: String, val price: Double?, val extraFeeUsd: Double = 0.0)
+    /**
+     * A trade being followed. `price`: the chain's coin in dollars when it started. `extraFeeUsd`:
+     * what moving funds here for this buy cost, kept in its cost basis. The rest is for its page.
+     */
+    private class Pending(
+        val chain: Chain,
+        val info: CoinInfo,
+        val title: String,
+        val price: Double?,
+        val tappedAt: Long,
+        val extraFeeUsd: Double = 0.0,
+        val preset: Preset? = null,
+        val presetIndex: Int? = null,
+        /** A buy's amount in dollars. */
+        val usd: Double? = null,
+        val moved: Moved? = null,
+        val byPlan: Boolean = false,
+    ) {
+        /** What the route quoted for it when it started: its price impact and what the venue takes. */
+        @Volatile var quote: Quote? = null
+
+        /** The coin's price then, read in the background when the screen had none. */
+        @Volatile var priceUsd: Double? = info.priceUsd
+        @Volatile var sentAt: Long? = null
+        @Volatile var landedAt: Long? = null
+
+        /** The chain's coin in dollars at its block, once the server read the receipt. */
+        @Volatile var blockNativeUsd: Double? = null
+
+        /** Its newest state. */
+        @Volatile var last: EngineTrade? = null
+    }
+
+    /** Funds moved to the chain for a buy, as its page shows them: the move and its transactions. */
+    data class Moved(val move: FillMove, val txs: List<FillTx>)
 
     fun evmOf(chain: Chain): EvmChain? = if (chain.isEvm) chain.feed.toLongOrNull()?.let { EvmChains.byId(it) } else null
 
@@ -175,8 +222,11 @@ class Trading(
         return null
     }
 
-    /** Sends go to a private relay on this chain, out of the public mempool. */
-    fun mevProtect(chain: Chain): Boolean = evmOf(chain)?.mevRpc != null
+    /**
+     * Sends go out privately on this chain, away from front-runners: a private relay on Ethereum and
+     * BNB Chain, the block engines with a tip on Solana.
+     */
+    fun mevProtect(chain: Chain): Boolean = chain == Chain.SOLANA || evmOf(chain)?.mevRpc != null
 
     /** The chain's own coin from its wrapped coin's market, until a balance read prices it. */
     private val wrappedPrices = mutableStateMapOf<Chain, Double>()
@@ -223,9 +273,21 @@ class Trading(
 
     /**
      * Buys `usd` of a coin from the chain's own balance. Throws TradeRefused when it cannot start.
-     * `extraFeeUsd`: what moving funds to the chain for it cost, added to its network fee.
+     * `presetIndex`: which preset it is (0 is P1). `known`: the quote the screen showed for it, else
+     * one is read beside the send. `moved`: funds moved to the chain for it; their cost joins its
+     * network fee.
      */
-    suspend fun buy(chain: Chain, token: String, usd: Double, preset: Preset, info: CoinInfo, extraFeeUsd: Double = 0.0): StateFlow<EngineTrade> {
+    suspend fun buy(
+        chain: Chain,
+        token: String,
+        usd: Double,
+        preset: Preset,
+        info: CoinInfo,
+        presetIndex: Int? = null,
+        known: Quote? = null,
+        moved: Moved? = null,
+    ): StateFlow<EngineTrade> {
+        val tapped = System.currentTimeMillis()
         val send = if (chain == Chain.SOLANA) solBuyer(token, preset, info) else evmBuyer(chain, token, preset, info)
         if (usd <= 0 || usd.isNaN()) throw TradeRefused("Enter an amount.")
         val price = priceOf(chain) ?: throw TradeRefused("The ${chain.native} price is not read yet. Try again in a moment.")
@@ -236,8 +298,39 @@ class Trading(
             throw TradeRefused("More than your ${chain.title} balance of ${Fmt.usdFull(balance.chains[chain] ?: 0.0)}.")
         }
         val flow = start { send(wei) }
-        follow(flow, Pending(chain, info, "Bought ${Fmt.usdFull(usd)} of ${info.label}", price, extraFeeUsd.coerceAtLeast(0.0)))
+        val p = Pending(
+            chain, info, "Bought ${Fmt.usdFull(usd)} of ${info.label}", price, tapped,
+            extraFeeUsd = moved?.move?.feeUsd?.coerceAtLeast(0.0) ?: 0.0,
+            preset = preset, presetIndex = presetIndex, usd = usd, moved = moved,
+        )
+        p.quote = known
+        follow(flow, p)
+        if (known == null) scope.launch { p.quote = orNull { quoteBuy(chain, token, wei, info) } }
+        readPriceIfNone(p, chain, token)
         return flow
+    }
+
+    /** The coin's price for the trade's page, when the screen that started it had none. Only the coin's address is asked. */
+    private fun readPriceIfNone(p: Pending, chain: Chain, token: String) {
+        if (p.priceUsd != null) return
+        scope.launch {
+            val row = orNull { api.prices(listOf(chain to token)).prices.firstOrNull() }
+            row?.priceUsd?.takeIf { it > 0 && it.isFinite() }?.let { if (p.priceUsd == null) p.priceUsd = it }
+        }
+    }
+
+    /** A sell's quote for the trade's page, read beside the send: its price impact and what the venue takes. */
+    private fun quoteSellBeside(p: Pending, chain: Chain, token: String, flow: StateFlow<EngineTrade>, info: CoinInfo) {
+        val amount = flow.value.swap.amountIn?.takeIf { it.signum() > 0 } ?: return
+        scope.launch {
+            p.quote = orNull {
+                if (chain == Chain.SOLANA) {
+                    sol.quotes(token, Side.SELL, listOf(amount), info.hints).firstOrNull()
+                } else {
+                    evmOf(chain)?.let { engine.quotes(it.id, token.lowercase(), Side.SELL, listOf(amount), info.hints).firstOrNull() }
+                }
+            }
+        }
     }
 
     /** A Solana buy of so many lamports, from the wallet that trades. */
@@ -254,7 +347,8 @@ class Trading(
     }
 
     /** Sells `bps` of the wallet's balance of a coin (10 000: all). The proceeds stay on its chain. */
-    suspend fun sell(chain: Chain, token: String, bps: Int, preset: Preset, info: CoinInfo, title: String): StateFlow<EngineTrade> {
+    suspend fun sell(chain: Chain, token: String, bps: Int, preset: Preset, info: CoinInfo, title: String, presetIndex: Int? = null): StateFlow<EngineTrade> {
+        val tapped = System.currentTimeMillis()
         val share = bps.coerceIn(1, 10_000)
         val flow = if (chain == Chain.SOLANA) {
             val signer = solSigner()
@@ -264,7 +358,10 @@ class Trading(
             val signer = signer()
             start { engine.sell(SellRequest(evm.id, token.lowercase(), share, prefsOf(evm, preset), info.symbol, info.hints), signer, session.ownEvm()) }
         }
-        follow(flow, Pending(chain, info, title, priceOf(chain)))
+        val p = Pending(chain, info, title, priceOf(chain), tapped, preset = preset, presetIndex = presetIndex)
+        follow(flow, p)
+        quoteSellBeside(p, chain, token, flow, info)
+        readPriceIfNone(p, chain, token)
         return flow
     }
 
@@ -312,13 +409,15 @@ class Trading(
     /**
      * What selling `amount` of a coin pays now, in dollars, price impact and tax included; null
      * when nothing sells it. Exit plans measure with it. Throws when the chain could not be read.
+     * A pool's quote leaves out a transfer tax the coin takes on the way in: taken off here.
      */
     suspend fun sellValueUsd(chain: Chain, token: String, amount: BigInteger, info: CoinInfo): Double? {
         if (chain == Chain.SOLANA) return sol.sellValueUsd(token, amount, info.hints)
         val evm = evmOf(chain) ?: return null
-        val out = engine.quotes(evm.id, token.lowercase(), Side.SELL, listOf(amount), info.hints).firstOrNull()?.out ?: return null
+        val q = engine.quotes(evm.id, token.lowercase(), Side.SELL, listOf(amount), info.hints).firstOrNull() ?: return null
         val price = nativeUsd(chain) ?: return null
-        return usdOf(out, chain.decimals, price)
+        val outside = TradeCosts.taxOutside(info.tax?.sell, info.onCurve, q.takeBps)
+        return usdOf(q.out, chain.decimals, price) * (1 - outside)
     }
 
     private val nativeRead = ConcurrentHashMap<Chain, Pair<Long, Double>>()
@@ -345,7 +444,18 @@ class Trading(
      * whether it is the one that trades or not, also while Nesty is locked with the watch kept.
      * The plan says how it went, so the usual note at the bottom of the screen is left out.
      */
-    suspend fun sellForWatch(walletId: String, wallet: String, chain: Chain, token: String, bps: Int, preset: Preset, info: CoinInfo, title: String): StateFlow<EngineTrade> {
+    suspend fun sellForWatch(
+        walletId: String,
+        wallet: String,
+        chain: Chain,
+        token: String,
+        bps: Int,
+        preset: Preset,
+        info: CoinInfo,
+        title: String,
+        presetIndex: Int? = null,
+    ): StateFlow<EngineTrade> {
+        val tapped = System.currentTimeMillis()
         val share = bps.coerceIn(1, 10_000)
         val flow = if (chain == Chain.SOLANA) {
             val signer = session.watchSolSigner(walletId, wallet)
@@ -357,7 +467,10 @@ class Trading(
         }
         quiet += flow.value.id
         byPlan += flow.value.id
-        follow(flow, Pending(chain, info, title, priceOf(chain) ?: nativeUsd(chain)))
+        val p = Pending(chain, info, title, priceOf(chain) ?: nativeUsd(chain), tapped, preset = preset, presetIndex = presetIndex, byPlan = true)
+        follow(flow, p)
+        quoteSellBeside(p, chain, token, flow, info)
+        readPriceIfNone(p, chain, token)
         return flow
     }
 
@@ -393,10 +506,95 @@ class Trading(
     private fun follow(flow: StateFlow<EngineTrade>, p: Pending) {
         pending[flow.value.id] = p
         scope.launch {
-            val t = flow.first { it.status != TradeStatus.WORKING }
+            val t = flow.onEach { now ->
+                p.last = now
+                if (p.sentAt == null && now.swap.hash != null) p.sentAt = System.currentTimeMillis()
+            }.first { it.status != TradeStatus.WORKING }
+            p.last = t
             notesFlow.emit(noteOf(t, p))
+            val chain = chainOf(t)
+            if (chain != null) {
+                // Landed: its entry gets what came after the swap (an approval, the way back to SOL).
+                // Sent and not landed: kept for Activity, with what its network fee was.
+                if (t.swap.status == StepStatus.CONFIRMED) settle(t, chain, p) else t.swap.hash?.let { store.put(failedFill(t, chain, p, it)) }
+            }
             if (t.status != TradeStatus.DONE) pending.remove(t.id)
         }
+    }
+
+    /** A landed trade's entry once the trade ended: every transaction and network fee it paid. */
+    private fun settle(t: EngineTrade, chain: Chain, p: Pending) {
+        val hash = t.swap.hash ?: return
+        store.update(keyOf(chain, t.wallet), hash) { f ->
+            f.copy(feeUsd = withExtra(feeUsd(t, chain, p.blockNativeUsd ?: p.price), p), detail = detailOf(t, chain, p))
+        }
+    }
+
+    private fun failedFill(t: EngineTrade, chain: Chain, p: Pending, hash: String): Fill {
+        val buy = t.side == Side.BUY
+        return Fill(
+            wallet = keyOf(chain, t.wallet),
+            feed = chain.feed,
+            token = keyOf(chain, t.token),
+            symbol = t.symbol ?: p.info.symbol,
+            side = if (buy) "buy" else "sell",
+            tx = hash,
+            at = System.currentTimeMillis(),
+            // What it tried to sell; a buy got nothing.
+            raw = if (buy) "0" else t.swap.amountIn?.toString() ?: "0",
+            decimals = decimalsOf(t, p),
+            usd = if (buy) p.usd else null,
+            feeUsd = withExtra(feeUsd(t, chain, p.price), p),
+            exact = false,
+            detail = detailOf(t, chain, p).copy(error = t.swap.error ?: "Stopped"),
+            failed = true,
+        )
+    }
+
+    /** How a trade was made, for its page. */
+    private fun detailOf(t: EngineTrade, chain: Chain, p: Pending): FillDetail {
+        val buy = t.side == Side.BUY
+        val swap = t.swap
+        val q = p.quote
+        val fees = t.steps.mapNotNull { it.feeWei }
+        val tips = t.steps.mapNotNull { it.tip }
+        val listed = if (buy) p.info.tax?.buy else p.info.tax?.sell
+        // In the order they went out: a buy's way into its pay token first, a sell's approval first.
+        val rank = mapOf(StepKind.FUND to if (buy) 0 else 2, StepKind.APPROVE to if (buy) 2 else 0, StepKind.SWAP to 1)
+        val own = t.steps.sortedBy { rank[it.kind] ?: 1 }.mapNotNull { step ->
+            val hash = step.hash ?: return@mapNotNull null
+            val kind = when (step.kind) {
+                StepKind.SWAP -> if (buy) "buy" else "sell"
+                StepKind.APPROVE -> "approve"
+                StepKind.FUND -> if (buy) "fund" else "back"
+            }
+            FillTx(kind, chain.feed, hash, step.status != StepStatus.FAILED)
+        }
+        return FillDetail(
+            route = t.venue,
+            launchpad = p.info.launchpad,
+            onCurve = p.info.onCurve,
+            preset = p.presetIndex,
+            slippageBps = p.preset?.let { slippageBps(it) },
+            speed = p.preset?.speed,
+            mev = if (mevProtect(chain)) true else null,
+            minOut = swap.minOut?.toString(),
+            impact = q?.priceImpactBps?.coerceAtLeast(0)?.let { it / 10_000.0 },
+            takeBps = q?.takeBps,
+            taxOutside = TradeCosts.taxOutside(listed, p.info.onCurve, q?.takeBps).takeIf { it > 0 },
+            priceUsd = p.priceUsd,
+            nativeUsd = p.blockNativeUsd ?: p.price,
+            native = (if (buy) swap.amountIn else swap.amountOut)?.toString(),
+            payout = t.payout?.symbol,
+            payoutDecimals = t.payout?.decimals,
+            feeRaw = if (fees.isEmpty()) null else fees.fold(BigInteger.ZERO) { a, b -> a + b }.toString(),
+            tipRaw = if (tips.isEmpty()) null else tips.fold(BigInteger.ZERO) { a, b -> a + b }.toString(),
+            move = p.moved?.move,
+            sentMs = p.sentAt?.let { (it - p.tappedAt).coerceAtLeast(0) },
+            confirmMs = p.landedAt?.let { at -> p.sentAt?.takeIf { it <= at }?.let { at - it } },
+            txs = (p.moved?.txs ?: emptyList()) + own,
+            byPlan = p.byPlan,
+        )
     }
 
     private fun decimalsOf(t: EngineTrade, p: Pending?): Int = t.decimals ?: p?.info?.decimals ?: 18
@@ -447,6 +645,7 @@ class Trading(
         val chain = chainOf(t) ?: return
         val hash = t.swap.hash ?: return
         val p = pending[t.id]
+        if (p != null && p.landedAt == null) p.landedAt = System.currentTimeMillis()
         val price = p?.price ?: priceOf(chain)
         estimate(t, chain, hash, p, price)?.let { store.put(it) }
         scope.launch {
@@ -463,7 +662,8 @@ class Trading(
                 if (f.state == "pending") continue
                 // A reading of another coin (a funding leg) is not this trade's entry.
                 if (f.state == "filled" && f.token != null && sameToken(chain, f.token, t.token)) {
-                    store.put(exact(f, t, chain, hash, p, price))
+                    if (p != null) f.nativeUsd?.takeIf { it > 0 }?.let { p.blockNativeUsd = it }
+                    store.put(exact(f, p?.last ?: t, chain, hash, p, price))
                     runCatching { balances.refresh() }
                 }
                 break
@@ -472,10 +672,12 @@ class Trading(
         }
     }
 
-    /** The network fee in dollars: the swap's, and on Solana its step through the pay token too. */
+    /**
+     * The network fee in dollars: every transaction of the trade, the swap and an approval for the
+     * sale on a first buy, on Solana its steps through the pay token too. The sheet counts the same.
+     */
     private fun feeUsd(t: EngineTrade, chain: Chain, price: Double?): Double? {
-        val steps = if (chain == Chain.SOLANA) t.steps else listOf(t.swap)
-        val fees = steps.mapNotNull { it.feeWei }
+        val fees = t.steps.mapNotNull { it.feeWei } + t.steps.mapNotNull { it.tip }
         if (fees.isEmpty() || price == null) return null
         return usdOf(fees.fold(BigInteger.ZERO) { s, f -> s + f }, chain.decimals, price)
     }
@@ -508,6 +710,7 @@ class Trading(
             feeUsd = withExtra(feeUsd(t, chain, price), p),
             mcapUsd = if (usd != null && tokens > 0 && supply != null) usd / tokens * supply else null,
             exact = false,
+            detail = p?.let { detailOf(t, chain, it) },
         )
     }
 
@@ -525,6 +728,8 @@ class Trading(
         feeUsd = withExtra(feeUsd(t, chain, f.nativeUsd ?: price), p),
         mcapUsd = f.mcapUsd,
         exact = true,
+        // The phone's detail stays; one is made here only when there is none yet.
+        detail = if (p != null && store.byTx(keyOf(chain, t.wallet), hash)?.detail == null) detailOf(t, chain, p) else null,
     )
 
     /** The network fee with what moving funds for the trade cost: both are part of what it cost to get in. */
@@ -555,8 +760,8 @@ class Trading(
         return Holding(p, held, priceNow ?: prices[Balances.tokenKey(chain, token)])
     }
 
-    /** The fills of the wallet that trades, newest first: its activity. */
-    fun activity(): List<Fill> = own().flatMap { store.of(it) }.distinct().sortedByDescending { it.at }
+    /** The trades of the wallet that trades, newest first, with those that were sent and did not land: its activity. */
+    fun activity(): List<Fill> = own().flatMap { store.activityOf(it) }.distinct().sortedByDescending { it.at }
 
     /** Prices of the coins of the wallet's positions, read while a screen shows them. */
     suspend fun livePrices() {
@@ -607,7 +812,23 @@ class Trading(
             },
         )
 
-        fun solPrefsOf(preset: Preset) = SolPrefs(slippageBps = slippageBps(preset), priorityLamports = priorityLamports(preset.speed))
+        /**
+         * Solana's tip to the block engine per trade transaction at each speed, on top of the
+         * priority fee: 0.00001, 0.00005 and 0.0002 SOL.
+         */
+        fun tipLamports(speed: String): BigInteger = BigInteger.valueOf(
+            when (speed) {
+                "Normal" -> 10_000L
+                "Turbo" -> 200_000L
+                else -> 50_000L
+            },
+        )
+
+        fun solPrefsOf(preset: Preset) = SolPrefs(
+            slippageBps = slippageBps(preset),
+            priorityLamports = priorityLamports(preset.speed),
+            tipLamports = tipLamports(preset.speed),
+        )
 
         /** A coin's address as a fill keeps it: EVM addresses lowercase, Solana ones as they are. */
         fun keyOf(chain: Chain, address: String): String = if (chain == Chain.SOLANA) address else address.lowercase()

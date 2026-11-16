@@ -69,8 +69,11 @@ import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
 import trade.nesty.app.vault.ExportKind
 import trade.nesty.app.vault.Vault
+import trade.nesty.app.vault.VaultError
 import trade.nesty.app.vault.VaultException
 import trade.nesty.app.vault.WalletInfo
+import trade.nesty.app.vault.WalletKind
+import trade.nesty.app.vault.missingSide
 
 /** Where a wallet lives, as the boards write it: both short addresses, or the one side it has. */
 fun whereOf(w: WalletInfo): String = when {
@@ -114,6 +117,46 @@ fun secretNote(looks: SecretLooks, phrase: Boolean, words: Int): String = when (
     SecretLooks.BAD_KEY -> "This is not an EVM or Solana key"
 }
 
+/** "EVM" or "Solana": the side a wallet lacks, as the screens name it. */
+fun sideName(side: WalletKind): String = if (side == WalletKind.EVM_KEY) "EVM" else "Solana"
+
+/** The same with its article: "an EVM", "a Solana". */
+fun aSideName(side: WalletKind): String = if (side == WalletKind.EVM_KEY) "an EVM" else "a Solana"
+
+/** What a typed or pasted secret is, for the side a wallet lacks: that side's key, or a phrase. */
+enum class SideLooks { EMPTY, KEY, PHRASE, OTHER_KEY, SHORT_PHRASE, BAD_PHRASE, BAD }
+
+fun sideLooks(secret: String, side: WalletKind): SideLooks {
+    if (secret.isBlank()) return SideLooks.EMPTY
+    val evm = Evm.parsePrivateKey(secret)?.also { it.wipe() } != null
+    val sol = !evm && Sol.parseSecretKey(secret)?.also { it.wipe() } != null
+    if (evm || sol) return if (evm == (side == WalletKind.EVM_KEY)) SideLooks.KEY else SideLooks.OTHER_KEY
+    val words = Bip39.wordCount(secret)
+    return when {
+        Bip39.isValid(secret) -> SideLooks.PHRASE
+        words == 12 || words == 24 -> SideLooks.BAD_PHRASE
+        // A phrase being typed: more than one word, or a first word of the list.
+        !secret.trim().startsWith("[") && (words > 1 || Bip39.normalize(secret) in Bip39.words) -> SideLooks.SHORT_PHRASE
+        else -> SideLooks.BAD
+    }
+}
+
+fun sideNote(looks: SideLooks, side: WalletKind, words: Int): String {
+    val name = sideName(side)
+    val aName = aSideName(side)
+    val other = if (side == WalletKind.EVM_KEY) WalletKind.SOL_KEY else WalletKind.EVM_KEY
+    val anOther = aSideName(other)
+    return when (looks) {
+        SideLooks.EMPTY -> "${aName.replaceFirstChar { it.uppercase() }} key, or a recovery phrase for its first $name address"
+        SideLooks.KEY -> "$name key. This wallet gets its address."
+        SideLooks.PHRASE -> "$words words. This wallet gets the phrase's first $name address."
+        SideLooks.OTHER_KEY -> "This is $anOther key. This wallet has its ${sideName(other)} address already."
+        SideLooks.SHORT_PHRASE -> "${Fmt.counted(words.toLong(), "word")} so far. A phrase has 12 or 24."
+        SideLooks.BAD_PHRASE -> "These words do not make a recovery phrase. Check each one."
+        SideLooks.BAD -> "This is not $aName key"
+    }
+}
+
 @Composable
 fun WalletsScreen(startAdding: Boolean) {
     val nav = LocalNavigator.current
@@ -125,6 +168,9 @@ fun WalletsScreen(startAdding: Boolean) {
     val active = session.active
     var adding by rememberSaveable { mutableStateOf(startAdding) }
     var backingUp by rememberSaveable { mutableStateOf<String?>(null) }
+    // The wallet whose missing side is being added, and how: a new key, or the user's own.
+    var addingSide by rememberSaveable { mutableStateOf<String?>(null) }
+    var sideImport by rememberSaveable { mutableStateOf(false) }
     WhileShown(wallets.size) { balances.readAll() }
 
     Column(Modifier.fillMaxSize().imePadding()) {
@@ -192,6 +238,25 @@ fun WalletsScreen(startAdding: Boolean) {
                     // The form opens right under the wallet it is about.
                     if (backingUp == w.id) {
                         Box(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) { ExportForm(w, onClose = { backingUp = null }) }
+                    }
+                    // A wallet made from one key: the side it lacks, made here or imported, in the row's place.
+                    val missing = w.missingSide
+                    if (missing != null && addingSide == w.id) {
+                        Box(Modifier.padding(start = 12.dp, end = 12.dp, bottom = 12.dp)) {
+                            SideForm(w, missing, sideImport, onClose = { addingSide = null }) { made -> scope.launch { balances.read(made) } }
+                        }
+                    } else if (missing != null) {
+                        MissingSideRow(
+                            missing,
+                            onCreate = {
+                                sideImport = false
+                                addingSide = w.id
+                            },
+                            onImport = {
+                                sideImport = true
+                                addingSide = w.id
+                            },
+                        )
                     }
                     if (!on) {
                         Box(
@@ -330,19 +395,8 @@ private fun AddWalletForm(count: Int, canCancel: Boolean, onClose: () -> Unit) {
                 Text(label, style = text(13, color = Ink.muted))
                 val note = secretNote(looks, phrase, Bip39.wordCount(secret))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextBox(secret, { secret = it }, label, Modifier.weight(1f), secret = true, bad = note.takeIf { wrong })
-                    Box(
-                        Modifier
-                            .height(48.dp)
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(Ink.raised)
-                            .border(1.dp, Ink.line3, RoundedCornerShape(12.dp))
-                            .clickable(role = Role.Button) { SecretClipboard.paste(context)?.let { secret = it.trim() } }
-                            .padding(horizontal = 14.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text("Paste", style = text(14, FontWeight.Bold))
-                    }
+                    TextBox(secret, { secret = it; problem = null }, label, Modifier.weight(1f), secret = true, bad = note.takeIf { wrong })
+                    PasteButton { SecretClipboard.paste(context)?.let { secret = it.trim(); problem = null } }
                 }
                 Text(note, style = text(13, color = if (wrong) Ink.pinkSoft else Ink.muted, lineHeight = 18.sp), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
             }
@@ -365,6 +419,126 @@ private fun AddWalletForm(count: Int, canCancel: Boolean, onClose: () -> Unit) {
             }
             GreenButton(label, add, Modifier.weight(2f), solid = ready, fontSize = 16)
         }
+    }
+}
+
+/** A wallet made from one key: the side it lacks, and the two ways to add it. */
+@Composable
+private fun MissingSideRow(side: WalletKind, onCreate: () -> Unit, onImport: () -> Unit) {
+    val name = sideName(side)
+    val aName = aSideName(side)
+    Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 6.dp, bottom = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("Add $aName address", style = text(13, color = Ink.text2, lineHeight = 18.sp), modifier = Modifier.weight(1f))
+        for ((label, does, onClick) in listOf(
+            Triple("Create", "Create a new $name address", onCreate),
+            Triple("Import", "Import $aName key", onImport),
+        )) {
+            Box(
+                Modifier
+                    .heightIn(min = 48.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .clickable(onClickLabel = does, role = Role.Button, onClick = onClick)
+                    .padding(horizontal = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(label, style = text(14, FontWeight.Bold, Ink.green))
+            }
+        }
+    }
+}
+
+/**
+ * Adds the side a wallet made from one key lacks, under its row: a new key made and kept here
+ * (backed up after), or the user's own key or recovery phrase for that side.
+ */
+@Composable
+private fun SideForm(wallet: WalletInfo, side: WalletKind, importing: Boolean, onClose: () -> Unit, onAdded: (WalletInfo) -> Unit) {
+    val session = AppGraph.session
+    val toasts = LocalToasts.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val name = sideName(side)
+    // A secret is never put in saved state: it lives in this form only.
+    var secret by remember { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var problem by remember { mutableStateOf<String?>(null) }
+    if (importing) SecureWindow()
+
+    val looks = remember(secret, side) { sideLooks(secret, side) }
+    val wrong = looks == SideLooks.BAD || looks == SideLooks.OTHER_KEY || looks == SideLooks.BAD_PHRASE || looks == SideLooks.SHORT_PHRASE
+    val ready = !busy && (!importing || looks == SideLooks.KEY || looks == SideLooks.PHRASE)
+    val go = {
+        if (ready) {
+            busy = true
+            problem = null
+            scope.launch {
+                try {
+                    val made = if (importing) session.importSide(wallet.id, secret) else session.createSide(wallet.id)
+                    secret = ""
+                    toasts.show("${made.name} has ${aSideName(side)} address", if (importing) "Its balance is being read." else "Back up its new key before you send funds to it.")
+                    onAdded(made)
+                    onClose()
+                } catch (e: VaultException) {
+                    problem = if (e.code == VaultError.DUPLICATE) "This address is in another of your wallets" else e.say()
+                } catch (_: Exception) {
+                    problem = "That did not work. Try again."
+                } finally {
+                    busy = false
+                }
+            }
+        }
+    }
+
+    val shape = RoundedCornerShape(14.dp)
+    Column(Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line2, shape).padding(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text("Add ${aSideName(side)} address", style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+        if (!importing) {
+            Text("It gets a new key, made and kept on this phone. Back it up before you send funds to it.", style = text(13, color = Ink.text2, lineHeight = 19.sp))
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                val label = "$name key or recovery phrase"
+                val note = sideNote(looks, side, Bip39.wordCount(secret))
+                Text(label, style = text(13, color = Ink.muted))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextBox(secret, { secret = it; problem = null }, label, Modifier.weight(1f), secret = true, bad = note.takeIf { wrong })
+                    PasteButton { SecretClipboard.paste(context)?.let { secret = it.trim(); problem = null } }
+                }
+                Text(note, style = text(13, color = if (wrong) Ink.pinkSoft else Ink.muted, lineHeight = 18.sp), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
+            }
+            Danger("It stays on this phone and is never sent anywhere. Nesty asks for it only here, never in a message or on a website.")
+        }
+        problem?.let { Text(it, style = text(14, FontWeight.SemiBold, Ink.pinkSoft), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(12.dp)).border(1.dp, Ink.line3, RoundedCornerShape(12.dp)).clickable(role = Role.Button, onClick = onClose),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("Cancel", style = text(15, FontWeight.Bold))
+            }
+            val label = when {
+                busy -> if (importing) "Importing…" else "Creating…"
+                importing -> "Import"
+                else -> "Create"
+            }
+            GreenButton(label, go, Modifier.weight(2f), solid = ready, height = 48.dp, fontSize = 15)
+        }
+    }
+}
+
+/** Fills a secret's box from the clipboard. */
+@Composable
+private fun PasteButton(onPaste: () -> Unit) {
+    Box(
+        Modifier
+            .height(48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(Ink.raised)
+            .border(1.dp, Ink.line3, RoundedCornerShape(12.dp))
+            .clickable(role = Role.Button, onClick = onPaste)
+            .padding(horizontal = 14.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("Paste", style = text(14, FontWeight.Bold))
     }
 }
 
@@ -412,6 +586,9 @@ private fun exportName(kind: ExportKind): String = when (kind) {
     ExportKind.SOL_KEY -> "Solana key"
 }
 
+/** The same inside a sentence: "recovery phrase", "EVM key", "Solana key". */
+private fun exportNameInLine(kind: ExportKind): String = if (kind == ExportKind.PHRASE) "recovery phrase" else exportName(kind)
+
 /**
  * Shows one secret of a wallet after its password: for a backup, or to move the wallet. A key
  * shows its last four characters only and is copied; a phrase shows its words, to write down.
@@ -423,7 +600,8 @@ fun ExportForm(wallet: WalletInfo, onClose: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val kinds = remember(wallet) { session.exportKinds(wallet) }
-    var kind by remember(wallet.id) { mutableStateOf(kinds.first()) }
+    // A key made here for a side added later is the one a backup waits for: it shows first.
+    var kind by remember(wallet.id) { mutableStateOf(session.firstExport(wallet)) }
     var password by remember { mutableStateOf("") }
     // Never in saved state, and gone as soon as the form is.
     var shown by remember { mutableStateOf<String?>(null) }
@@ -469,10 +647,10 @@ fun ExportForm(wallet: WalletInfo, onClose: () -> Unit) {
                 ) {
                     Text("Cancel", style = text(15, FontWeight.Bold))
                 }
-                GreenButton(if (busy) "Checking…" else "Show ${exportName(kind).lowercase().replace("evm", "EVM")}", reveal, Modifier.weight(2f), solid = password.isNotEmpty() && !busy, height = 48.dp, fontSize = 15)
+                GreenButton(if (busy) "Checking…" else "Show ${exportNameInLine(kind)}", reveal, Modifier.weight(2f), solid = password.isNotEmpty() && !busy, height = 48.dp, fontSize = 15)
             }
         } else {
-            Text("${wallet.name}: ${exportName(kind).lowercase().replace("evm", "EVM")}", style = text(13, color = Ink.muted))
+            Text("${wallet.name}: ${exportNameInLine(kind)}", style = text(13, color = Ink.muted))
             if (kind == ExportKind.PHRASE) {
                 // Words are for paper: three across, each with its place in the phrase.
                 val words = secret.split(" ")

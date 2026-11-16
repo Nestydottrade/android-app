@@ -97,6 +97,11 @@ data class SolPrefs(
     val priorityLamports: BigInteger,
     /** The most that fee may cost, in dollars (the extension's default). */
     val maxGasUsd: Double = 10.0,
+    /**
+     * A tip to the block engine for a private send (MEV protection), in lamports, in each trade
+     * transaction. Zero sends through the public RPCs, untipped.
+     */
+    val tipLamports: BigInteger = BigInteger.ZERO,
 )
 
 data class SolBuyRequest(
@@ -647,7 +652,7 @@ class SolTrader(
         val m = orNull { market(mint, VENUE_TTL_MS, hints) } ?: return null
         if (m.routes.isEmpty()) return null
         val txs = if (m.funding != null) 2L else 1L
-        return (prefs.priorityLamports + SIGNATURE_LAMPORTS) * BigInteger.valueOf(txs)
+        return (prefs.priorityLamports + SIGNATURE_LAMPORTS + prefs.tipLamports) * BigInteger.valueOf(txs)
     }
 
     // ── buy ─────────────────────────────────────────────────────────────────────────
@@ -689,7 +694,9 @@ class SolTrader(
             val stepAt = t.add(TradeStep(StepKind.FUND, amountIn = req.amount))
             scope.launch { fundedBuy(t, 0, stepAt, FundedBuy(wallet, req.mint, pay, solPay(solUsd), req.amount, req.prefs, maxPriority)) }
         } else {
-            val ixs = build.build(Side.BUY, wallet.address, req.amount, minAfter(best.out, req.prefs.slippageBps))
+            val least = minAfter(best.out, req.prefs.slippageBps)
+            t.set(0) { it.copy(minOut = least) }
+            val ixs = build.build(Side.BUY, wallet.address, req.amount, least)
             scope.launch {
                 trade(t, 0, TradeJob(wallet, req.mint, Side.BUY, best.route, req.amount, pay, ixs, req.prefs, req.amount, maxPriority, spend = ixs.spend, landed = true))
             }
@@ -758,7 +765,9 @@ class SolTrader(
             val coin = SolRoutes.bestRoute(priced, Side.BUY, got)
             val buy = coin?.let { SolRoutes.tradeBuilder(it.route, random) }
             if (coin == null || buy == null) return fail("No route for this coin right now: the $sym stays in the wallet.")
-            val ixs = buy.build(Side.BUY, p.wallet.address, got, minAfter(coin.out, p.prefs.slippageBps))
+            val least = minAfter(coin.out, p.prefs.slippageBps)
+            t.set(i) { it.copy(minOut = least) }
+            val ixs = buy.build(Side.BUY, p.wallet.address, got, least)
             // The SOL step was held to the amount; this spends exactly what that step bought.
             trade(t, i, TradeJob(p.wallet, p.mint, Side.BUY, coin.route, got, p.pay, ixs, p.prefs, got, p.maxPriority, spend = ixs.spend, landed = true))
         } catch (e: CancellationException) {
@@ -803,7 +812,10 @@ class SolTrader(
         )
         val stepAt = if (funding != null) t.add(TradeStep(StepKind.FUND)) else null
         val maxPriority = maxPriority(req.prefs, solUsd)
-        val ixs = build.build(Side.SELL, wallet.address, amount, minAfter(best.out, req.prefs.slippageBps))
+        val least = minAfter(best.out, req.prefs.slippageBps)
+        // Through its token the swap pays that token, then SOL arrives: its least is not in SOL.
+        if (stepAt == null) t.set(0) { it.copy(minOut = least) }
+        val ixs = build.build(Side.SELL, wallet.address, amount, least)
         val unfund: ((TxMeta?) -> Unit)? = if (stepAt == null) {
             null
         } else {
@@ -907,6 +919,7 @@ class SolTrader(
             maxSpend = p.maxSpend,
             maxPriorityLamports = p.maxPriority,
             payUnit = PayUnit(p.pay.symbol, p.pay.decimals),
+            maxTipLamports = p.prefs.tipLamports,
         )
         runLeg(
             t,
@@ -1003,14 +1016,21 @@ class SolTrader(
             // A few random units make every transaction unique: an identical second click in the
             // same blockhash window would otherwise have the same signature and be dropped.
             var units = minOf(Spl.MAX_COMPUTE_UNITS, baseUnits + random(256))
-            fun withBudget(u: Int) = listOf(Spl.setComputeUnitLimit(u), Spl.setComputeUnitPrice(microLamports(fee, u))) + instructions
+            // A private send tips the block engine, with the marker against sandwiches when the
+            // transaction still fits with it (a two-hop route is near the size limit).
+            val tip = prefs.tipLamports.takeIf { it.signum() > 0 }
+            val tipTo = Jito.TIP_ACCOUNTS[random(Jito.TIP_ACCOUNTS.size)]
+            var marked = tip != null
+            fun withBudget(u: Int) = listOf(Spl.setComputeUnitLimit(u), Spl.setComputeUnitPrice(microLamports(fee, u))) + instructions +
+                listOfNotNull(tip?.let { Jito.tip(wallet.address, it, tipTo, marked) })
+            if (marked && !fits(wallet.address, withBudget(Spl.MAX_COMPUTE_UNITS))) marked = false
             var ixs = withBudget(units)
             val verdict = validate(ixs)
             if (!verdict.ok) return LegSubmit.Blocked(verdict.actions)
 
             val (bh, short) = coroutineScope {
                 val b = async { blockhash() }
-                val s = async { shortfall?.invoke(fee) }
+                val s = async { shortfall?.invoke(fee + (tip ?: BigInteger.ZERO)) }
                 b.await() to s.await()
             }
             if (short != null) return LegSubmit.Skipped(short)
@@ -1031,8 +1051,8 @@ class SolTrader(
             val raw = SolTx.serializeTransaction(message, listOf(signature))
             val sig = Base58.encode(signature)
             onSending(sig)
-            rpc.broadcast(raw)
-            return LegSubmit.Out(Sent(raw, sig, ixs, bh.lastValidBlockHeight))
+            rpc.broadcast(raw, privately = tip != null)
+            return LegSubmit.Out(Sent(raw, sig, ixs, bh.lastValidBlockHeight, privately = tip != null, tip = tip))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -1114,7 +1134,12 @@ class SolTrader(
         return if ((accs.getOrNull(0)?.lamports ?: BigInteger.ZERO) < need) "Insufficient SOL for fees: about ${units(need, 9)} needed." else null
     }
 
-    private class Sent(val raw: ByteArray, val sig: String, val ixs: List<Instruction>, val lastValid: Long)
+    /** A sent transaction: `privately` through the block engines, with its `tip`. */
+    private class Sent(val raw: ByteArray, val sig: String, val ixs: List<Instruction>, val lastValid: Long, val privately: Boolean = false, val tip: BigInteger? = null)
+
+    /** Whether these instructions make a transaction small enough to send. */
+    private fun fits(wallet: String, ixs: List<Instruction>): Boolean =
+        runCatching { SolTx.serializeTransaction(SolTx.compileMessage(wallet, ixs, SolAddr.SYSTEM_PROGRAM), emptyList()) }.isSuccess
 
     private sealed interface SigEnd {
         class Landed(val err: JsonElement?) : SigEnd
@@ -1132,7 +1157,7 @@ class SolTrader(
             is SigEnd.Landed -> {
                 val err = end.err
                 if (err != null) t.fail(i, SolErrors.explain(err, p.ixs)) else t.set(i) { it.copy(status = StepStatus.CONFIRMED, error = null) }
-                fill(t, i, p.sig, job)
+                fill(t, i, p.sig, job, p.tip)
             }
             SigEnd.Expired -> {
                 t.fail(i, EXPIRED)
@@ -1164,7 +1189,7 @@ class SolTrader(
             val n = now()
             if (!late && n - lastSend >= REBROADCAST_MS) {
                 lastSend = n
-                scope.launch { orNull { rpc.broadcast(p.raw) } }
+                scope.launch { orNull { rpc.broadcast(p.raw, p.privately) } }
             }
             if (late || n - heightAt >= HEIGHT_CHECK_MS) {
                 heightAt = n
@@ -1179,15 +1204,15 @@ class SolTrader(
         return SigEnd.Timeout
     }
 
-    /** The fee the transaction paid, and what it delivered. Best effort. */
-    private suspend fun fill(t: Ticket, i: Int, sig: String, job: LegJob) {
+    /** The fee the transaction paid (and its tip, when it landed with one), and what it delivered. Best effort. */
+    private suspend fun fill(t: Ticket, i: Int, sig: String, job: LegJob, tip: BigInteger? = null) {
         var landed: TxMeta? = null
         for (attempt in 0 until FILL_TRIES) {
             val meta = orNull { rpc.getTransactionMeta(sig) }
             if (meta != null) {
                 val confirmed = t.step(i).status == StepStatus.CONFIRMED
                 val out = if (confirmed) job.delivered?.invoke(meta)?.takeIf { it.signum() > 0 } else null
-                t.set(i) { it.copy(feeWei = meta.fee, amountOut = out ?: it.amountOut) }
+                t.set(i) { it.copy(feeWei = meta.fee, tip = if (confirmed) tip else null, amountOut = out ?: it.amountOut) }
                 if (confirmed) landed = meta
                 break
             }

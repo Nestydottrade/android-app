@@ -86,15 +86,16 @@ fun chainBalanceText(chain: Chain): String {
 }
 
 /**
- * The bar under a coin: one-tap buys, or selling and buying more once the wallet holds it. A
- * coin this build cannot trade says so instead. Custom opens the buy sheet, and so does a
- * one-tap buy the chain's own balance cannot pay: the sheet says what is moved there first.
+ * The bar under a coin: one-tap buys, or selling and buying more once the wallet holds it. The
+ * one-tap buttons show only once the user picks Buy, Sell or Buy more, so a stray tap trades
+ * nothing. A coin this build cannot trade says so instead. Custom opens the buy sheet, and so
+ * does a one-tap buy the chain's own balance cannot pay: the sheet says what is moved there first.
  */
 @Composable
-fun TradeBar(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChecks: () -> Unit, openBuy: Boolean = false) {
+fun TradeBar(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChecks: () -> Unit, openBuy: Boolean = false, openUsd: Double? = null) {
     val trading = AppGraph.trading
     var sheet by rememberSaveable { mutableStateOf(openBuy) }
-    var sheetUsd by rememberSaveable { mutableStateOf<Double?>(null) }
+    var sheetUsd by rememberSaveable { mutableStateOf(if (openBuy) openUsd else null) }
     if (trading.needsUpdate(chain, coin)) {
         LockedBar()
         return
@@ -134,7 +135,13 @@ private fun LockedBar() {
 @Composable
 private fun BuyBar(chain: Chain, token: String, coin: Coin, onCustom: (Double?) -> Unit) {
     val nav = LocalNavigator.current
+    var open by rememberSaveable { mutableStateOf(false) }
     BottomBarFrame {
+        if (!open) {
+            val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: "this coin"
+            GreenButton("Buy $symbol", onClick = { open = true }, modifier = Modifier.fillMaxWidth(), solid = true, fontSize = 16)
+            return@BottomBarFrame
+        }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Buy", style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
             Row(Modifier.clickable(role = Role.Button) { nav.tab(Route.Portfolio) }, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -147,17 +154,18 @@ private fun BuyBar(chain: Chain, token: String, coin: Coin, onCustom: (Double?) 
     }
 }
 
-/** $10, $25 and $50 at one tap with P1; Custom for any amount and preset. */
+/** The quick buy amounts at one tap with P1; Custom for any amount and preset. */
 @Composable
 private fun BuyButtons(chain: Chain, token: String, coin: Coin, onCustom: (Double?) -> Unit) {
     val toasts = LocalToasts.current
     val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: "this coin"
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        for (usd in listOf(10, 25, 50)) {
+        for (usd in AppGraph.settings.quickAmounts) {
             GreenButton(
-                "$$usd",
+                quickLabel(usd),
                 { if (shortOn(chain, usd.toDouble())) onCustom(usd.toDouble()) else QuickTrade.buy(toasts, chain, token, usd.toDouble(), coin.symbol, coin) },
                 Modifier.weight(1f).semantics { contentDescription = "Buy $$usd of $symbol" },
+                fontSize = 16,
             )
         }
         Box(
@@ -169,20 +177,25 @@ private fun BuyButtons(chain: Chain, token: String, coin: Coin, onCustom: (Doubl
                 .clickable(onClickLabel = "Choose an amount", role = Role.Button) { onCustom(null) },
             contentAlignment = Alignment.Center,
         ) {
-            Text("Custom", style = text(15, FontWeight.Bold))
+            Text("Custom", style = text(14, FontWeight.Bold), maxLines = 1)
         }
     }
 }
+
+/** $25, $1000, $25.0K: a quick buy amount on its button. */
+private fun quickLabel(usd: Int): String = if (usd < 10_000) "$$usd" else Fmt.usd(usd.toDouble())
 
 /** Selling the wallet's tokens, or buying more: one tap each, with P1. */
 @Composable
 private fun HoldingBar(chain: Chain, token: String, coin: Coin, holding: Holding, onCustom: (Double?) -> Unit) {
     val toasts = LocalToasts.current
-    var mode by rememberSaveable { mutableIntStateOf(0) }
+    // Neither side picked: one-tap sells and buys show once the user picks one.
+    var mode by rememberSaveable { mutableIntStateOf(NO_SIDE) }
     val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: holding.position.symbol ?: "this coin"
     val preset = AppGraph.settings.presets[0]
     BottomBarFrame {
-        SideToggle(mode) { mode = it }
+        SideToggle(mode) { mode = if (mode == it) NO_SIDE else it }
+        if (mode == NO_SIDE) return@BottomBarFrame
         if (mode == 0) {
             val value = holding.value
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -223,6 +236,10 @@ private fun HoldingBar(chain: Chain, token: String, coin: Coin, holding: Holding
     }
 }
 
+/** The holding bar before Sell or Buy more is picked. */
+private const val NO_SIDE = -1
+
+/** Sell or Buy more; a tap on the picked side puts its buttons away. */
 @Composable
 private fun SideToggle(mode: Int, onPick: (Int) -> Unit) {
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Ink.raised), horizontalArrangement = Arrangement.spacedBy(2.dp)) {

@@ -13,6 +13,7 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
 import trade.nesty.app.data.CoinInfo
 import trade.nesty.app.data.Preset
+import trade.nesty.app.data.Trading
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.Toasts
 
@@ -34,10 +35,19 @@ object QuickTrade {
     /** Coins with a trade still starting. A second tap on one waits for the first to go out. */
     private val starting = HashSet<String>()
 
+    /** A trade that cannot start. A wallet without this chain's side gets the way to add it. */
+    private fun refuse(toasts: Toasts, title: String, why: String) {
+        if (why == Trading.NO_SOL || why == Trading.NO_EVM) {
+            toasts.show(title, why, bad = true, action = "Add") { AppGraph.pendingLink = AlertLink(AlertLink.WALLETS) }
+        } else {
+            toasts.show(title, why, bad = true)
+        }
+    }
+
     fun buy(toasts: Toasts, chain: Chain, token: String, usd: Double, symbol: String?, coin: Coin? = null) {
         val trading = AppGraph.trading
         trading.cannotTrade(chain)?.let {
-            toasts.show("Buy not sent", it, bad = true)
+            refuse(toasts, "Buy not sent", it)
             return
         }
         val key = "buy:${chain.feed}:${token.lowercase()}"
@@ -53,7 +63,7 @@ object QuickTrade {
                     return@launch
                 }
                 val info = read?.let { CoinInfo.of(it) } ?: CoinInfo(symbol = symbol)
-                withContext(Dispatchers.Default) { trading.buy(chain, token, usd, preset, info) }
+                withContext(Dispatchers.Default) { trading.buy(chain, token, usd, preset, info, presetIndex = 0) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -68,7 +78,7 @@ object QuickTrade {
     fun sell(toasts: Toasts, chain: Chain, token: String, bps: Int, coin: Coin?, doing: String, done: String) {
         val trading = AppGraph.trading
         trading.cannotTrade(chain)?.let {
-            toasts.show("Sell not sent", it, bad = true)
+            refuse(toasts, "Sell not sent", it)
             return
         }
         val key = "sell:${chain.feed}:${token.lowercase()}"
@@ -78,7 +88,7 @@ object QuickTrade {
         scope.launch {
             try {
                 val info = coin?.let { CoinInfo.of(it) } ?: coinInfo(chain, token, null)
-                withContext(Dispatchers.Default) { trading.sell(chain, token, bps, preset, info, done) }
+                withContext(Dispatchers.Default) { trading.sell(chain, token, bps, preset, info, done, presetIndex = 0) }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

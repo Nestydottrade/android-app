@@ -77,6 +77,7 @@ fun routeOf(link: AlertLink): Route? {
         AlertLink.PORTFOLIO -> Route.Portfolio
         AlertLink.ALERTS -> Route.Alerts
         AlertLink.UPDATE -> Route.AppUpdate
+        AlertLink.WALLETS -> Route.Wallets()
         else -> null
     }
 }

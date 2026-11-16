@@ -33,6 +33,8 @@ data class SolValidationContext(
     val maxPriorityLamports: BigInteger,
     /** The pay currency, for amounts in the actions. SOL when absent. */
     val payUnit: PayUnit? = null,
+    /** The tip a private send may pay the block engine, in lamports: none when zero. */
+    val maxTipLamports: BigInteger = BigInteger.ZERO,
 )
 
 data class SolValidationResult(
@@ -129,6 +131,35 @@ object SolValidator {
         return if (d.size == 12 && le(d, 0, 4) == BigInteger.valueOf(Spl.SYSTEM_TRANSFER.toLong()) && ix.keys == keys) le(d, 4, 8) else null
     }
 
+    /** What a trade's system instructions did: the one wrap into its own WSOL, and the one tip. */
+    private class SystemUse(var wrapped: BigInteger = BigInteger.ZERO, var tips: Int = 0)
+
+    /**
+     * A system instruction of a trade: a tip to the block engine for a private send (at most one,
+     * at most the tip the user's speed sets), or the one transfer into the wallet's own WSOL.
+     */
+    private fun readSystem(ix: Instruction, ctx: SolValidationContext, solPay: Boolean, use: SystemUse, actions: MutableList<BlockedAction>) {
+        val tip = Jito.tipOf(ix, ctx.wallet)
+        if (tip != null) {
+            use.tips++
+            val reason = when {
+                use.tips > 1 -> "Only one tip"
+                tip > ctx.maxTipLamports -> "Above your MEV protection tip"
+                tip < Jito.MIN_TIP -> "Below the block engine's minimum"
+                else -> null
+            }
+            actions += act("MEV protection tip ${sol(tip)}", reason)
+            return
+        }
+        val wrap = if (solPay && use.wrapped.signum() == 0) wrapAmount(ix, ctx.wallet) else null
+        if (wrap == null) {
+            actions += act("System program", "Only one transfer to your own wrapped SOL")
+        } else {
+            use.wrapped = wrap
+            actions += act("Wrap ${sol(wrap)}")
+        }
+    }
+
     private enum class WsolStep { SYNC, CLOSE }
 
     /** A token instruction on the wallet's own WSOL account: syncing it, or closing it to the wallet. */
@@ -168,7 +199,7 @@ object SolValidator {
         val unit = ctx.payUnit ?: SOL_UNIT
         fun amount(raw: BigInteger) = units(raw, unit.decimals, unit.symbol)
         val budget = Budget()
-        var wrapped = BigInteger.ZERO
+        val system = SystemUse()
         var trades = 0
         var spend = BigInteger.ZERO
         var amountIn = BigInteger.ZERO
@@ -189,15 +220,7 @@ object SolValidator {
             val d = ix.data
             when (ix.programId) {
                 COMPUTE_BUDGET_PROGRAM -> readBudget(ix, budget, actions)
-                SYSTEM_PROGRAM -> {
-                    val wrap = if (solPay && wrapped.signum() == 0) wrapAmount(ix, wallet) else null
-                    if (wrap == null) {
-                        actions += act("System program", "Only one transfer to your own wrapped SOL")
-                    } else {
-                        wrapped = wrap
-                        actions += act("Wrap ${sol(wrapped)}")
-                    }
-                }
+                SYSTEM_PROGRAM -> readSystem(ix, ctx, solPay, system, actions)
                 ATA_PROGRAM -> {
                     val open = opening(ix, wallet, opens)
                     actions += if (open != null) act(open.label) else act("Token account", "Not an account this trade needs")
@@ -247,7 +270,7 @@ object SolValidator {
         if (trades != 1) actions += act("Trade", "Exactly one trade per transaction")
         // SOL into a pool is wrapped first, exactly what the buy spends; nothing else wraps.
         val wraps = solPay && ctx.side == Side.BUY && route.hops.firstOrNull() is PoolVenue
-        if (wrapped != (if (wraps) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(wrapped)}", "Does not wrap what the trade spends")
+        if (system.wrapped != (if (wraps) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(system.wrapped)}", "Does not wrap what the trade spends")
         checkPriority(budget, ctx.maxPriorityLamports, actions)
         return SolValidationResult(actions.all { it.ok }, actions, spend, amountIn, minOut)
     }
@@ -267,7 +290,7 @@ object SolValidator {
         val unit = ctx.payUnit ?: SOL_UNIT
         fun amount(raw: BigInteger) = units(raw, unit.decimals, unit.symbol)
         val budget = Budget()
-        var wrapped = BigInteger.ZERO
+        val system = SystemUse()
         var swaps = 0
         var spend = BigInteger.ZERO
         var amountIn = BigInteger.ZERO
@@ -284,15 +307,7 @@ object SolValidator {
         for (ix in instructions) {
             when (ix.programId) {
                 COMPUTE_BUDGET_PROGRAM -> readBudget(ix, budget, actions)
-                SYSTEM_PROGRAM -> {
-                    val wrap = if (solPay && wrapped.signum() == 0) wrapAmount(ix, wallet) else null
-                    if (wrap == null) {
-                        actions += act("System program", "Only one transfer to your own wrapped SOL")
-                    } else {
-                        wrapped = wrap
-                        actions += act("Wrap ${sol(wrapped)}")
-                    }
-                }
+                SYSTEM_PROGRAM -> readSystem(ix, ctx, solPay, system, actions)
                 ATA_PROGRAM -> {
                     val open = opening(ix, wallet, opens)
                     actions += if (open != null) act(open.label) else act("Token account", "Not an account this trade needs")
@@ -331,7 +346,7 @@ object SolValidator {
 
         if (swaps != 1) actions += act("Trade", "Exactly one trade per transaction")
         // Pools trade wrapped SOL: a buy wraps exactly what it spends; nothing else wraps.
-        if (wrapped != (if (solPay && ctx.side == Side.BUY) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(wrapped)}", "Does not wrap what the trade spends")
+        if (system.wrapped != (if (solPay && ctx.side == Side.BUY) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(system.wrapped)}", "Does not wrap what the trade spends")
         checkPriority(budget, ctx.maxPriorityLamports, actions)
         return SolValidationResult(actions.all { it.ok }, actions, spend, amountIn, minOut)
     }

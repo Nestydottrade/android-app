@@ -43,6 +43,13 @@ class Settings(context: Context) : AlertPrefs {
     var quickBuy by mutableStateOf(prefs.getInt(KEY_QUICK, 25))
         private set
 
+    /**
+     * The quick buy amounts in dollars, smallest first: a coin page's one-tap buys, the buy sheet's
+     * chips, and what the list amount is picked from.
+     */
+    var quickAmounts by mutableStateOf(readAmounts())
+        private set
+
     var followed by mutableStateOf(readList<Followed>(KEY_FOLLOWED))
         private set
 
@@ -91,9 +98,26 @@ class Settings(context: Context) : AlertPrefs {
     }
 
     fun nextQuickBuy() {
-        val i = QUICK_STEPS.indexOf(quickBuy)
-        pickQuickBuy(QUICK_STEPS[(i + 1).mod(QUICK_STEPS.size)])
+        val i = quickAmounts.indexOf(quickBuy)
+        pickQuickBuy(quickAmounts[(i + 1).mod(quickAmounts.size)])
     }
+
+    /**
+     * New quick buy amounts, saved smallest first. The list amount keeps its place among them.
+     * False, and nothing saved, unless they are [QUICK_COUNT] different amounts of $1 to [QUICK_MAX].
+     */
+    fun setQuickAmounts(amounts: List<Int>): Boolean {
+        if (!okAmounts(amounts)) return false
+        val sorted = amounts.sorted()
+        val at = quickAmounts.indexOf(quickBuy)
+        quickAmounts = sorted
+        prefs.edit().putString(KEY_AMOUNTS, sorted.joinToString(",")).apply()
+        if (quickBuy !in sorted) pickQuickBuy(sorted.getOrNull(at) ?: sorted.minBy { kotlin.math.abs(it - quickBuy) })
+        return true
+    }
+
+    private fun readAmounts(): List<Int> =
+        prefs.getString(KEY_AMOUNTS, null)?.split(",")?.mapNotNull { it.trim().toIntOrNull() }?.takeIf { okAmounts(it) }?.sorted() ?: QUICK_STEPS
 
     fun isFollowed(address: String) = followed.any { it.address.equals(address, ignoreCase = true) }
 
@@ -140,7 +164,13 @@ class Settings(context: Context) : AlertPrefs {
 
     companion object {
         const val MAX_FOLLOWED = 20
+        /** The quick buy amounts until the user sets their own. */
         val QUICK_STEPS = listOf(10, 25, 50, 100)
+        const val QUICK_COUNT = 4
+        const val QUICK_MAX = 100_000
+
+        fun okAmounts(list: List<Int>): Boolean = list.size == QUICK_COUNT && list.all { it in 1..QUICK_MAX } && list.distinct().size == list.size
+        private const val KEY_AMOUNTS = "quickAmounts"
         val LOCK_STEPS = listOf(5, 15, 60)
         private const val KEY_LOCK = "lockAfter"
         val DEFAULT_PRESETS = listOf(Preset(15, "Fast"), Preset(25, "Turbo"), Preset(5, "Normal"))

@@ -61,7 +61,7 @@ class EngineExitMarket(
         val info = info(plan, chain)
         val title = if (bps >= 10_000) "Exit plan sold your ${plan.label}" else "Exit plan sold ${bps / 100}% of your ${plan.label}"
         val flow = try {
-            trading.sellForWatch(plan.walletId, plan.wallet, chain, plan.token, bps, settings.presets.first(), info, title)
+            trading.sellForWatch(plan.walletId, plan.wallet, chain, plan.token, bps, settings.presets.first(), info, title, presetIndex = 0)
         } catch (e: TradeRefused) {
             return SellEnd(false, error = e.message)
         }

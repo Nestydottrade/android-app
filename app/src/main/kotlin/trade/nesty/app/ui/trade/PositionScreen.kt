@@ -148,7 +148,7 @@ private fun Yours(h: Holding, symbol: String, coin: Coin?, now: Long) {
                 if (p.taken >= 0.01) Text("Taken out so far: ${Fmt.usdFull(p.taken)}", style = text(14, color = Ink.text2))
                 // Right after a buy the position is down by what getting in cost, not by the market.
                 if (pnl != null && pnl < 0 && p.sold.signum() == 0 && now - p.firstAt < FRESH_MS && -pnl < p.paid * 0.15) {
-                    val parts = if ((coin?.tax?.buy ?: 0.0) > 0) "price impact, the tax and the network fee" else "price impact and the network fee"
+                    val parts = if ((coin?.tax?.buy ?: 0.0) > 0) "price impact, fees and tax" else "price impact and fees"
                     Text(
                         "The ${Fmt.usdFull(-pnl)} down is what it cost to get in: $parts.",
                         style = text(13, color = Ink.muted, lineHeight = 18.sp),

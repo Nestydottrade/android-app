@@ -120,32 +120,7 @@ fun MenuScreen(atAlerts: Boolean = false) {
                 }
             }
 
-            Section("Trading") {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Quick buy amount", style = text(15, FontWeight.SemiBold))
-                        Text("One tap on a list buys this much", style = text(13, color = Ink.muted))
-                    }
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        for (q in Settings.QUICK_STEPS) {
-                            val on = settings.quickBuy == q
-                            Box(
-                                Modifier
-                                    .weight(1f)
-                                    .height(44.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(if (on) Ink.violetBg else Ink.raised)
-                                    .border(1.dp, if (on) Ink.violet else Ink.line2, RoundedCornerShape(12.dp))
-                                    .clickable(role = Role.Button) { settings.pickQuickBuy(q) }
-                                    .semantics { selected = on },
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Text("$$q", style = text(15, FontWeight.Bold, if (on) Ink.text else Ink.text2))
-                            }
-                        }
-                    }
-                }
-            }
+            Section("Trading") { QuickBuySetting() }
 
             Section("Alerts", Modifier.bringIntoViewRequester(alerts)) { Column { AlertSettings() } }
 

@@ -13,11 +13,15 @@ import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.menu.inFours
 import trade.nesty.app.ui.menu.oneBalanceText
 import trade.nesty.app.ui.vault.SecretLooks
+import trade.nesty.app.ui.vault.SideLooks
 import trade.nesty.app.ui.vault.looksLike
 import trade.nesty.app.ui.vault.secretNote
+import trade.nesty.app.ui.vault.sideLooks
+import trade.nesty.app.ui.vault.sideNote
 import trade.nesty.app.ui.vault.whereOf
 import trade.nesty.app.vault.WalletInfo
 import trade.nesty.app.vault.WalletKind
+import trade.nesty.app.vault.missingSide
 
 /**
  * One Balance and the wallet forms' words. `balancesEvm` and `balancesSol` are real answers for
@@ -115,5 +119,34 @@ class WalletLogicTest {
         assertEquals("1 word so far. A phrase has 12 or 24.", secretNote(SecretLooks.SHORT_PHRASE, true, 1))
         assertEquals("An EVM key or a Solana key", secretNote(SecretLooks.EMPTY, false, 0))
         assertTrue(secretNote(SecretLooks.SOL_KEY, false, 0).startsWith("Solana key. This wallet will trade on Solana only"))
+    }
+
+    /** The side a wallet made from one key lacks, and the line under its box. Public test data again. */
+    @Test
+    fun theLineUnderTheMissingSidesBox() {
+        assertEquals(WalletKind.SOL_KEY, evmOnly.missingSide)
+        assertEquals(WalletKind.EVM_KEY, solOnly.missingSide)
+        assertNull(both.missingSide)
+        val phrase = "test test test test test test test test test test test junk"
+        val evmKey = "0x" + "4c1e9a7b".repeat(8)
+        assertEquals(SideLooks.EMPTY, sideLooks(" ", WalletKind.SOL_KEY))
+        assertEquals(SideLooks.KEY, sideLooks(evmKey, WalletKind.EVM_KEY))
+        assertEquals(SideLooks.OTHER_KEY, sideLooks(evmKey, WalletKind.SOL_KEY))
+        assertEquals(SideLooks.PHRASE, sideLooks(phrase, WalletKind.SOL_KEY))
+        assertEquals(SideLooks.PHRASE, sideLooks(phrase, WalletKind.EVM_KEY))
+        // A phrase being typed is not called wrong; an address or a stray word is.
+        assertEquals(SideLooks.SHORT_PHRASE, sideLooks("test", WalletKind.SOL_KEY))
+        assertEquals(SideLooks.SHORT_PHRASE, sideLooks("test test test", WalletKind.EVM_KEY))
+        assertEquals(SideLooks.BAD_PHRASE, sideLooks(phrase.replace("junk", "test"), WalletKind.SOL_KEY))
+        assertEquals(SideLooks.BAD, sideLooks(sol, WalletKind.SOL_KEY))
+        assertEquals(SideLooks.BAD, sideLooks("0x1234", WalletKind.EVM_KEY))
+        assertEquals("A Solana key, or a recovery phrase for its first Solana address", sideNote(SideLooks.EMPTY, WalletKind.SOL_KEY, 0))
+        assertEquals("An EVM key, or a recovery phrase for its first EVM address", sideNote(SideLooks.EMPTY, WalletKind.EVM_KEY, 0))
+        assertEquals("EVM key. This wallet gets its address.", sideNote(SideLooks.KEY, WalletKind.EVM_KEY, 1))
+        assertEquals("This is an EVM key. This wallet has its EVM address already.", sideNote(SideLooks.OTHER_KEY, WalletKind.SOL_KEY, 1))
+        assertEquals("This is a Solana key. This wallet has its Solana address already.", sideNote(SideLooks.OTHER_KEY, WalletKind.EVM_KEY, 1))
+        assertEquals("12 words. This wallet gets the phrase's first Solana address.", sideNote(SideLooks.PHRASE, WalletKind.SOL_KEY, 12))
+        assertEquals("This is not a Solana key", sideNote(SideLooks.BAD, WalletKind.SOL_KEY, 1))
+        assertEquals("This is not an EVM key", sideNote(SideLooks.BAD, WalletKind.EVM_KEY, 1))
     }
 }

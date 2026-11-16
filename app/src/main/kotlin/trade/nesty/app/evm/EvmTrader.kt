@@ -48,6 +48,10 @@ data class TradeStep(
     val feeWei: BigInteger? = null,
     /** While this transaction waits behind an earlier nonce that never went out. */
     val waitingNonce: Long? = null,
+    /** A swap's least out, as signed: in the unit of its `amountOut`. */
+    val minOut: BigInteger? = null,
+    /** On Solana: the tip a private send paid the block engine, once it landed. */
+    val tip: BigInteger? = null,
 )
 
 /** A buy or a sell from the active wallet, as the screens show it. */
@@ -107,8 +111,12 @@ data class SellRequest(
     val poolHints: List<String> = emptyList(),
 )
 
-/** A quote to show. The trade quotes again and checks everything before it signs. */
-data class Quote(val amountIn: BigInteger, val out: BigInteger, val priceImpactBps: Int?, val venue: String)
+/**
+ * A quote to show. The trade quotes again and checks everything before it signs. `takeBps`: what
+ * the route's venue takes itself on this side (a launchpad's fee and the coin's tax, a hook's
+ * fee), already out of `out`; null where the venue reports nothing.
+ */
+data class Quote(val amountIn: BigInteger, val out: BigInteger, val priceImpactBps: Int?, val venue: String, val takeBps: Int? = null)
 
 /**
  * The EVM trade engine for the active wallet, ported from the extension's trading.ts and
@@ -173,12 +181,31 @@ class EvmTrader(
         val ref = (smallest / big(100)).takeIf { it.signum() > 0 } ?: BigInteger.ONE
         val ctx = venueCtx(chain, hints)
         val routes = routing.bestWithRef(ctx, token, side, ref, amounts, refresh)
+        val chosen = routes.mapNotNull { it.route }.distinctBy { it.pool.id }
+        val takes = coroutineScope { chosen.map { r -> async { r.pool.id to takeOf(ctx, r) } }.map { it.await() }.toMap() }
         return routes.mapIndexed { i, r ->
             r.route?.let { route ->
                 val impact = r.refOut?.takeIf { it.signum() > 0 }?.let { TradeMath.priceImpactBps(amounts[i], route.out, ref, it) }
-                Quote(amounts[i], route.out, impact, route.pool.label)
+                val take = takes[route.pool.id]?.let { if (side == Side.BUY) it.buyBps else it.sellBps }
+                Quote(amounts[i], route.out, impact, route.pool.label, take)
             }
         }
+    }
+
+    private val takes = ConcurrentHashMap<String, Pair<Long, VenueTax>>()
+
+    /**
+     * What a pool's venue takes itself, read again after half a minute. A failed read keeps the
+     * last one known; null when none was ever read or the venue reports nothing.
+     */
+    private suspend fun takeOf(ctx: VenueCtx, route: Routed): VenueTax? {
+        val key = "${ctx.chain.id}:${route.pool.venueId}:${route.pool.id}"
+        val known = takes[key]
+        if (known != null && now() - known.first < TAKE_TTL_MS) return known.second
+        val read = orNull { route.venue.venueTax(ctx, route.pool) } ?: return known?.second
+        if (takes.size >= TAKES_KEPT) takes.clear()
+        takes[key] = now() to read
+        return read
     }
 
     /** Why no pool trades `token` right now, when a venue knows (a full curve waiting for its pool). */
@@ -247,6 +274,7 @@ class EvmTrader(
             }
             val gate = balanceGate(p.chain, p.ctx, p.prefs, p.wallet.address, p.amount)
             val minOut = TradeMath.minOutAfter(out, 0, p.prefs.slippageBps)
+            t.set(i) { it.copy(minOut = minOut) }
             val deadline = big(now() / 1000 + TradeMath.DEADLINE_S)
             val tx = buildTx(p.route.venue, p.ctx, p.route.pool, Side.BUY, SellParams(p.wallet.address, p.amount, minOut, deadline))
             val vctx = vctx(p.chain, p.wallet.address, p.own, p.ctx, p.route, token = p.route.pool.token, maxValue = p.maxValue)
@@ -269,6 +297,7 @@ class EvmTrader(
         val assetOut = via.legVenue.quote(p.ctx, funding.leg, Side.BUY, listOf(p.amount)).firstOrNull()
         if (assetOut == null || assetOut.signum() == 0) return t.fail(i, "No ${funding.symbol} quote")
         val minOut = TradeMath.minOutAfter(p.route.out, 0, p.prefs.slippageBps)
+        t.set(i) { it.copy(minOut = minOut) }
         val r = fundedRoute(p.ctx, p.wallet.address, p.route, funding, via)
         val assetMin = TradeMath.minOutAfter(assetOut, 0, TradeMath.FUNDING_SLIPPAGE_BPS)
         val calls = NestyRouter.buyCalls(r, p.amount, assetMin, minOut)
@@ -439,6 +468,7 @@ class EvmTrader(
 
             // 3) The swap itself.
             val minOut = TradeMath.minOutAfter(out, 0, p.prefs.slippageBps)
+            t.set(i) { it.copy(minOut = minOut) }
             val deadline = big(nowS + TradeMath.DEADLINE_S)
             val tx = buildTx(p.route.venue, p.ctx, p.route.pool, Side.SELL, SellParams(p.wallet.address, p.amount, minOut, deadline, permit))
             // With an approval still pending, a simulation would fail for the wrong reason.
@@ -465,6 +495,7 @@ class EvmTrader(
         if (!check.ok) return t.block(i, listOf(check))
         val signature = withContext(Dispatchers.Default) { Permit2.transfer(p.chain.id, permit, via.router).sign(p.wallet::signHash) }
         val minOut = TradeMath.minOutAfter(out, 0, p.prefs.slippageBps)
+        t.set(i) { it.copy(minOut = minOut) }
         val r = fundedRoute(p.ctx, p.wallet.address, p.route, funding, via)
         val assetMin = TradeMath.minOutAfter(assetOut, 0, p.prefs.slippageBps)
         val calls = NestyRouter.sellCalls(r, assetMin, minOut) ?: return t.fail(i, "No way back from ${funding.symbol}")
@@ -892,6 +923,10 @@ class EvmTrader(
         private const val GAP_CHECK_MS = 4_000L
         private const val BLOCK_TTL_MS = 3_000L
         private const val KEEP_TRADES = 20
+
+        /** How long a venue's own take stands before it is read again (a launch window can change it). */
+        private const val TAKE_TTL_MS = 30_000L
+        private const val TAKES_KEPT = 500
 
         const val NO_ROUTE = "No pool can trade this coin right now."
         const val UPDATE_APP = "Update the app to trade here"

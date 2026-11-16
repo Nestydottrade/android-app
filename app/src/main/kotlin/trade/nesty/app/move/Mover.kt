@@ -18,6 +18,8 @@ import trade.nesty.app.data.BalanceModel
 import trade.nesty.app.data.Balances
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.CoinInfo
+import trade.nesty.app.data.FillMove
+import trade.nesty.app.data.FillTx
 import trade.nesty.app.data.Preset
 import trade.nesty.app.data.Settings
 import trade.nesty.app.data.Trading
@@ -277,6 +279,7 @@ class Mover(
         val move = Move(
             newId(), MoveKind.BUY, wallet.id, now(), chain.feed, recipient, usd, listOf(leg),
             token = token, symbol = info.symbol, decimals = info.decimals, supply = info.supply, hints = info.hints,
+            tax = info.tax, onCurve = info.onCurve, launchpad = info.launchpad,
             preset = presetIndex.coerceIn(0, 2),
         )
         store.put(move)
@@ -309,7 +312,7 @@ class Mover(
         val chain = m.toChain ?: throw MoveRefused("Unknown chain.")
         val token = m.token ?: throw MoveRefused("Unknown coin.")
         store.update(id) { it.copy(state = MoveState.BUYING, usd = usd, preset = presetIndex.coerceIn(0, 2), buyError = null) }
-        return startBuy(id, chain, token, usd, settings.presets[presetIndex.coerceIn(0, 2)], info, Plans.moveCostUsd(m.legs[0]))
+        return startBuy(id, chain, token, usd, presetIndex.coerceIn(0, 2), info, m.legs[0])
             ?: throw MoveRefused(store.get(id)?.buyError ?: "Could not start.")
     }
 
@@ -588,11 +591,26 @@ class Mover(
             return
         }
         store.update(id) { it.copy(state = MoveState.BUYING) }
-        startBuy(id, chain, token, m.usd, settings.presets[m.preset], CoinInfo(m.symbol, m.decimals, m.supply, m.hints), Plans.moveCostUsd(leg))
+        val info = CoinInfo(m.symbol, m.decimals, m.supply, m.hints, tax = m.tax, onCurve = m.onCurve, launchpad = m.launchpad)
+        startBuy(id, chain, token, m.usd, m.preset, info, leg)
     }
 
-    /** Waits for the moved funds to show in the chain's balance, then buys; the move ends with the buy. */
-    private suspend fun startBuy(id: String, chain: Chain, token: String, usd: Double, preset: Preset, info: CoinInfo, moveCost: Double): StateFlow<EngineTrade>? {
+    /**
+     * Waits for the moved funds to show in the chain's balance, then buys; the move ends with the
+     * buy. What the move cost joins the buy's cost basis, and the move its page.
+     */
+    private suspend fun startBuy(id: String, chain: Chain, token: String, usd: Double, presetIndex: Int, info: CoinInfo, leg: MoveLeg): StateFlow<EngineTrade>? {
+        val preset = settings.presets[presetIndex.coerceIn(0, 2)]
+        val moved = Trading.Moved(
+            FillMove(
+                from = leg.from,
+                sentUsd = leg.usdIn,
+                arrivedUsd = leg.usdOut,
+                feeUsd = Plans.moveCostUsd(leg),
+                ms = if (leg.sentAt != null && leg.endedAt != null) (leg.endedAt - leg.sentAt).coerceAtLeast(0) else null,
+            ),
+            listOfNotNull(leg.hash?.let { FillTx("move", leg.from, it) }, leg.outHash?.let { FillTx("arrive", leg.to, it) }),
+        )
         val price = trading.priceOf(chain)
         val wei = price?.let { trading.weiOf(usd, chain, it) }
         for (attempt in 0 until ARRIVAL_TRIES) {
@@ -602,7 +620,7 @@ class Mover(
             delay(ARRIVAL_WAIT_MS)
         }
         val flow = try {
-            trading.buy(chain, token, usd, preset, info, extraFeeUsd = moveCost)
+            trading.buy(chain, token, usd, preset, info, presetIndex = presetIndex, moved = moved)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

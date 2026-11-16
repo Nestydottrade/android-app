@@ -80,10 +80,15 @@ class WalletSession(private val vault: Vault, private val settings: Settings, pr
     suspend fun addNew(name: String) = change { vault.addNew(name) }
     suspend fun importPhrase(name: String, phrase: String) = change { vault.importPhrase(name, phrase) }
     suspend fun importKey(name: String, key: String) = change { vault.importKey(name, key) }
+
+    /** The side a wallet made from one key lacks: a new key made here, or the user's own key or phrase. */
+    suspend fun createSide(id: String) = change { vault.createSide(id) }
+    suspend fun importSide(id: String, input: String) = change { vault.importSide(id, input) }
     suspend fun setActive(id: String) = change { vault.setActive(id) }
     suspend fun export(password: String, id: String, what: ExportKind) = change { vault.export(password, id, what) }
 
     fun exportKinds(wallet: WalletInfo) = vault.exportKinds(wallet)
+    fun firstExport(wallet: WalletInfo) = vault.firstExport(wallet)
 
     /** The open vault's key for fingerprint unlock to seal, after the password again. The caller wipes it. */
     suspend fun keyForFingerprint(password: String): ByteArray = change { vault.keyForFingerprint(password) }

@@ -36,12 +36,71 @@ data class Fill(
     val feeUsd: Double? = null,
     val mcapUsd: Double? = null,
     val exact: Boolean = false,
+    /** How it was made, for its page in Activity; null on entries from before 0.1.2. */
+    val detail: FillDetail? = null,
+    /** Sent and did not land: kept for Activity, never counted in a position. */
+    val failed: Boolean = false,
 ) {
     val chain: Chain? get() = Chain.of(feed)
     val amount: BigInteger get() = raw.toBigIntegerOrNull()?.takeIf { it.signum() >= 0 } ?: BigInteger.ZERO
     val isBuy: Boolean get() = side == "buy"
     val tokens: Double get() = BigDecimal(amount).movePointLeft(decimals).toDouble()
 }
+
+/**
+ * A trade as it was made, kept with its fill for the trade's page: its route and settings, what
+ * the quote said when it was sent, its prices then, its transactions and how long they took.
+ */
+@Serializable
+data class FillDetail(
+    /** The pool, as its venue names it: "Flap curve via FXIon". */
+    val route: String? = null,
+    /** The launchpad whose curve it traded on, when it did. */
+    val launchpad: String? = null,
+    val onCurve: Boolean = false,
+    /** The preset it used (0 is P1), its slippage and speed. */
+    val preset: Int? = null,
+    val slippageBps: Int? = null,
+    val speed: String? = null,
+    /** Whether it went out through a private route, away from front-runners; null where the chain needs none. */
+    val mev: Boolean? = null,
+    /** The least it would take, in the smallest unit of what it gets. */
+    val minOut: String? = null,
+    /** Shares of its value: price impact, what the venue took itself, a tax taken on top. */
+    val impact: Double? = null,
+    val takeBps: Int? = null,
+    val taxOutside: Double? = null,
+    /** The coin's price and the chain coin's when it was sent. */
+    val priceUsd: Double? = null,
+    val nativeUsd: Double? = null,
+    /** What it paid (a buy) or got (a sell), in the smallest unit of the chain's coin or its payout token. */
+    val native: String? = null,
+    /** A sell paid out in a token the coin is priced in, not the chain's coin. */
+    val payout: String? = null,
+    val payoutDecimals: Int? = null,
+    /** The network fee and a Solana MEV tip, in the chain coin's smallest unit. */
+    val feeRaw: String? = null,
+    val tipRaw: String? = null,
+    /** Funds moved to the chain first for this buy. */
+    val move: FillMove? = null,
+    /** Milliseconds from the tap to the network taking it, and from there to its confirmation. */
+    val sentMs: Long? = null,
+    val confirmMs: Long? = null,
+    /** Every transaction it made, in order. */
+    val txs: List<FillTx> = emptyList(),
+    /** Why it did not land. */
+    val error: String? = null,
+    /** A sell an exit plan made. */
+    val byPlan: Boolean = false,
+)
+
+/** Funds moved from another chain for a buy: what left, what arrived, what it cost and took. */
+@Serializable
+data class FillMove(val from: String, val sentUsd: Double? = null, val arrivedUsd: Double? = null, val feeUsd: Double? = null, val ms: Long? = null)
+
+/** One transaction of a trade: `move`, `arrive`, `fund`, `buy`, `sell`, `approve` or `back`. */
+@Serializable
+data class FillTx(val kind: String, val feed: String, val hash: String, val ok: Boolean = true)
 
 /** The fills of every wallet on this phone, newest first. Nothing here is sent anywhere. */
 class PositionStore(context: Context) {
@@ -53,16 +112,35 @@ class PositionStore(context: Context) {
     private fun read(): List<Fill> =
         prefs.getString(KEY, null)?.let { runCatching { NestyJson.decodeFromString<List<Fill>>(it) }.getOrNull() } ?: emptyList()
 
-    /** One entry per transaction: the server's reading replaces the phone's, never the other way. */
+    /**
+     * One entry per transaction: the server's reading replaces the phone's, never the other way,
+     * and keeps the phone's detail when it has none of its own.
+     */
     @Synchronized
     fun put(fill: Fill) {
         val same = fills.firstOrNull { it.tx.equals(fill.tx, true) && it.wallet == fill.wallet }
         if (same != null && same.exact && !fill.exact) return
-        fills = (fills.filterNot { it === same } + fill).sortedByDescending { it.at }.take(MAX)
+        val kept = if (fill.detail == null && same?.detail != null) fill.copy(detail = same.detail) else fill
+        fills = (fills.filterNot { it === same } + kept).sortedByDescending { it.at }.take(MAX)
         prefs.edit().putString(KEY, NestyJson.encodeToString(fills)).apply()
     }
 
-    fun of(wallet: String?): List<Fill> = if (wallet == null) emptyList() else fills.filter { it.wallet.equals(wallet, true) }
+    /** Changes the entry of one transaction, whichever reading it holds; nothing when there is none. */
+    @Synchronized
+    fun update(wallet: String, tx: String, change: (Fill) -> Fill) {
+        val same = fills.firstOrNull { it.tx.equals(tx, true) && it.wallet == wallet } ?: return
+        fills = (fills.filterNot { it === same } + change(same)).sortedByDescending { it.at }.take(MAX)
+        prefs.edit().putString(KEY, NestyJson.encodeToString(fills)).apply()
+    }
+
+    /** A wallet's landed trades: what its positions count. */
+    fun of(wallet: String?): List<Fill> = activityOf(wallet).filter { !it.failed }
+
+    /** And the trades it sent that did not land, for Activity. */
+    fun activityOf(wallet: String?): List<Fill> = if (wallet == null) emptyList() else fills.filter { it.wallet.equals(wallet, true) }
+
+    /** One entry by its transaction, for its page. */
+    fun byTx(wallet: String, tx: String): Fill? = fills.firstOrNull { it.wallet.equals(wallet, true) && it.tx.equals(tx, true) }
 
     /** The coins a wallet has traded, to name with its balance. */
     fun coinsOf(wallet: String?): List<Pair<Chain, String>> = of(wallet).mapNotNull { f -> f.chain?.let { it to f.token } }.distinct()
@@ -113,7 +191,7 @@ data class Holding(val position: Position, val held: BigInteger, val priceUsd: D
 
 object Positions {
     fun of(fills: List<Fill>): List<Position> =
-        fills.groupBy { it.feed to if (it.feed == Chain.SOLANA.feed) it.token else it.token.lowercase() }.mapNotNull { (key, list) ->
+        fills.filter { !it.failed }.groupBy { it.feed to if (it.feed == Chain.SOLANA.feed) it.token else it.token.lowercase() }.mapNotNull { (key, list) ->
             val chain = Chain.of(key.first) ?: return@mapNotNull null
             val buys = list.filter { it.isBuy }
             val sells = list.filter { !it.isBuy }

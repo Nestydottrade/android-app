@@ -60,6 +60,7 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
 import trade.nesty.app.data.CoinInfo
 import trade.nesty.app.data.Preset
+import trade.nesty.app.data.TradeCosts
 import trade.nesty.app.evm.Quote
 import trade.nesty.app.evm.Side
 import trade.nesty.app.evm.TradeStatus
@@ -268,14 +269,19 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
     val moveFee = mq?.let { it.feeUsd ?: if (it.usdIn != null && it.usdOut != null) (it.usdIn - it.usdOut).coerceAtLeast(0.0) else null }
 
     val dec = info.decimals ?: 18
-    val tax = (coin.tax?.buy ?: 0.0).coerceIn(0.0, 0.99)
     val q = quote
-    val tokens = q?.let { BigDecimal(it.out).movePointLeft(dec).toDouble() * (1 - tax) }
+    // A launchpad's fee and the coin's tax on its curve are already out of the quote; a pool's
+    // quote leaves out a transfer tax the coin takes on top.
+    val figures = if (q != null && usd != null) {
+        val impactShare = q.priceImpactBps?.coerceAtLeast(0)?.let { it / 10_000.0 }
+        val outside = TradeCosts.taxOutside(coin.tax?.buy, coin.onCurve, q.takeBps)
+        TradeCosts.buy(usd, BigDecimal(q.out).movePointLeft(dec).toDouble(), impactShare, q.takeBps, outside, coin.priceUsd)
+    } else null
+    val tokens = figures?.tokens
     val supply = info.supply
     val entryMc = if (usd != null && tokens != null && tokens > 0 && supply != null && supply > 0) usd / tokens * supply else null
-    val impact = q?.priceImpactBps?.coerceAtLeast(0)?.let { it / 10_000.0 }
     val feeShown = if (viaMove) (if (f != null && moveFee != null) f + moveFee else null) else f
-    val cost = if (usd != null && q != null && (!viaMove || feeShown != null)) usd * (impact ?: 0.0) + usd * tax + (feeShown ?: 0.0) else null
+    val cost = if (usd != null && figures != null && (!viaMove || feeShown != null)) usd * figures.cost + (feeShown ?: 0.0) else null
     // Max leaves twice the fee estimate, a little for the price moving before it lands, and on
     // Solana the rent of the accounts a buy opens. With One Balance it adds what the fullest
     // other chain can move here, its bridge room taken out.
@@ -320,6 +326,7 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
         val a = ask
         val moveFrom = source
         val offer = mq
+        val shownQuote = q
         // Not the sheet's own scope: closing the sheet does not stop a buy or a move that has started.
         QuickTrade.scope.launch {
             try {
@@ -337,7 +344,7 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                         moveId = m.id
                     }
                     else -> {
-                        val started = withContext(Dispatchers.Default) { trading.buy(chain, token, u, p, info) }
+                        val started = withContext(Dispatchers.Default) { trading.buy(chain, token, u, p, info, presetIndex = pi, known = shownQuote) }
                         if (shown[0]) trading.quiet.add(started.value.id)
                         flow = started
                     }
@@ -409,7 +416,7 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                     }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for (v in listOf(10, 25, 50, 100)) {
+                    for (v in settings.quickAmounts) {
                         AmountChip("$$v", on = usd == v.toDouble(), enabled = !working, modifier = Modifier.weight(1f)) {
                             amount = v.toString()
                             typed = true
@@ -422,7 +429,7 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                         }
                     }
                 }
-                Details(symbol, usd, tokens, entryMc, impact, tax, feeShown, if (viaMove) "Network and move fees" else "Network fee", cost, quoted, q == null, why)
+                Details(symbol, usd, tokens, entryMc, figures?.impact, figures?.fees, feeShown, if (viaMove) "Network and move fees" else "Network fee", cost, quoted, q == null, why)
                 PresetRow(chain, settings.presets, presetIndex, editing, enabled = !working, onPick = { presetIndex = it }) { editing = !editing }
                 if (editing) {
                     PresetEditor(presetIndex, preset) { settings.setPreset(presetIndex, it) }
@@ -553,7 +560,7 @@ private fun Details(
     tokens: Double?,
     entryMc: Double?,
     impact: Double?,
-    tax: Double,
+    fees: Double?,
     fee: Double?,
     feeLabel: String,
     cost: Double?,
@@ -574,7 +581,7 @@ private fun Details(
         }
         DetailRow("You get about", tokens?.let { "${Fmt.amount(it)} $symbol" } ?: wait)
         DetailRow("Your entry market cap", entryMc?.let { Fmt.usd(it) } ?: wait)
-        DetailRow("Price impact · Tax", "${impact?.let { Fmt.share(it) } ?: wait} · ${Fmt.taxPct(tax)}")
+        DetailRow("Price impact · Fees and tax", "${impact?.let { Fmt.share(it) } ?: wait} · ${fees?.let { Fmt.share(it) } ?: wait}")
         DetailRow(feeLabel, fee?.let { "about ${Fmt.usdFull(it)}" } ?: wait)
         Box(Modifier.fillMaxWidth().background(Ink.raised)) {
             DetailRow(

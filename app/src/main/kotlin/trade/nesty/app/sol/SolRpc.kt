@@ -174,7 +174,12 @@ internal suspend fun postJson(http: OkHttpClient, url: String, body: String, tim
  * Where a signed transaction goes: every public RPC at once, the first to accept wins, as the
  * extension's broadcast. Never through Nesty's server: it only ever reads (and refuses sends).
  */
-class SolBroadcast(private val http: OkHttpClient, private val urls: List<String> = SolRpcs.PUBLIC) : SolSender {
+class SolBroadcast(
+    private val http: OkHttpClient,
+    private val urls: List<String> = SolRpcs.PUBLIC,
+    /** To block engines (Jito.ENGINES), which take the encoding alone and skip the preflight themselves. */
+    private val engines: Boolean = false,
+) : SolSender {
     private val background = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override suspend fun send(raw: ByteArray): String {
@@ -182,8 +187,10 @@ class SolBroadcast(private val http: OkHttpClient, private val urls: List<String
             add(Base64.getEncoder().encodeToString(raw))
             add(buildJsonObject {
                 put("encoding", "base64")
-                put("skipPreflight", true)
-                put("maxRetries", 0)
+                if (!engines) {
+                    put("skipPreflight", true)
+                    put("maxRetries", 0)
+                }
             })
         }
         val body = SolRpcs.body("sendTransaction", params)
@@ -209,8 +216,11 @@ class SolBroadcast(private val http: OkHttpClient, private val urls: List<String
     }
 }
 
-/** The typed reads a trade makes, over any SolCall (Nesty's /rpc, or a test's record). */
-class SolRpc(private val reads: SolCall, private val sender: SolSender? = null) {
+/**
+ * The typed reads a trade makes, over any SolCall (Nesty's /rpc, or a test's record). `sender`
+ * sends to the public RPCs, `privateSender` to the block engines, for a trade with a tip.
+ */
+class SolRpc(private val reads: SolCall, private val sender: SolSender? = null, private val privateSender: SolSender? = null) {
     /**
      * Keys per getMultipleAccounts, fewer once an endpoint refuses more. The spec allows 100, but
      * the public node behind Nesty's /rpc takes 10, and the proxy answers a bigger read with a
@@ -336,7 +346,9 @@ class SolRpc(private val reads: SolCall, private val sender: SolSender? = null) 
     }
 
     /** Sends to the public RPCs (never through Nesty's server). */
-    suspend fun broadcast(raw: ByteArray): String = (sender ?: throw IOException("No sender")).send(raw)
+    /** A private send never falls back to the public RPCs: without a block engine it fails. */
+    suspend fun broadcast(raw: ByteArray, privately: Boolean = false): String =
+        if (privately) (privateSender ?: throw IOException("No private route")).send(raw) else (sender ?: throw IOException("No sender")).send(raw)
 
     companion object {
         fun parseAccount(e: JsonElement): SolAccount? {

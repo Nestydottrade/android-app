@@ -46,6 +46,8 @@ data class AlertLink(val to: String, val feed: String? = null, val token: String
         const val ALERTS = "alerts"
         /** The app's Update screen. */
         const val UPDATE = "update"
+        /** The Wallets screen: where a wallet made from one key gets the side it lacks. */
+        const val WALLETS = "wallets"
 
         fun position(feed: String, token: String) = AlertLink(POSITION, feed, token)
         fun token(feed: String, token: String) = AlertLink(TOKEN, feed, token)

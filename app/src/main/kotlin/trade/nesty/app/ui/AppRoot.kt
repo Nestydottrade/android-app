@@ -54,6 +54,7 @@ import trade.nesty.app.ui.token.TokenScreen
 import trade.nesty.app.ui.tracker.TrackerModel
 import trade.nesty.app.ui.tracker.TrackerScreen
 import trade.nesty.app.ui.trade.PositionScreen
+import trade.nesty.app.ui.trade.TradeDetailScreen
 import trade.nesty.app.ui.vault.SetupScreen
 import trade.nesty.app.ui.vault.UnlockScreen
 import trade.nesty.app.ui.vault.WalletsScreen
@@ -221,9 +222,10 @@ private fun Screen(route: Route) {
         is Route.Smart -> SmartScreen(route.leaderboard)
         Route.Tracker -> TrackerScreen()
         Route.Portfolio -> PortfolioScreen()
-        is Route.Token -> TokenScreen(route.chain, route.address, route.buy)
+        is Route.Token -> TokenScreen(route.chain, route.address, route.buy, route.buyUsd)
         is Route.TradesHolders -> TradesHoldersScreen(route.chain, route.address)
         is Route.Position -> PositionScreen(route.chain, route.address)
+        is Route.Trade -> TradeDetailScreen(route.wallet, route.tx)
         is Route.Wallet -> WalletScreen(route.chain, route.address)
         Route.Search -> SearchScreen()
         is Route.Menu -> MenuScreen(atAlerts = route.alerts)
