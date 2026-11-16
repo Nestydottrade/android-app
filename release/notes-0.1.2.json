@@ -1,7 +1,7 @@
 [
   {
     "title": "Clearer buy costs",
-    "text": "The buy sheet splits the cost to get in into price impact, fees, tax and the route, and no longer counts a curve's fee twice"
+    "text": "The buy sheet splits the cost to get in into price impact, fees, tax and the route; a curve's fee counts once"
   },
   {
     "title": "MEV protection on Solana",
@@ -17,7 +17,7 @@
   },
   {
     "title": "Trade details",
-    "text": "Each trade in Activity opens a page with what it cost, where the money came from, its route and its transactions, failed trades too"
+    "text": "Each trade in Activity, failed ones too, opens a page with what it cost, its route and its transactions"
   },
   {
     "title": "Both sides for every wallet",
