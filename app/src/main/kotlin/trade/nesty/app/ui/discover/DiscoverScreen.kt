@@ -37,6 +37,7 @@ import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.ui.ChainChips
 import trade.nesty.app.ui.CoinAvatar
+import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
 import trade.nesty.app.ui.menu.oneBalance
@@ -159,7 +160,7 @@ private fun DiscoverRowView(r: DiscoverRow, lane: Lane, now: Long, quick: Int, o
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                CoinAvatar(r.image, r.symbol, r.address, r.chain, 44.dp)
+                CoinAvatar(rememberCoinImage(r.chain, r.address, r.image, r.served), r.symbol, r.address, r.chain, 44.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                         Text(

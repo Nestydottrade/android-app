@@ -54,12 +54,14 @@ import kotlinx.coroutines.launch
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
+import trade.nesty.app.data.Served
 import trade.nesty.app.data.Trade
 import trade.nesty.app.data.TradersAnswer
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.Check
 import trade.nesty.app.ui.Checks
 import trade.nesty.app.ui.CoinAvatar
+import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
 import trade.nesty.app.ui.Fmt
@@ -209,7 +211,9 @@ private fun TokenHeader(coin: Coin?, chain: Chain, address: String, now: Long, o
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         IconButton48(NIcons.arrowBack, "Back", Ink.text, onClick = onBack)
-        CoinAvatar(coin?.image, symbol, address, chain, 38.dp)
+        // Asked once the coin's answer is in, as it may carry the picture itself.
+        val picture = if (coin == null) null else rememberCoinImage(chain, address, coin.image, Served(coin.launchpad))
+        CoinAvatar(picture, symbol, address, chain, 38.dp)
         Column(Modifier.weight(1f).padding(start = 8.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(symbol, style = text(20, FontWeight.Bold, lineHeight = 22.sp), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
             val sub = listOfNotNull(

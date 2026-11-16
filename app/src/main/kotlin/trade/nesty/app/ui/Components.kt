@@ -60,6 +60,7 @@ import trade.nesty.app.R
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.ui.alerts.BellButton
 import trade.nesty.app.data.Chain
+import trade.nesty.app.data.Served
 import trade.nesty.app.ui.theme.Figures
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
@@ -117,6 +118,19 @@ fun CoinAvatar(image: String?, symbol: String?, seed: String, chain: Chain?, siz
             ChainDot(chain, dot, ring = 3.dp, modifier = Modifier.align(Alignment.BottomEnd).offset(3.dp, 3.dp))
         }
     }
+}
+
+/**
+ * A coin's picture: `image` when the screen has a usable one, else as [CoinImages] finds it once
+ * the row is drawn, null until then. `served`: what the server's answer for the coin said, when
+ * the screen has one.
+ */
+@Composable
+fun rememberCoinImage(chain: Chain, token: String, image: String? = null, served: Served? = null): String? {
+    if (imageUrl(image) != null) return image
+    val images = AppGraph.images
+    LaunchedEffect(chain, token, served) { images.ask(chain, token, served) }
+    return images.of(chain, token)
 }
 
 @Composable

@@ -76,6 +76,9 @@ object AppGraph {
         private set
     lateinit var updater: Updater
         private set
+    /** Coin pictures for the screens that come without them, kept while the app runs. */
+    lateinit var images: CoinImages
+        private set
     private lateinit var app: Context
 
     /** What a tapped notification opens, applied once the screens can show it. */
@@ -97,6 +100,8 @@ object AppGraph {
         val stream = base.newBuilder().readTimeout(45, TimeUnit.SECONDS).build()
         imageHttp = base.newBuilder().readTimeout(15, TimeUnit.SECONDS).build()
         api = NestyApi(base, stream)
+        // four.meme refuses servers: the pictures of its coins are read from its records by the phone.
+        images = CoinImages(api, FourMemeRecords(base, PrefsRestDisk(context.applicationContext)))
         app = context.applicationContext
         settings = Settings(context.applicationContext)
         exitStore = ExitStore(PrefsExitDisk(context.applicationContext))

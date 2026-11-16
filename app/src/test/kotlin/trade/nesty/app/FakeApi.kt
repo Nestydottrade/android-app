@@ -13,6 +13,12 @@ import trade.nesty.app.data.NestyApi
  * every URL asked is added to `asked`. Nothing leaves the machine.
  */
 fun fakeApi(asked: MutableList<String>, answer: (String) -> Pair<Int, String>): NestyApi {
+    val http = fakeHttp(asked, answer)
+    return NestyApi(http, http)
+}
+
+/** An HTTP client against fake hosts, as [fakeApi]'s: for the reads made of hosts other than Nesty's. */
+fun fakeHttp(asked: MutableList<String>, answer: (String) -> Pair<Int, String>): OkHttpClient {
     val fake = Interceptor { chain ->
         val url = chain.request().url.toString()
         synchronized(asked) { asked += url }
@@ -27,6 +33,5 @@ fun fakeApi(asked: MutableList<String>, answer: (String) -> Pair<Int, String>): 
             .body(body.toResponseBody(type.toMediaType()))
             .build()
     }
-    val http = OkHttpClient.Builder().addInterceptor(fake).build()
-    return NestyApi(http, http)
+    return OkHttpClient.Builder().addInterceptor(fake).build()
 }

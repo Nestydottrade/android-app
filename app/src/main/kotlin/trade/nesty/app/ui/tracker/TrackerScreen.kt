@@ -77,6 +77,7 @@ import trade.nesty.app.ui.Route
 import trade.nesty.app.ui.TabHeader
 import trade.nesty.app.ui.WhileShown
 import trade.nesty.app.ui.discover.shareKey
+import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.pctColor
 import trade.nesty.app.ui.signColor
@@ -368,7 +369,7 @@ private fun TrackedRow(r: TrackedTrade, now: Long, settings: Settings, onOpen: (
                 Modifier.weight(1f).clickable(role = Role.Button, onClick = onOpen).padding(start = 16.dp, end = 4.dp, top = 12.dp, bottom = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                CoinAvatar(null, r.symbol, t.token, r.chain, 40.dp)
+                CoinAvatar(rememberCoinImage(r.chain, t.token), r.symbol, t.token, r.chain, 40.dp)
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(

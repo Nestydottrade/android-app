@@ -21,6 +21,7 @@ import trade.nesty.app.ui.CoinAvatar
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.Stat
 import trade.nesty.app.ui.WhileShown
+import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.rememberNow
 import trade.nesty.app.ui.signColor
 import androidx.compose.foundation.layout.Box
@@ -289,7 +290,7 @@ private fun PositionRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        CoinAvatar(null, symbol, h.position.token, h.position.chain, 36.dp)
+        CoinAvatar(rememberCoinImage(h.position.chain, h.position.token), symbol, h.position.token, h.position.chain, 36.dp)
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(symbol, style = text(15, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(sub, style = text(13, color = Ink.muted), maxLines = 1, overflow = TextOverflow.Ellipsis)

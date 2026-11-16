@@ -15,6 +15,7 @@ import trade.nesty.app.data.Feed
 import trade.nesty.app.data.FeedRow
 import trade.nesty.app.data.ListToken
 import trade.nesty.app.data.NestyApi
+import trade.nesty.app.data.Served
 import trade.nesty.app.data.Settings
 import trade.nesty.app.data.Share
 import trade.nesty.app.ui.Checks
@@ -44,6 +45,8 @@ data class DiscoverRow(
     val curve: Double?,
     val holders: Int?,
     val flag: Flag?,
+    /** What the server's feed said of a coin it has no picture for; null for a list that does not say. */
+    val served: Served? = null,
 )
 
 fun shareKey(chain: Chain, address: String) = "${chain.feed}:${address.lowercase()}"
@@ -150,6 +153,8 @@ class DiscoverModel(private val api: NestyApi, @Suppress("unused") private val s
             curve = if (!r.complete && l != Lane.GRAD) r.progress else null,
             holders = share?.holders,
             flag = Checks.flag(r.signal?.size, share, r.tax, r.venue),
+            // A feed names each coin's launchpad as its venue.
+            served = Served(r.venue),
         )
     }
 

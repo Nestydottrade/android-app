@@ -60,6 +60,7 @@ import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.ChainDot
 import trade.nesty.app.ui.CoinAvatar
+import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
 import trade.nesty.app.ui.Fmt
@@ -165,7 +166,7 @@ fun WalletScreen(chain: Chain, address: String) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
-                                CoinAvatar(null, symbol, c.token, null, 36.dp)
+                                CoinAvatar(rememberCoinImage(chain, c.token), symbol, c.token, null, 36.dp)
                                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Text(symbol, style = text(15, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))

@@ -49,6 +49,7 @@ import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.ListToken
 import trade.nesty.app.ui.CoinAvatar
+import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
 import trade.nesty.app.ui.Fmt
@@ -182,7 +183,7 @@ private fun SearchRow(t: ListToken, chain: Chain, onClick: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            CoinAvatar(t.image, symbol, t.address, chain, 40.dp)
+            CoinAvatar(rememberCoinImage(chain, t.address, t.image), symbol, t.address, chain, 40.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(symbol, style = text(16, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 // The name gives way first: where it trades and the chain tell coins of one symbol apart.
