@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -40,11 +41,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.BoardRow
 import trade.nesty.app.data.Chain
+import trade.nesty.app.data.CoinImages
 import trade.nesty.app.data.Settings
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.ChainDot
@@ -187,7 +190,7 @@ private fun SignalsTab() {
         if (past.isNotEmpty()) {
             item { SectionTitle("Earlier today", "How each one went, good or bad") }
             uniqueItems(past, { "past:" + signalKey(it) }) { s ->
-                PastSignalRow(s, now, onWallets = { openKey = signalKey(s) }) { nav.push(Route.Token(s.chain, s.row.token)) }
+                PastSignalRow(s, model.images, now, onWallets = { openKey = signalKey(s) }) { nav.push(Route.Token(s.chain, s.row.token)) }
             }
         }
         if (all.isEmpty() && (chain == null || model.proven(chain) != 0)) {
@@ -212,6 +215,13 @@ private fun SignalsTab() {
 }
 
 private fun signalKey(s: ChainSignal) = "${s.chain.feed}:${s.row.token}:${s.row.at}"
+
+/** A signal's coin: its letter until its picture is read, which starts once the row is drawn. */
+@Composable
+private fun SignalCoin(images: CoinImages, s: ChainSignal, symbol: String, size: Dp) {
+    LaunchedEffect(s.chain, s.row.token) { images.ask(s.chain, s.row.token) }
+    CoinAvatar(images.of(s.chain, s.row.token), symbol, s.row.token, s.chain, size)
+}
 
 /** The sheet of one signal: it reads the coin's trader tables itself, as no token page is open under it. */
 @Composable
@@ -354,7 +364,7 @@ private fun LiveSignalCard(s: ChainSignal, model: SignalsModel, now: Long, onOpe
         ) {
             // The buy button sits over the end of this row; the rows under it take the whole width.
             Row(Modifier.padding(end = 70.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                CoinAvatar(null, symbol, r.token, s.chain, 40.dp)
+                SignalCoin(model.images, s, symbol, 40.dp)
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(symbol, style = text(16, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
@@ -402,7 +412,7 @@ private fun LiveSignalCard(s: ChainSignal, model: SignalsModel, now: Long, onOpe
 }
 
 @Composable
-private fun PastSignalRow(s: ChainSignal, now: Long, onWallets: () -> Unit, onOpen: () -> Unit) {
+private fun PastSignalRow(s: ChainSignal, images: CoinImages, now: Long, onWallets: () -> Unit, onOpen: () -> Unit) {
     val r = s.row
     val symbol = r.symbol?.takeIf { it.isNotBlank() } ?: Fmt.address(r.token)
     val supply = r.supply ?: SUPPLY
@@ -425,7 +435,7 @@ private fun PastSignalRow(s: ChainSignal, now: Long, onWallets: () -> Unit, onOp
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            CoinAvatar(null, symbol, r.token, s.chain, 36.dp)
+            SignalCoin(images, s, symbol, 36.dp)
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(symbol, style = text(15, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))

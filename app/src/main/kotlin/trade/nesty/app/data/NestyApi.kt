@@ -62,6 +62,9 @@ class NestyApi(
 
     suspend fun token(chain: Chain, address: String): Coin = get("token/${chain.feed}/$address")
 
+    /** A launchpad coin's picture, read to the end by the server; null where none is found. */
+    suspend fun image(chain: Chain, address: String): String? = get<ImageAnswer>("image/${chain.feed}/$address").image
+
     suspend fun candles(chain: Chain, address: String, interval: String, limit: Int = 500): CandlesAnswer =
         get("candles/${chain.feed}/$address", "interval" to interval, "limit" to limit)
 

@@ -16,6 +16,7 @@ import trade.nesty.app.data.Board
 import trade.nesty.app.data.BoardRow
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.ChainSignals
+import trade.nesty.app.data.CoinImages
 import trade.nesty.app.data.NestyApi
 import trade.nesty.app.data.Share
 import trade.nesty.app.data.SignalFigures
@@ -40,6 +41,8 @@ class SignalsModel(private val api: NestyApi) {
     var record by mutableStateOf<SignalRecord?>(null)
         private set
     private val shares = mutableStateMapOf<String, Share>()
+    /** The signals come without pictures: each coin's is read as its row is drawn. */
+    val images = CoinImages(api)
     var failed by mutableStateOf(false)
         private set
     var loaded by mutableStateOf(false)
