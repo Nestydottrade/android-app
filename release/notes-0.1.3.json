@@ -1,0 +1,10 @@
+[
+  {
+    "title": "Older trades as you scroll",
+    "text": "A coin's Trades list loads older trades as you reach its end, as far back as they can be read"
+  },
+  {
+    "title": "A wallet's every trade",
+    "text": "Filter Trades by a wallet to see all its trades of the coin, not only those among the latest"
+  }
+]
