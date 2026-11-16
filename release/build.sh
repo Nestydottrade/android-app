@@ -4,7 +4,8 @@
 #   bash android/release/build.sh <keystore> [alias]
 #
 # The keystore stays where the user keeps it: never in this repository, on the server or with
-# Claude. Its password is asked here and handed to this one Gradle run through its environment.
+# Claude. Its password is asked here and handed to this one Gradle run through its environment;
+# that run leaves no daemon behind to hold it.
 # The APK and what publish.sh needs land in android/release/out/, which git leaves out.
 set -euo pipefail
 
@@ -23,9 +24,14 @@ case "$KS_ABS" in "$(cd .. && pwd)"/*) echo "Keep the keystore outside the repos
 
 read -rsp "Password of $(basename "$KS"): " PASS
 echo
+# The tests need no key: they run first, and PASS is not exported, so no process of theirs sees it.
+./gradlew-local.cmd testDebugUnitTest --console=plain
 rm -f app/build/outputs/apk/release/app-release.apk
+# The password reaches one Gradle process that ends with the build. A daemon would keep the
+# build's environment, password included, for hours: Gradle's is off (--no-daemon) and Kotlin's
+# is never started (the compiler runs inside that process).
 NESTY_KEYSTORE="$(cygpath -w "$KS_ABS")" NESTY_KEY_ALIAS="$ALIAS" NESTY_KEYSTORE_PASSWORD="$PASS" \
-  ./gradlew-local.cmd testDebugUnitTest assembleRelease --console=plain
+  ./gradlew-local.cmd --no-daemon -Pkotlin.compiler.execution.strategy=in-process assembleRelease --console=plain
 unset PASS
 
 APK=app/build/outputs/apk/release/app-release.apk
