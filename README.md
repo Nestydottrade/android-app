@@ -1,13 +1,15 @@
 # Nesty for Android
 
 A standalone, non-custodial trading app for Nesty, in Kotlin and Jetpack Compose.
-The brief is `docs/android-brief.md` in the extension's folder.
+Keys stay on the phone, and every trade is signed there.
 
-This build (0.1.0) reads, holds wallets and trades on the EVM chains. It reads
-Discover, Token, Trades and holders, Signals, Leaderboard, Wallet page, Tracker,
-Stats and Updates, with live data from `https://nesty.trade/api/v1/` on BNB
-Chain, Base, Robinhood, Ethereum, Elysium and Solana, and buys and sells on all
-six (below).
+It reads Discover, Token, Trades and holders, Signals, Leaderboard, Wallet page,
+Tracker, Stats and Updates, with live data from `https://nesty.trade/api/v1/` on
+BNB Chain, Base, Robinhood, Ethereum, Elysium and Solana, and buys and sells on
+all six (below).
+
+- Download: https://nesty.trade/#/install/android
+- Privacy policy: https://nesty.trade/#/privacy/android
 
 ## Wallets and keys
 
@@ -91,8 +93,8 @@ it does not list is asked for with `/token` on each chain it can be on
 - `data/Trading.kt` is what the screens call; `ui/trade/` has the one-tap buys
   with preset P1 (lists, token page), the buy sheet (any amount and preset), the
   sell bar (Initials, 25%, 50%, All), the position page and the Portfolio lists.
-  A buy is paid from the chain's own balance: funds do not move between chains
-  in this build.
+  A buy the chain cannot pay takes the missing amount from another chain (One
+  Balance, below).
 - Left out of the extension's engine: the aggregator; the DEX Screener index
   (the server's v4 pool ids are used instead, each checked on chain); the tax
   probe (its call is not allowed through `/rpc`, so the minimums assume no tax
@@ -117,10 +119,13 @@ it does not list is asked for with `/token` on each chain it can be on
   budget included, and the transaction is simulated: on an error nothing is
   signed. A buy spends no more SOL than the user confirmed, and the priority fee
   stays under the max network fee. Signing is in the vault (`VaultSolSigner`).
-- Reads, simulations and status checks go through `/rpc/solana`; sends go
-  straight to the public Solana RPC. `getMultipleAccounts` reads ten accounts a
-  call, the most the public node takes (a private RPC takes 100).
-- Speed is the priority fee: Normal 0.0001, Fast 0.0005, Turbo 0.002 SOL.
+- Reads, simulations and status checks go through `/rpc/solana`. A trade goes
+  out privately, as a bundle of its own through the block engines
+  (`sol/Jito.kt`), with a tip; a send without a tip goes straight to the public
+  Solana RPC. `getMultipleAccounts` reads ten accounts a call, the most the
+  public node takes (a private RPC takes 100).
+- Speed is the priority fee, Normal 0.0001, Fast 0.0005, Turbo 0.002 SOL, plus
+  the block engine's tip, 0.00001, 0.00005 and 0.0002 SOL.
 - Left out of the extension's engine: the pool index (pools come from the
   coin's address, Orca's fixed-fee pools and the pools the server names), several
   wallets at once, and the dollar limits per transaction and per click. A coin
@@ -177,7 +182,7 @@ it does not list is asked for with `/token` on each chain it can be on
   (`move/Relay.kt`: the depository, the amount, the credited wallet, the payout
   chain and coin), and its deposit is validated and simulated like a trade. Each
   bridge is quoted again right before it is signed.
-- Left out: QR scanning (it needs a library download, which is the user's call);
+- Left out: QR scanning (it would need another library);
   moving funds out of Elysium (the bridge holds no HYPE there, and the
   extension's way out through USDC was never tried with real funds), so Elysium
   funds are only sent on Elysium; a buy's move from several chains at once (one
@@ -242,7 +247,7 @@ it does not list is asked for with `/token` on each chain it can be on
   Tracker follows no Solana wallet yet (the server's book has no Solana).
 - Left out: the chart's plan lines and "Since you bought" (the Position screen
   has no chart yet), "farmers move in", "Deposit arrived", Share links on
-  alerts (step 10).
+  alerts.
 - Tests: `app/src/test/kotlin/trade/nesty/app/exit/` (the math against the
   extension's cases, the watcher with a fake market) and `alerts/` (the store,
   where an alert shows, its texts, the tracker and signal reads on a fake
@@ -298,11 +303,11 @@ it does not list is asked for with `/token` on each chain it can be on
 
 ### Releasing
 
-The release key is the user's own: it is never in this repository, on the
-server or with Claude. Create it once, outside this folder:
+The release key is the developer's own: it is never in this repository or on
+the server. Create it once, outside this folder:
 
 ```
-keytool -genkeypair -v -keystore D:\NestyKeys\nesty-release.jks -alias nesty -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Nesty"
+keytool -genkeypair -v -keystore <keys folder>/nesty-release.jks -alias nesty -keyalg RSA -keysize 4096 -validity 36500 -dname "CN=Nesty"
 ```
 
 `-dname "CN=Nesty"` names the certificate Nesty: anyone can read it from the
@@ -313,17 +318,17 @@ Keep a copy of the keystore and its password somewhere safe: every update must
 be signed with the same key, so a lost key means no more updates for anyone.
 
 1. Raise `versionCode` and `versionName` in `app/build.gradle.kts`.
-2. `bash android/release/build.sh D:/NestyKeys/nesty-release.jks` asks for the
+2. `bash android/release/build.sh <keys folder>/nesty-release.jks` asks for the
    password, runs the tests and builds the shrunk APK signed with that key. It
    refuses the debug key, and a key other than the earlier releases'
    (`release/signer.sha256`, pinned by the first release: commit it). It
    writes `release/out/nesty-<version>.apk` and `release.json`.
-3. Publishing is a deploy, so only with the user's yes:
-   `bash android/release/publish.sh [notes.json]` uploads the APK to the VPS
-   (108.61.156.56) into `/var/www/nesty-app/`, checks its hash there and as
+3. Publishing is a deploy, run once the release is approved:
+   `bash android/release/publish.sh [notes.json]` uploads the APK to Nesty's
+   server into `/var/www/nesty-app/`, checks its hash there and as
    `https://nesty.trade/app/<file>` serves it, then writes
-   `/var/lib/nesty-api/app.json`. Caddy's `/app/` route is set up once by hand
-   (`website/api/README.md`).
+   `/var/lib/nesty-api/app.json`. The server's `/app/` route is set up once by
+   hand.
 
 A phone with a debug build (signed with this computer's debug key) cannot take
 a release-signed update: Android refuses another key. It needs the app
@@ -342,19 +347,14 @@ Around the release:
   not covered yet. The worldwide rollout in 2027 needs `trade.nesty.app` and
   its key registered in the Android Developer Console, or each install and
   update needs the phone's advanced flow (a one-day wait) or adb.
-- The X routes' daily spend is capped by the X service itself
-  (`website/xcard`: `XCARD_DAILY_CALLS` 3,000 lookups, about $0.54, and
-  `XCARD_DAILY_POSTS` 5,000 posts, about $0.75, a UTC day, counted on disk,
-  for the site and the API alike). This app does not call them yet.
 - The download page is `https://nesty.trade/#/install/android`: it offers what
   `/api/v1/app` names, with the APK's and the signing key's SHA-256.
 - The app's privacy policy is `https://nesty.trade/#/privacy/android`: what the
   server sees (the wallets a phone asks about), what it keeps, who else sees
   what. A version that changes what the app sends changes that page with it.
   The app links to it only from a later version: 0.1.0 has no link.
-- The updates list has an `app` tag (`website/src/lib/updates.ts`,
-  `website/api/updates-list.ts`); the Updates screen files those entries under
-  App. A release gets an entry there, served after the next API deploy.
+- nesty.trade's Updates list tags the app's entries `app`, and the app's
+  Updates screen files them under App. A release gets an entry there.
 
 ## Build
 
