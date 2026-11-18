@@ -181,6 +181,11 @@ data class TradesAnswer(
     val older: String? = null,
     /** One wallet's answer: every trade it made of the coin is among them. */
     val all: Boolean = false,
+    /**
+     * A page before the newest, read from Nesty's book: so are the pages before it, which the list
+     * then reads without being asked. False from a server that does not say.
+     */
+    val booked: Boolean = false,
 )
 
 /** The stream's `candle` event: the newest candle of the stream's interval. */

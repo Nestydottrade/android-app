@@ -150,7 +150,11 @@ private fun TradesList(model: TokenModel, only: String?, setOnly: (String?) -> U
         when {
             shown.isNotEmpty() -> LazyColumn(Modifier.fillMaxSize(), state = tradeList) {
                 uniqueItems(shown, { it.id }) { t -> TradeRow(t, now, only, setOnly, open) }
-                if (only == null) item(key = "older") { OlderEnd(model.older) { scope.launch { model.loadOlder() } } }
+                if (only == null) item(key = "older") {
+                    // Between the pages of a past read on its own, the list's end still says it is read.
+                    val end = if (model.readingPast && model.older == Older.IDLE) Older.LOADING else model.older
+                    OlderEnd(end) { scope.launch { model.loadOlder() } }
+                }
             }
             only != null && read?.phase == Phase.FAILED -> EmptyNote("Could not read its trades. Trying again.")
             only != null && read?.phase != Phase.READY -> EmptyNote("Reading its trades…")

@@ -1,6 +1,7 @@
 package trade.nesty.app
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -27,6 +28,10 @@ class TradePagesTest {
         val tail = all?.let { ""","all":$it""" } ?: ""
         return """{"trades":[$trades],"reading":$reading,"older":${older?.let { "\"$it\"" } ?: "null"}$tail}"""
     }
+
+    /** As [page], from a server that says whether the page came from Nesty's book. */
+    private fun booked(name: String, from: Long, count: Int, older: String?, booked: Boolean) =
+        page(name, from, count, older).dropLast(1) + ""","booked":$booked}"""
 
     private fun model(answer: (String) -> Pair<Int, String>) = TokenModel(fakeApi(asked, answer), Chain.BSC, coin)
 
@@ -214,5 +219,88 @@ class TradePagesTest {
         assertEquals(null, answer.older)
         m.loadTrades()
         assertEquals(1, m.trades.size)
+    }
+    @Test
+    fun readsItsPastFromTheBookWithoutBeingAsked() = runTest {
+        val m = model { url ->
+            200 to when {
+                url.contains("before=c1") -> booked("b", 900, 200, "c2", true)
+                url.contains("before=c2") -> booked("c", 700, 150, null, true)
+                else -> page("a", 1_000, 100, "c1")
+            }
+        }
+        m.loadTrades()
+        m.readPast()
+        assertEquals(listOf("c1", "c2"), cursors())
+        // The most the server sends a page.
+        assertTrue(asked.drop(1).all { it.contains("limit=200") })
+        assertEquals(450, m.trades.size)
+        assertEquals((1_000L downTo 551L).toList(), m.trades.map { it.at })
+        assertEquals(Older.DONE, m.older)
+    }
+
+    @Test
+    fun aPageFromTheChainLeavesTheRestToTheListsEnd() = runTest {
+        val m = model { url ->
+            200 to when {
+                url.contains("before=") -> booked("b", 900, 200, "c2", false)
+                else -> page("a", 1_000, 100, "c1")
+            }
+        }
+        m.loadTrades()
+        m.readPast()
+        assertEquals(listOf("c1"), cursors())
+        assertEquals(300, m.trades.size)
+        assertEquals(Older.IDLE, m.older)
+        // A server that does not say where its pages come from is read one page back too, no more.
+        asked.clear()
+        val old = model { url -> 200 to if (url.contains("before=")) page("b", 900, 100, "c2") else page("a", 1_000, 100, "c1") }
+        old.loadTrades()
+        old.readPast()
+        assertEquals(listOf("c1"), cursors())
+    }
+
+    @Test
+    fun waitsForTheServersFirstReadOfTheCoin() = runTest {
+        var newest = 0
+        val m = model { url ->
+            200 to when {
+                url.contains("before=") -> booked("b", 50, 10, null, true)
+                newest++ < 2 -> page("a", 100, 0, null, reading = true)
+                else -> page("a", 100, 20, "c1")
+            }
+        }
+        m.loadTrades()
+        m.readPast()
+        assertEquals(listOf("c1"), cursors())
+        assertEquals(30, m.trades.size)
+        assertEquals(Older.DONE, m.older)
+    }
+
+    @Test
+    fun aFailedPageIsAskedOnceMoreThenLeftToTheList() = runTest {
+        var failed = 0
+        val m = model { url ->
+            if (url.contains("before=")) {
+                failed++
+                502 to """{"error":"unreadable"}"""
+            } else {
+                200 to page("a", 1_000, 100, "c1")
+            }
+        }
+        m.loadTrades()
+        m.readPast()
+        assertEquals(2, failed)
+        assertEquals(Older.FAILED, m.older)
+        assertEquals(100, m.trades.size)
+    }
+
+    @Test
+    fun aChainWithoutTheBookIsNotReadWithoutBeingAsked() = runTest {
+        val mint = "Mint111111111111111111111111111111111111111"
+        val m = TokenModel(fakeApi(asked) { 200 to page("a", 1_000, 100, "s0.x") }, Chain.SOLANA, mint)
+        m.loadTrades()
+        m.readPast()
+        assertEquals(1, asked.size)
     }
 }

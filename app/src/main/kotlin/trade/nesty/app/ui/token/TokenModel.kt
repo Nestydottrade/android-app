@@ -10,6 +10,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import trade.nesty.app.data.ApiException
 import trade.nesty.app.data.Candle
@@ -57,6 +58,15 @@ private const val OLDER_PAGE = 100
 private const val EMPTY_PAGES = 3
 /** Trades the list holds at most: past them the oldest go. */
 const val MAX_TRADES = 5_000
+/** Each page of the coin's past read without being asked: the most the server sends. */
+private const val BOOKED_PAGE = 200
+/** Between those pages, as the site's token page waits between its own. */
+private const val BOOKED_PAUSE_MS = 300L
+/** A page that did not come is asked for once more, this long after. */
+private const val PAGE_RETRY_MS = 2_000L
+/** While the server's first read of the coin runs, its newest page is asked again this often, so many times. */
+private const val READING_WAIT_MS = 3_000L
+private const val READING_TRIES = 10
 
 /** Everything the token page and its Trades and holders page read of one coin. */
 class TokenModel(private val api: NestyApi, val chain: Chain, val address: String) {
@@ -95,12 +105,20 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
     /** Counts the older pages that added trades, so a list whose end stays in view asks again. */
     var olderPages by mutableIntStateOf(0)
         private set
+    /** The coin's past is being read on its own, between its pages too. */
+    var readingPast by mutableStateOf(false)
+        private set
     /** Where the page before the list starts, as the server told it. */
     private var olderCursor: String? = null
     /** An older page was added: a newest page read again then leaves the cursor as it is. */
     private var paged = false
     /** Counts the times the list started again, so an older page asked for before is dropped. */
     private var listEpoch = 0
+    /**
+     * Whether the last page before the newest came from Nesty's book: then the coin's past is read
+     * on its own from the moment it opens. Null until a page said.
+     */
+    private var olderBooked: Boolean? = null
 
     /** The wallet the list is filtered to, with its trades read whole; null while it is not. */
     var walletRead by mutableStateOf<WalletRead?>(null)
@@ -143,10 +161,11 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
 
     val holderCount: Int? get() = share?.holders ?: holders?.holders
 
-    /** Reads the coin, its chart and its trades live, and the rest every 30 seconds, while shown. */
+    /** Reads the coin, its chart and its trades live, its past, and the rest every 30 seconds, while shown. */
     suspend fun live(withChart: Boolean) = coroutineScope {
         launch { firstCoin() }
         launch { sides() }
+        launch { readPast() }
         if (withChart) {
             launch {
                 snapshotFlow { frame }.collectLatest { f ->
@@ -289,11 +308,43 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
     }
 
     /**
-     * Adds the page before the list's oldest trade. A quiet stretch of the chain can answer empty
-     * pages: past EMPTY_PAGES of them in a row the list waits (STALLED) for the person to scroll
-     * back to its end or ask.
+     * Reads the coin's past without being asked, from the moment it opens, while its pages come
+     * from Nesty's book: a page every BOOKED_PAUSE_MS, back to its first trade or MAX_TRADES, so
+     * the followed wallets' trades and the Trades list hold all of it. A page read from the chain
+     * stops it: the rest come as the list's end comes into view, as the server's RPCs are shared
+     * by every phone. Not on a chain without the book. Internal for its tests.
      */
-    suspend fun loadOlder() {
+    internal suspend fun readPast() {
+        if (!chain.book) return
+        // The newest page first: it tells where the one before it starts.
+        snapshotFlow { tradesPhase }.first { it != Phase.LOADING }
+        var reading = 0
+        try {
+            while (older != Older.DONE && older != Older.STALLED && olderBooked != false) {
+                if (olderCursor == null && reading++ >= READING_TRIES) return
+                // No cursor yet: the server's first read of the coin still runs.
+                delay(if (olderCursor == null) READING_WAIT_MS else BOOKED_PAUSE_MS)
+                // Its pages come from the book: the list's end says so between them too.
+                readingPast = olderBooked == true
+                loadOlder(BOOKED_PAGE)
+                if (older == Older.FAILED) {
+                    // Asked once more; past that, the list's end asks again as it comes into view.
+                    delay(PAGE_RETRY_MS)
+                    loadOlder(BOOKED_PAGE)
+                    if (older == Older.FAILED) return
+                }
+            }
+        } finally {
+            readingPast = false
+        }
+    }
+
+    /**
+     * Adds the page before the list's oldest trade, [size] trades at most. A quiet stretch of the
+     * chain can answer empty pages: past EMPTY_PAGES of them in a row the list waits (STALLED) for
+     * the person to scroll back to its end or ask.
+     */
+    suspend fun loadOlder(size: Int = OLDER_PAGE) {
         if (older == Older.LOADING || older == Older.DONE) return
         older = Older.LOADING
         try {
@@ -309,9 +360,10 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
             val epoch = listEpoch
             repeat(EMPTY_PAGES) {
                 val cursor = olderCursor ?: return
-                val a = api.trades(chain, address, OLDER_PAGE, before = cursor)
+                val a = api.trades(chain, address, size, before = cursor)
                 // The list started again meanwhile, or filled up.
                 if (epoch != listEpoch || older != Older.LOADING) return
+                olderBooked = a.booked
                 val added = addOlder(a.trades)
                 paged = true
                 val full = trades.size >= MAX_TRADES
