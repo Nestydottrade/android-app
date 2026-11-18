@@ -264,6 +264,60 @@ data class TradersAnswer(
     val signal: CoinSignal? = null,
 )
 
+/** A key wallet of a coin: what it is to the coin and what it holds now. */
+@Serializable
+data class KeyWallet(
+    val wallet: String = "",
+    /** `dev`, `team`, `handoff`, `insider`, `bundler`, `sniper`, `top` or `big`. */
+    val role: String = "",
+    /** Its place among the ten largest holders, 1 to 10; null below them. */
+    val rank: Int? = null,
+    val tags: List<String> = emptyList(),
+    /** Whole tokens; null where not read. */
+    val held: Double? = null,
+)
+
+/** What a key wallet did: a trade, or a send between wallets. */
+@Serializable
+data class KeyMove(
+    val id: String = "",
+    val tx: String = "",
+    val at: Long = 0,
+    /** `bought`, `sold`, `sent`, `received` or `burned`. */
+    val verb: String = "",
+    val wallet: String = "",
+    val role: String = "",
+    /** Whole tokens. */
+    val tokens: Double = 0.0,
+    /** What a trade paid or got, in whole units of the answer's quote; null for a send. */
+    val quote: Double? = null,
+    /** The other wallet of a send. */
+    val other: String? = null,
+    /** A buy of 1% of the supply or more, whoever made it. */
+    val big: Boolean = false,
+    /** The market cap a trade's price came to; null for a send. */
+    val mcapUsd: Double? = null,
+)
+
+/**
+ * A coin's Key wallets list (/keys): its creator's side, launch buyers, largest holders and big
+ * buyers, with their moves newest first. `price` is a whole token in the quote, `supply` whole tokens.
+ */
+@Serializable
+data class KeysAnswer(
+    val feed: String = "",
+    val address: String = "",
+    val quote: Quote? = null,
+    val supply: Double? = null,
+    val price: Double? = null,
+    /** Still reading moves back: ask again within seconds. */
+    val reading: Boolean = false,
+    /** Some moves may be missing. */
+    val partial: Boolean = false,
+    val wallets: List<KeyWallet> = emptyList(),
+    val moves: List<KeyMove> = emptyList(),
+)
+
 /**
  * The coin's signal of the last day with the most wallets. `wallets` names them in the signal's
  * order; `rows` holds one for each of them that has a trade among those summed, in that order.

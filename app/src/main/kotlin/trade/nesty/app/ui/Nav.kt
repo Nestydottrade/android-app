@@ -31,6 +31,9 @@ sealed interface Route {
     data class Token(val chain: Chain, val address: String, val buy: Boolean = false, val buyUsd: Double? = null) : Route
     data class TradesHolders(val chain: Chain, val address: String) : Route
 
+    /** What a coin's creator side, launch buyers, largest holders and big buyers did with it. */
+    data class KeyWallets(val chain: Chain, val address: String) : Route
+
     /** The wallet's position in a coin: what it holds, its result, selling. */
     data class Position(val chain: Chain, val address: String) : Route
 

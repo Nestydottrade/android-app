@@ -18,6 +18,7 @@ import trade.nesty.app.data.ChainRecord
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
 import trade.nesty.app.data.HoldersAnswer
+import trade.nesty.app.data.KeysAnswer
 import trade.nesty.app.data.NestyApi
 import trade.nesty.app.data.Share
 import trade.nesty.app.data.SignalRow
@@ -67,6 +68,13 @@ private const val PAGE_RETRY_MS = 2_000L
 /** While the server's first read of the coin runs, its newest page is asked again this often, so many times. */
 private const val READING_WAIT_MS = 3_000L
 private const val READING_TRIES = 10
+/** The Key wallets list is asked for again this soon while the server reads its moves back. */
+private const val KEYS_READING_MS = 5_000L
+/** And this often after, so its newest moves come in. */
+private const val KEYS_MS = 10_000L
+/** After a failed ask, then doubling up to the most. */
+private const val KEYS_FAILED_MS = 5_000L
+private const val KEYS_MAX_WAIT_MS = 30_000L
 
 /** Everything the token page and its Trades and holders page read of one coin. */
 class TokenModel(private val api: NestyApi, val chain: Chain, val address: String) {
@@ -443,6 +451,47 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
 
     fun clearWallet() {
         walletRead = null
+    }
+
+    /** The Key wallets list as the server last told it; null until it did. */
+    var keys by mutableStateOf<KeysAnswer?>(null)
+        private set
+    /** EMPTY where the server keeps no such list of the coin (Solana). */
+    var keysPhase by mutableStateOf(Phase.LOADING)
+        private set
+
+    /**
+     * Asks for the Key wallets list while it shows: every 5 seconds while the server still reads
+     * moves back, every 10 after, as its README asks. Only the coin goes to the server.
+     */
+    suspend fun followKeys() {
+        if (!chain.book) {
+            keysPhase = Phase.EMPTY
+            return
+        }
+        var wait = KEYS_FAILED_MS
+        while (true) {
+            try {
+                val a = api.keys(chain, address)
+                keys = a
+                keysPhase = Phase.READY
+                wait = KEYS_FAILED_MS
+                delay(if (a.reading) KEYS_READING_MS else KEYS_MS)
+                continue
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: ApiException) {
+                if (e.notFound) {
+                    keysPhase = Phase.EMPTY
+                    return
+                }
+                if (keys == null) keysPhase = Phase.FAILED
+            } catch (_: Exception) {
+                if (keys == null) keysPhase = Phase.FAILED
+            }
+            delay(wait)
+            wait = (wait * 2).coerceAtMost(KEYS_MAX_WAIT_MS)
+        }
     }
 
     /** The list filtered to [wallet]: its trades read whole and those heard since, each once, newest first. */

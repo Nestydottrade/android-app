@@ -62,6 +62,9 @@ class NestyApi(
 
     suspend fun token(chain: Chain, address: String): Coin = get("token/${chain.feed}/$address")
 
+    /** The coin's key wallets and their moves; only the coin goes to the server. Not on Solana (404). */
+    suspend fun keys(chain: Chain, address: String): KeysAnswer = get("keys/${chain.feed}/$address")
+
     /** A launchpad coin's picture, read to the end by the server; null where none is found. */
     suspend fun image(chain: Chain, address: String): String? = get<ImageAnswer>("image/${chain.feed}/$address").image
 

@@ -40,6 +40,7 @@ import trade.nesty.app.ui.alerts.routeOf
 import trade.nesty.app.ui.discover.DiscoverModel
 import trade.nesty.app.ui.discover.DiscoverScreen
 import trade.nesty.app.ui.discover.SearchScreen
+import trade.nesty.app.ui.holders.KeyWalletsScreen
 import trade.nesty.app.ui.holders.TradesHoldersScreen
 import trade.nesty.app.ui.menu.AppUpdateScreen
 import trade.nesty.app.ui.menu.MenuScreen
@@ -225,6 +226,7 @@ private fun Screen(route: Route) {
         Route.Portfolio -> PortfolioScreen()
         is Route.Token -> TokenScreen(route.chain, route.address, route.buy, route.buyUsd)
         is Route.TradesHolders -> TradesHoldersScreen(route.chain, route.address)
+        is Route.KeyWallets -> KeyWalletsScreen(route.chain, route.address)
         is Route.Position -> PositionScreen(route.chain, route.address)
         is Route.Trade -> TradeDetailScreen(route.wallet, route.tx)
         is Route.Wallet -> WalletScreen(route.chain, route.address)

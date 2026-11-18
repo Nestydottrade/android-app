@@ -161,6 +161,8 @@ fun TokenScreen(chain: Chain, address: String, openBuy: Boolean = false, buyUsd:
                             model.holderCount?.let { Fmt.counted(it.toLong(), "holder") },
                         ).joinToString(" · ")
                         NavRow("Trades and holders", note.ifEmpty { null }, onClick = { nav.push(Route.TradesHolders(chain, address)) })
+                        Divider()
+                        NavRow("Key wallets", onClick = { nav.push(Route.KeyWallets(chain, address)) })
                     }
                 }
                 TradeBar(chain, address, coin, checks, onChecks = { scope.launch { scroll.animateScrollTo(checksY.toInt()) } }, openBuy = openBuy, openUsd = buyUsd)

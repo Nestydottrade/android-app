@@ -30,7 +30,12 @@ enum class WalletTag(val label: String, val bg: Color, val line: Color, val ink:
     DEV("Dev", Color.Transparent, Ink.violet.copy(alpha = 0.6f), Ink.violetSoft),
     FLIPPER("Flipper", Color.Transparent, Ink.line3, Ink.text2),
     HOLDER("Holder", Color.Transparent, Ink.greenLine, Ink.greenSoft),
-    TRACKED("Tracked", Ink.greenDeep, Ink.greenLine, Ink.green);
+    TRACKED("Tracked", Ink.greenDeep, Ink.greenLine, Ink.green),
+
+    // The Key wallets list's own parts, never read from a tag.
+    INSIDER("Insider", Color.Transparent, Ink.pink.copy(alpha = 0.55f), Ink.pink),
+    TOP("Top 10", Color.Transparent, Ink.line3, Ink.text2),
+    BIG("Big buy", Color.Transparent, Ink.greenLine, Ink.greenSoft);
 
     companion object {
         fun of(tag: String?): WalletTag? = when (tag?.lowercase()) {
@@ -51,7 +56,7 @@ enum class WalletTag(val label: String, val bg: Color, val line: Color, val ink:
 }
 
 @Composable
-fun TagChip(tag: WalletTag) {
+fun TagChip(tag: WalletTag, label: String = tag.label) {
     Box(
         Modifier
             .height(20.dp)
@@ -60,7 +65,7 @@ fun TagChip(tag: WalletTag) {
             .padding(horizontal = 6.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(tag.label, style = text(11, FontWeight.Bold, tag.ink), maxLines = 1)
+        Text(label, style = text(11, FontWeight.Bold, tag.ink), maxLines = 1)
     }
 }
 
