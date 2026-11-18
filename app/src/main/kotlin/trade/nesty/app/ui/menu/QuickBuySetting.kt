@@ -107,11 +107,16 @@ private fun AmountsEditor(now: List<Int>, onSave: (List<Int>) -> String?) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         Text("Amounts in dollars", style = text(13, color = Ink.muted))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            typed.forEachIndexed { i, value ->
-                DollarBox(value, "Quick buy amount ${i + 1}", Modifier.weight(1f), bad = why != null) { v ->
-                    typed = typed.toMutableList().also { it[i] = v }
-                    why = null
+        // Two across, so six figures fit a box on a narrow phone.
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (pair in typed.withIndex().chunked(2)) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    for ((i, value) in pair) {
+                        DollarBox(value, "Quick buy amount ${i + 1}", Modifier.weight(1f), bad = why != null) { v ->
+                            typed = typed.toMutableList().also { it[i] = v }
+                            why = null
+                        }
+                    }
                 }
             }
         }

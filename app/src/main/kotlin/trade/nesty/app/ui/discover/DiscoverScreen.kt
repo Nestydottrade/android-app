@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -191,7 +191,7 @@ private fun DiscoverRowView(r: DiscoverRow, lane: Lane, now: Long, quick: Int, o
             }
             Box(
                 Modifier
-                    .width(60.dp)
+                    .widthIn(min = 60.dp)
                     .height(44.dp)
                     .background(Ink.greenDeep, RoundedCornerShape(12.dp))
                     .border(1.dp, Ink.greenLine, RoundedCornerShape(12.dp))

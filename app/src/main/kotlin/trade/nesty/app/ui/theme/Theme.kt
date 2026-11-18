@@ -68,23 +68,20 @@ object Ink {
     fun chainSolid(c: Chain): Color = Color(c.dot)
 }
 
-val Barlow = FontFamily(
-    Font(R.font.barlow_regular, FontWeight.Normal),
-    Font(R.font.barlow_medium, FontWeight.Medium),
-    Font(R.font.barlow_semibold, FontWeight.SemiBold),
-    Font(R.font.barlow_bold, FontWeight.Bold),
-)
-
-/** Barlow Semi Condensed, for figures. */
-val Figures = FontFamily(
-    Font(R.font.barlow_sc_medium, FontWeight.Medium),
-    Font(R.font.barlow_sc_semibold, FontWeight.SemiBold),
-    Font(R.font.barlow_sc_bold, FontWeight.Bold),
+/**
+ * Inter, as on nesty.trade, for words and figures alike (figures with tabular digits). The
+ * files are static instances of the site's Inter Variable, made by tools/fonts/make_inter.py.
+ */
+val Inter = FontFamily(
+    Font(R.font.inter_regular, FontWeight.Normal),
+    Font(R.font.inter_medium, FontWeight.Medium),
+    Font(R.font.inter_semibold, FontWeight.SemiBold),
+    Font(R.font.inter_bold, FontWeight.Bold),
 )
 
 fun text(size: Int, weight: FontWeight = FontWeight.Normal, color: Color = Ink.text, lineHeight: TextUnit = TextUnit.Unspecified) =
     TextStyle(
-        fontFamily = Barlow,
+        fontFamily = Inter,
         fontSize = size.sp,
         fontWeight = weight,
         color = color,
@@ -93,7 +90,7 @@ fun text(size: Int, weight: FontWeight = FontWeight.Normal, color: Color = Ink.t
     )
 
 fun figure(size: Int, weight: FontWeight = FontWeight.SemiBold, color: Color = Ink.text) =
-    TextStyle(fontFamily = Figures, fontSize = size.sp, fontWeight = weight, color = color, fontFeatureSettings = "tnum")
+    TextStyle(fontFamily = Inter, fontSize = size.sp, fontWeight = weight, color = color, fontFeatureSettings = "tnum")
 
 @Composable
 fun NestyTheme(content: @Composable () -> Unit) {
@@ -112,11 +109,11 @@ fun NestyTheme(content: @Composable () -> Unit) {
     )
     val base = Typography()
     val type = Typography(
-        bodyLarge = base.bodyLarge.copy(fontFamily = Barlow),
-        bodyMedium = base.bodyMedium.copy(fontFamily = Barlow),
-        bodySmall = base.bodySmall.copy(fontFamily = Barlow),
-        labelLarge = base.labelLarge.copy(fontFamily = Barlow),
-        titleMedium = base.titleMedium.copy(fontFamily = Barlow),
+        bodyLarge = base.bodyLarge.copy(fontFamily = Inter),
+        bodyMedium = base.bodyMedium.copy(fontFamily = Inter),
+        bodySmall = base.bodySmall.copy(fontFamily = Inter),
+        labelLarge = base.labelLarge.copy(fontFamily = Inter),
+        titleMedium = base.titleMedium.copy(fontFamily = Inter),
     )
     MaterialTheme(colorScheme = scheme, typography = type, content = content)
 }

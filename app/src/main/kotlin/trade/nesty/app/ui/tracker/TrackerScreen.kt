@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -400,7 +399,7 @@ private fun TrackedRow(r: TrackedTrade, now: Long, settings: Settings, onOpen: (
                 Box(
                     Modifier
                         .padding(top = 12.dp)
-                        .width(64.dp)
+                        .widthIn(min = 64.dp)
                         .height(44.dp)
                         .clip(RoundedCornerShape(12.dp))
                         .background(Ink.greenDeep)

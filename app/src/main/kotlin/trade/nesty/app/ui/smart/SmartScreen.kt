@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -361,9 +362,16 @@ private fun LiveSignalCard(s: ChainSignal, model: SignalsModel, now: Long, onOpe
                         Text(symbol, style = text(16, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                         Text(listOfNotNull(s.chain.title, r.launched?.let { Fmt.age(now - it) }).joinToString(" · "), style = text(12, color = Ink.muted), maxLines = 1)
                     }
+                    // The change is measured first: where the row is short, the figures give way, never the change.
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("MC at signal", style = text(13, color = Ink.muted), maxLines = 1)
-                        Text("${Fmt.usd(then)} → ${Fmt.usd(nowMc)}", style = figure(15, FontWeight.SemiBold), maxLines = 1)
+                        Text("MC", style = text(13, color = Ink.muted), maxLines = 1)
+                        Text(
+                            "${Fmt.usd(then)} → ${Fmt.usd(nowMc)}",
+                            style = figure(15, FontWeight.SemiBold),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
                         if (change != null) Text(Fmt.pctChange(change), style = text(13, FontWeight.Bold, pctColor(change)), maxLines = 1)
                     }
                 }
@@ -389,7 +397,7 @@ private fun LiveSignalCard(s: ChainSignal, model: SignalsModel, now: Long, onOpe
             Modifier
                 .align(Alignment.TopEnd)
                 .padding(top = 14.dp, end = 12.dp)
-                .width(64.dp)
+                .widthIn(min = 64.dp)
                 .height(44.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Ink.greenDeep)
@@ -584,7 +592,7 @@ private fun LeaderRow(rank: Int, r: BoardRow, sort: Sort, settings: Settings, on
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text("$rank", style = figure(14, FontWeight.SemiBold, Ink.muted), modifier = Modifier.width(22.dp))
+                Text("$rank", style = figure(14, FontWeight.SemiBold, Ink.muted), modifier = Modifier.widthIn(min = 22.dp))
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Text(

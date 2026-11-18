@@ -652,10 +652,11 @@ fun ExportForm(wallet: WalletInfo, onClose: () -> Unit) {
         } else {
             Text("${wallet.name}: ${exportNameInLine(kind)}", style = text(13, color = Ink.muted))
             if (kind == ExportKind.PHRASE) {
-                // Words are for paper: three across, each with its place in the phrase.
+                // Words are for paper: two across, each with its place in the phrase. Two leave the
+                // longest words room on a narrow phone; a word never loses a letter to the edge.
                 val words = secret.split(" ")
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    for (row in words.withIndex().chunked(3)) {
+                    for (row in words.withIndex().chunked(2)) {
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             for ((i, word) in row) {
                                 Row(
@@ -663,15 +664,16 @@ fun ExportForm(wallet: WalletInfo, onClose: () -> Unit) {
                                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 ) {
                                     Text("${i + 1}", style = figure(13, FontWeight.SemiBold, Ink.muted))
-                                    Text(word, style = text(14, FontWeight.SemiBold), maxLines = 1)
+                                    Text(word, style = text(14, FontWeight.SemiBold))
                                 }
                             }
+                            repeat(2 - row.size) { Box(Modifier.weight(1f)) }
                         }
                     }
                 }
                 Text("Write the words down in this order and keep them off any screen. They are this wallet's only backup.", style = text(13, color = Ink.text2, lineHeight = 19.sp))
             } else {
-                Text("•••• •••• •••• •••• •••• •••• ${secret.takeLast(4)}", style = figure(17, FontWeight.SemiBold), maxLines = 1)
+                Text("•••• •••• •••• •••• •••• •••• ${secret.takeLast(4)}", style = figure(17, FontWeight.SemiBold))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Box(

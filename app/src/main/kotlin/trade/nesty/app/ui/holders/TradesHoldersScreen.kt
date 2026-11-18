@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.items
@@ -187,7 +188,7 @@ private fun TradeRow(t: Trade, now: Long, only: String?, setOnly: (String?) -> U
     val w = t.wallet
     Column {
         Row(Modifier.fillMaxWidth().heightIn(min = 60.dp), verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.width(92.dp).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.widthIn(min = 92.dp).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(if (t.isBuy) "Buy" else "Sell", style = text(13, FontWeight.Bold, if (t.isBuy) Ink.green else Ink.pink))
                 Text(t.usd?.let { Fmt.usdFull(it) } ?: Fmt.DASH, style = figure(15, FontWeight.SemiBold), maxLines = 1)
             }
@@ -254,7 +255,7 @@ private fun HoldersList(model: TokenModel, chain: Chain, open: (String) -> Unit)
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
-                            Text("${i + 1}", style = figure(14, FontWeight.SemiBold, Ink.muted), modifier = Modifier.width(22.dp))
+                            Text("${i + 1}", style = figure(14, FontWeight.SemiBold, Ink.muted), modifier = Modifier.widthIn(min = 22.dp))
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 WalletName(h.wallet, h.tags)
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -310,7 +311,7 @@ private fun TradersList(model: TokenModel, early: Boolean, open: (String) -> Uni
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
-                        if (early) Text("${i + 1}", style = figure(14, FontWeight.SemiBold, Ink.muted), modifier = Modifier.width(22.dp))
+                        if (early) Text("${i + 1}", style = figure(14, FontWeight.SemiBold, Ink.muted), modifier = Modifier.widthIn(min = 22.dp))
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             WalletName(r.wallet, r.tags)
                             Text(

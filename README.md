@@ -403,5 +403,9 @@ D:\Android\sdk\emulator\emulator.exe -avd nesty36
   each move.
 - `ui/`: one folder per screen, shared parts in `Components.kt`, figures in
   `Format.kt`, the coin checks in `Checks.kt`; Withdraw in `ui/withdraw/`.
+- `res/font/`: Inter, nesty.trade's typeface (SIL OFL 1.1,
+  `assets/licenses/OFL-Inter.txt`), at the four weights the app uses. They are
+  static fonts made from the site's Inter Variable by
+  `tools/fonts/make_inter.py`, so the app fetches no font.
 - `app/src/test/`: unit tests; `resources/fixtures/` holds real API answers
   saved on 2026-11-13.

@@ -56,7 +56,7 @@ import kotlinx.coroutines.launch
 import trade.nesty.app.data.Candle
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.NIcons
-import trade.nesty.app.ui.theme.Barlow
+import trade.nesty.app.ui.theme.Inter
 import trade.nesty.app.ui.theme.Ink
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -245,10 +245,10 @@ fun CandleChart(
     ath: Double? = null,
 ) {
     val measurer = rememberTextMeasurer()
-    val labelStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Ink.muted) }
-    val tagStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Ink.greenInk) }
-    val athStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Ink.text2) }
-    val athTagStyle = remember { TextStyle(fontFamily = Barlow, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Ink.ground) }
+    val labelStyle = remember { TextStyle(fontFamily = Inter, fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = Ink.muted, fontFeatureSettings = "tnum") }
+    val tagStyle = remember { TextStyle(fontFamily = Inter, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Ink.greenInk, fontFeatureSettings = "tnum") }
+    val athStyle = remember { TextStyle(fontFamily = Inter, fontSize = 10.sp, fontWeight = FontWeight.SemiBold, color = Ink.text2, fontFeatureSettings = "tnum") }
+    val athTagStyle = remember { TextStyle(fontFamily = Inter, fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Ink.ground, fontFeatureSettings = "tnum") }
     val latest by rememberUpdatedState(candles)
     val scope = rememberCoroutineScope()
     val scrolledBack by remember(view) { derivedStateOf { view.pin != null } }

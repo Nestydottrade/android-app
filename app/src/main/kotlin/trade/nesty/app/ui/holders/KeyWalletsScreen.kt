@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -322,7 +322,7 @@ private fun KeyMoveRow(m: KeyMove, rank: Int?, a: KeysAnswer, line: String, now:
                 .padding(vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.width(92.dp).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(Modifier.widthIn(min = 92.dp).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Text(KeyList.verbWord(m.verb), style = text(13, FontWeight.Bold, verbColor(m.verb)), maxLines = 1)
                 Text(
                     supply?.let { KeyList.ofSupply(m.tokens / it) } ?: Fmt.compact(m.tokens),

@@ -61,7 +61,6 @@ import trade.nesty.app.data.AppGraph
 import trade.nesty.app.ui.alerts.BellButton
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Served
-import trade.nesty.app.ui.theme.Figures
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
@@ -611,7 +610,7 @@ fun Gap(h: Dp) = Spacer(Modifier.height(h))
 
 @Composable
 fun FigureText(value: String, size: Int, color: Color = Ink.text, weight: FontWeight = FontWeight.SemiBold, modifier: Modifier = Modifier) {
-    Text(value, style = figure(size, weight, color).copy(fontFamily = Figures), modifier = modifier, maxLines = 1)
+    Text(value, style = figure(size, weight, color), modifier = modifier, maxLines = 1)
 }
 
 /**
