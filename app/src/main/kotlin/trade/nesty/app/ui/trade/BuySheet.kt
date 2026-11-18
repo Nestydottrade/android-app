@@ -516,21 +516,31 @@ private fun AskNote(ask: Move, chain: Chain, onKeep: () -> Unit) {
     }
 }
 
+/** A big amount to type: dollars by default; `prefix` null and `clean` for an amount of a coin. */
 @Composable
-internal fun AmountField(value: String, enabled: Boolean, bad: Boolean, onChange: (String) -> Unit) {
+internal fun AmountField(
+    value: String,
+    enabled: Boolean,
+    bad: Boolean,
+    prefix: String? = "$",
+    describe: String = "Amount in dollars",
+    size: Int = 44,
+    clean: (String) -> String? = ::cleanAmount,
+    onChange: (String) -> Unit,
+) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("$", style = figure(44, FontWeight.SemiBold, if (value.isEmpty()) Ink.muted else Ink.text))
-        Box(Modifier.weight(1f).padding(start = 2.dp)) {
-            if (value.isEmpty()) Text("0", style = figure(44, FontWeight.SemiBold, Ink.muted))
+        if (prefix != null) Text(prefix, style = figure(size, FontWeight.SemiBold, if (value.isEmpty()) Ink.muted else Ink.text))
+        Box(Modifier.weight(1f).padding(start = if (prefix != null) 2.dp else 0.dp)) {
+            if (value.isEmpty()) Text("0", style = figure(size, FontWeight.SemiBold, Ink.muted))
             BasicTextField(
                 value = value,
-                onValueChange = { v -> cleanAmount(v)?.let(onChange) },
+                onValueChange = { v -> clean(v)?.let(onChange) },
                 enabled = enabled,
                 singleLine = true,
-                textStyle = figure(44, FontWeight.SemiBold, if (bad) Ink.pink else Ink.text),
+                textStyle = figure(size, FontWeight.SemiBold, if (bad) Ink.pink else Ink.text),
                 cursorBrush = SolidColor(Ink.green),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done, autoCorrectEnabled = false),
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Amount in dollars" },
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = describe },
             )
         }
     }

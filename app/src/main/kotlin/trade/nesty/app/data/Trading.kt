@@ -34,7 +34,10 @@ import trade.nesty.app.evm.TradeException
 import trade.nesty.app.evm.TradePrefs
 import trade.nesty.app.evm.TradeStatus
 import trade.nesty.app.evm.orNull
+import trade.nesty.app.evm.sanitizeLabel
 import trade.nesty.app.evm.shortErr
+import trade.nesty.app.move.Recipient
+import trade.nesty.app.move.Typed
 import trade.nesty.app.sol.HttpSolCall
 import trade.nesty.app.sol.Jito
 import trade.nesty.app.sol.SolAddr
@@ -118,6 +121,9 @@ class Trading(
     http: OkHttpClient,
 ) {
     lateinit var balances: BalanceModel
+
+    /** Coins added to Portfolio by hand. */
+    lateinit var imports: ImportStore
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val pending = ConcurrentHashMap<String, Pending>()
@@ -743,19 +749,22 @@ class Trading(
     /** The addresses of the wallet that trades: its EVM one and its Solana one. */
     private fun own(): List<String> = listOfNotNull(session.active?.evm, session.active?.sol)
 
-    /** The positions of the wallet that trades, with its balances and prices now. */
+    /** The positions of the wallet that trades, with its balances and prices now, and the coins added by hand. */
     fun holdings(): List<Holding> {
         val fills = activity()
-        if (fills.isEmpty()) return emptyList()
-        return Positions.holdings(fills, balances.active) { c, t -> prices[Balances.tokenKey(c, t)] }
+        val added = own().flatMap { imports.of(it) }
+        if (fills.isEmpty() && added.isEmpty()) return emptyList()
+        return Positions.holdings(fills, balances.active, added) { c, t -> prices[Balances.tokenKey(c, t)] }
     }
 
     /** One coin's position, priced at `priceNow` when the screen has a fresher price. */
     fun holding(chain: Chain, token: String, priceNow: Double? = null): Holding? {
         val wallet = addressOn(chain) ?: return null
         val fills = store.of(wallet).filter { it.feed == chain.feed && sameToken(chain, it.token, token) }
-        if (fills.isEmpty()) return null
-        val p = Positions.of(fills).firstOrNull() ?: return null
+        val added = imports.find(wallet, chain, token)
+        val p = (Positions.of(fills).firstOrNull()?.let { if (added != null) it.copy(imported = true) else it })
+            ?: added?.let { Position.of(it, chain) }
+            ?: return null
         val held = balances.active?.token(chain, token) ?: p.booked
         return Holding(p, held, priceNow ?: prices[Balances.tokenKey(chain, token)])
     }
@@ -763,10 +772,102 @@ class Trading(
     /** The trades of the wallet that trades, newest first, with those that were sent and did not land: its activity. */
     fun activity(): List<Fill> = own().flatMap { store.activityOf(it) }.distinct().sortedByDescending { it.at }
 
-    /** Prices of the coins of the wallet's positions, read while a screen shows them. */
+    /** The coins added by hand to the wallet that trades, to name with its balance and its prices. */
+    private fun addedCoins(): List<Pair<Chain, String>> = own().flatMap { imports.of(it) }.mapNotNull { i -> i.chain?.let { it to i.token } }
+
+    /**
+     * Adds a coin the wallet that trades got from outside Nesty to Portfolio. Its address is read
+     * on each chain of its kind the wallet has, and the coin is added where the wallet holds some.
+     * The server sees the wallet's address with the coin, as for every balance it reads. Throws
+     * TradeRefused with the reason when nothing was added.
+     */
+    suspend fun importCoin(input: String): List<Imported> {
+        val wallet = session.active ?: throw TradeRefused("Add a wallet first.")
+        val typed = Recipient.parse(input) ?: throw TradeRefused("Paste the coin's address.")
+        val (owner, chains) = when (typed) {
+            is Typed.Bad -> throw TradeRefused(typed.reason)
+            is Typed.EvmAddress -> (wallet.evm ?: throw TradeRefused(NO_EVM)) to Balances.chainsOf(wallet).filter { it.isEvm }
+            is Typed.SolAddress -> (wallet.sol ?: throw TradeRefused(NO_SOL)) to listOf(Chain.SOLANA)
+        }
+        val token = keyOf(chains.first(), typed.address)
+        if (sameToken(chains.first(), token, owner)) throw TradeRefused("This is your wallet's own address. Paste the coin's address.")
+        val answer = try {
+            api.balances(owner, chains.map { it to token })
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw TradeRefused("Could not read your balances just now. Try again.")
+        }
+        val read = answer.chains.filter { !it.failed }.mapNotNull { b -> Chain.of(b.feed)?.takeIf { it in chains }?.let { it to b } }
+        val held = read.filter { (c, b) -> b.tokens.any { sameToken(c, it.address, token) && (it.raw?.toBigIntegerOrNull()?.signum() ?: 0) > 0 } }.map { it.first }
+        if (held.isEmpty()) {
+            throw TradeRefused(if (read.size < chains.size) "Some chains could not be read just now. Try again." else "This wallet holds none of this coin.")
+        }
+        val fresh = held.filter { c -> store.of(owner).none { it.feed == c.feed && sameToken(c, it.token, token) } && imports.find(owner, c, token) == null }
+        if (fresh.isEmpty()) throw TradeRefused("This coin is already in your Portfolio.")
+        val added = fresh.mapNotNull { c ->
+            val facts = factsOf(c, token) ?: return@mapNotNull null
+            facts.priceUsd?.takeIf { it > 0 && it.isFinite() }?.let { prices[Balances.tokenKey(c, token)] = it }
+            facts.mcapUsd?.takeIf { it > 0 && it.isFinite() }?.let { mcaps[Balances.tokenKey(c, token)] = it }
+            Imported(keyOf(c, owner), c.feed, token, facts.symbol, facts.decimals, System.currentTimeMillis())
+        }
+        if (added.isEmpty()) throw TradeRefused("Could not read this coin just now. Try again.")
+        for (i in added) {
+            if (!imports.put(i)) throw TradeRefused("You have added ${ImportStore.MAX_PER_WALLET} coins to this wallet already. Remove one first.")
+        }
+        // The balance that names the new coin, so its row shows what the wallet holds at once.
+        orNull { balances.refresh() }
+        return added
+    }
+
+    /** What a coin added by hand is called and how it counts: from the server by its address, else from its chain. */
+    private data class Facts(val symbol: String?, val decimals: Int, val priceUsd: Double?, val mcapUsd: Double?)
+
+    private suspend fun factsOf(chain: Chain, token: String): Facts? {
+        val coin = orNull { api.token(chain, token) }
+        val symbol = coin?.symbol?.let { sanitizeLabel(it, 16) }?.takeIf { it.isNotEmpty() }
+        coin?.decimals?.let { return Facts(symbol, it, coin.priceUsd, coin.mcapUsd) }
+        if (chain == Chain.SOLANA) return orNull { solDirect.tokenMeta(token) }?.let { Facts(symbol ?: it.symbol, it.decimals, coin?.priceUsd, coin?.mcapUsd) }
+        val evm = evmOf(chain) ?: return null
+        val reader = directReaders.getOrPut(evm.id) { ChainReader(evm, directRpc) }
+        val decimals = orNull { reader.read1(token, Erc20.decimals) as? BigInteger }?.toInt()?.takeIf { it in 0..36 } ?: return null
+        val named = symbol ?: orNull { reader.read1(token, Erc20.symbol) as? String }?.let { sanitizeLabel(it, 16) }?.takeIf { it.isNotEmpty() }
+        return Facts(named, decimals, coin?.priceUsd, coin?.mcapUsd)
+    }
+
+    /** Takes a coin added by hand out of Portfolio. Its trades from this phone, if any, stay. */
+    fun removeImport(chain: Chain, token: String) {
+        val wallet = addressOn(chain) ?: return
+        imports.remove(wallet, chain, token)
+    }
+
+    /**
+     * A landed send of a coin to an address, kept with the coin's fills: its tokens count as taken
+     * out at what they were worth (`usd`), so the position's result stays where it stood.
+     */
+    fun recordSend(wallet: String, chain: Chain, token: String, symbol: String?, decimals: Int, raw: BigInteger, tx: String, usd: Double?, feeUsd: Double?) {
+        store.put(
+            Fill(
+                wallet = keyOf(chain, wallet),
+                feed = chain.feed,
+                token = keyOf(chain, token),
+                symbol = symbol,
+                side = Fill.SEND,
+                tx = tx,
+                at = System.currentTimeMillis(),
+                raw = raw.toString(),
+                decimals = decimals,
+                usd = usd,
+                feeUsd = feeUsd,
+                exact = true,
+            ),
+        )
+    }
+
+    /** Prices of the coins of the wallet's positions and those added by hand, read while a screen shows them. */
     suspend fun livePrices() {
         while (true) {
-            val coins = own().flatMap { store.coinsOf(it) }.distinct().take(30)
+            val coins = (addedCoins() + own().flatMap { store.coinsOf(it) }).distinct().take(30)
             if (coins.isNotEmpty()) {
                 runCatching { api.prices(coins) }.getOrNull()?.prices?.forEach { r ->
                     val c = Chain.of(r.feed) ?: return@forEach

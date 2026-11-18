@@ -25,12 +25,14 @@ import trade.nesty.app.evm.bool
 import trade.nesty.app.evm.int
 import trade.nesty.app.evm.str
 import trade.nesty.app.keys.Base58
+import trade.nesty.app.move.RelaySol
 import java.math.BigInteger
 
 /**
  * MEV protection on Solana: each trade transaction tips one block engine tip account and carries
  * the marker where it fits, the validator takes exactly that tip and no other, and the replayed
- * coins of every venue still build. Read-only: the signer keeps the message and refuses.
+ * coins of every venue still build. Sends and deposits never tip. Read-only: the signer keeps the
+ * message and refuses.
  */
 class JitoTest {
     private val wallet = "9xQeWvG816bUx9EPjHmaT23yvVM2ZWbrrpZb9PusVFin"
@@ -141,6 +143,54 @@ class JitoTest {
             }
         }
         assertTrue("checked $checked", checked >= 25)
+    }
+
+    @Test
+    fun plainSendsGoUntippedWhateverTheSpeedTips() = runBlocking {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+        try {
+            val trader = SolTrader(
+                rpc = SolRpc(ReplaySolCall(replay), SolSender { throw AssertionError("nothing is sent") }, SolSender { throw AssertionError("nothing is sent") }),
+                scope = scope,
+                now = { nowMs },
+                pollMs = 5,
+                random = { 0 },
+            )
+            val to = SolVectors.OTHER
+            // A MADE-UP mint and deposit id: nothing behind them.
+            val mint = Base58.encode(ByteArray(32) { 0x4d })
+            val id = ByteArray(32) { 7 }
+            val amount = BigInteger.valueOf(1_234_567)
+            val asset = SolAsset(mint, SolAddr.TOKEN_PROGRAM, 6, "KILN")
+            fun send(a: SolAsset?) = SolTransferContext(replayWallet, to, a, amount, tipped.priorityLamports)
+            val sends: List<Triple<String, List<Instruction>, (List<Instruction>) -> SolValidationResult>> = listOf(
+                Triple("SOL", listOf(Spl.transfer(replayWallet, to, amount)), { ixs -> SolValidator.validateTransfer(ixs, send(null)) }),
+                Triple(
+                    "coin",
+                    listOf(
+                        Spl.createAtaIdempotent(to, mint, SolAddr.TOKEN_PROGRAM, payer = replayWallet),
+                        Spl.transferChecked(replayWallet, to, mint, SolAddr.TOKEN_PROGRAM, amount, 6),
+                    ),
+                    { ixs -> SolValidator.validateTransfer(ixs, send(asset)) },
+                ),
+                Triple(
+                    "deposit",
+                    listOf(RelaySol.depositNative(replayWallet, amount, id)),
+                    { ixs -> SolValidator.validateRelayDeposit(ixs, RelayDepositContext(replayWallet, amount, id, amount, tipped.priorityLamports)) },
+                ),
+            )
+            for ((name, ixs, validate) in sends) {
+                val signer = CaptureSigner(replayWallet)
+                val r = trader.sendPlain(signer, ixs, SolSend.COIN_UNITS, tipped, validate)
+                // It reached the signer, which refuses: the validator took it as built.
+                assertTrue("$name: $r", r is SolTrader.Plain.Refused && r.blocked == null)
+                assertEquals(name, 1, signer.messages.size)
+                val keys = decode(signer.messages.single()).keys
+                assertTrue("$name: tipped", keys.none { it in Jito.TIP_ACCOUNTS || it == Jito.DONT_FRONT })
+            }
+        } finally {
+            scope.cancel()
+        }
     }
 
     @Test

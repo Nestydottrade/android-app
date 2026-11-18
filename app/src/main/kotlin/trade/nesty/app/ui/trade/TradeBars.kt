@@ -200,16 +200,19 @@ private fun HoldingBar(chain: Chain, token: String, coin: Coin, holding: Holding
             val value = holding.value
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 val initials = holding.initials
-                SellButton(
-                    "Initials",
-                    initials?.let { Fmt.usdFull(it) } ?: "When up",
-                    enabled = initials != null && value != null && value > 0,
-                    does = initials?.let { "Sell ${Fmt.usdFull(it)} of your $symbol, what you paid" },
-                    modifier = Modifier.weight(1f),
-                ) {
-                    // Rounded up, as the extension does: enough to have what was paid back.
-                    val bps = ceil(initials!! / value!! * 10_000).toInt().coerceIn(1, 10_000)
-                    QuickTrade.sell(toasts, chain, token, bps, coin, "Taking your initials out of $symbol", "Took your initials out of $symbol")
+                // A coin whose cost is not on record has no initials to take out.
+                if (holding.known) {
+                    SellButton(
+                        "Initials",
+                        initials?.let { Fmt.usdFull(it) } ?: "When up",
+                        enabled = initials != null && value != null && value > 0,
+                        does = initials?.let { "Sell ${Fmt.usdFull(it)} of your $symbol, what you paid" },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        // Rounded up, as the extension does: enough to have what was paid back.
+                        val bps = ceil(initials!! / value!! * 10_000).toInt().coerceIn(1, 10_000)
+                        QuickTrade.sell(toasts, chain, token, bps, coin, "Taking your initials out of $symbol", "Took your initials out of $symbol")
+                    }
                 }
                 for ((bps, label) in listOf(2_500 to "25%", 5_000 to "50%", 10_000 to "All")) {
                     val what = if (bps == 10_000) "all your $symbol" else "$label of your $symbol"

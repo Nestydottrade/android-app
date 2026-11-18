@@ -18,6 +18,44 @@ object SolSend {
     /** Compute units a SOL transfer asks for before it is simulated. */
     const val SOL_UNITS = 1_000
 
+    /** And a coin's transfer, with the receiver's account for it opened when missing. */
+    const val COIN_UNITS = 80_000
+
+    /**
+     * The size of the token account the associated token program opens: 165 bytes; under
+     * Token-2022 also the account type and an ImmutableOwner entry (170), and the entries some mint
+     * extensions require of every account (of the coins Nesty sends, only Pausable's).
+     */
+    fun tokenAccountSize(tokenProgram: String, extensions: List<Int> = emptyList()): Int =
+        if (tokenProgram != SolAddr.TOKEN_2022_PROGRAM) 165 else 170 + if (Layouts.EXT_PAUSABLE in extensions) 4 else 0
+
+    /** The rent exemption of an account of `size` bytes, as the chain has priced it for years: until it is read. */
+    fun rentOf(size: Int): BigInteger = BigInteger.valueOf((128L + size) * 6_960)
+
+    /** Why a coin cannot be sent at all, from its mint; null when it can (transfers.ts sendBlock). */
+    fun coinBlock(meta: SolTokenMeta): String? {
+        val ext = meta.extensions
+        val name = meta.symbol.ifBlank { "this coin" }
+        return when {
+            Layouts.EXT_NON_TRANSFERABLE in ext -> "${meta.symbol.ifBlank { "This coin" }} cannot be transferred."
+            Layouts.EXT_TRANSFER_HOOK in ext -> "Nesty cannot send $name: it runs a program of its own on every transfer."
+            Layouts.EXT_TRANSFER_FEE_CONFIG in ext -> "Nesty cannot send $name: it takes a fee on every transfer."
+            else -> null
+        }
+    }
+
+    /**
+     * Whether a wallet holding `lamports` can pay a coin send: its fee, and `rent` for the
+     * receiver's new account for the coin (zero when they have one). Null when it can. The SOL left
+     * must still be zero or at least `minBalance`, for the wallet to exist.
+     */
+    fun coinSendBlock(lamports: BigInteger, rent: BigInteger, fee: BigInteger, minBalance: BigInteger): String? {
+        val left = lamports - fee - rent
+        if (left.signum() >= 0 && (left.signum() == 0 || left >= minBalance)) return null
+        val what = if (rent.signum() > 0) "the fee and the receiver's account for this coin take" else "the fee takes"
+        return "Not enough SOL: $what ${sol(fee + rent)} SOL, and a wallet must keep at least ${sol(minBalance)} SOL."
+    }
+
     /** Kinds funds are lost at: Nesty refuses to send to them. */
     val LOSING = setOf(SolRecipientKind.PROGRAM, SolRecipientKind.MINT, SolRecipientKind.TOKEN_ACCOUNT)
 

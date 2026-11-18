@@ -266,8 +266,10 @@ object Layouts {
 
     /** Token-2022 extension types. */
     const val EXT_TRANSFER_FEE_CONFIG = 1
+    const val EXT_NON_TRANSFERABLE = 9
     const val EXT_TRANSFER_HOOK = 14
     const val EXT_TOKEN_METADATA = 19
+    const val EXT_PAUSABLE = 26
 
     fun decodeMint(data: ByteArray): MintInfo? {
         if (data.size < MINT_SIZE) return null

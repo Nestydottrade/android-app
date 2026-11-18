@@ -14,9 +14,12 @@ import java.math.BigInteger
 import java.math.MathContext
 import java.math.RoundingMode
 
-/** What funds were moved for: a withdrawal to someone, or a buy on a chain that was short. */
+/**
+ * What funds were moved for: a withdrawal to someone, a buy on a chain that was short, or a coin
+ * the wallet holds sent to someone on its own chain.
+ */
 @Serializable
-enum class MoveKind { WITHDRAW, BUY }
+enum class MoveKind { WITHDRAW, BUY, SEND_COIN }
 
 /** One transaction of a move: a plain send on one chain, or a bridge deposit paid out on another. */
 @Serializable
@@ -78,7 +81,7 @@ data class MoveLeg(
     val from: String,
     /** The chain it arrives on. */
     val to: String,
-    /** What leaves, in the smallest unit of `from`'s coin. */
+    /** What leaves, in the smallest unit of `from`'s coin (of the coin sent, for a coin send). */
     val amountIn: String,
     /** What the receiver gets, in the smallest unit of `to`'s coin: as quoted for a bridge. */
     val amountOut: String? = null,
@@ -121,11 +124,11 @@ data class Move(
     /** The chain it arrives on, and who is paid there (the wallet itself before a buy). */
     val to: String,
     val recipient: String,
-    /** A withdrawal: the dollars leaving One Balance. A buy: the buy's amount. */
+    /** A withdrawal: the dollars leaving One Balance. A buy: the buy's amount. A coin send: what it was worth, 0 unpriced. */
     val usd: Double,
     val legs: List<MoveLeg>,
     val state: MoveState = MoveState.WORKING,
-    /** A buy: the coin, as the sheet knew it. */
+    /** A buy or a coin send: the coin, as the screen knew it. */
     val token: String? = null,
     val symbol: String? = null,
     val decimals: Int? = null,
@@ -142,6 +145,12 @@ data class Move(
     val updatedAt: Long = at,
 ) {
     val toChain: Chain? get() = Chain.of(to)
+
+    /** A coin send: the tokens sent, in their smallest unit. */
+    val coinRaw: BigInteger get() = legs.firstOrNull()?.amountIn?.toBigIntegerOrNull() ?: BigInteger.ZERO
+
+    /** A coin send: the tokens sent, whole. */
+    val coinTokens: Double get() = BigDecimal(coinRaw).movePointLeft(decimals ?: 18).toDouble()
 
     /** Dollars of the legs that arrived, as quoted. */
     val arrivedUsd: Double get() = legs.filter { it.status == LegStatus.DONE }.sumOf { it.usdOut ?: 0.0 }

@@ -458,7 +458,7 @@ fun WithdrawScreen() {
             Summary(dest, parts, cost, usd)
 
             Text(
-                "Coins you hold are not part of this. Sell a position first to withdraw its value.",
+                "Coins you hold are not part of this. To send one, open it in Portfolio.",
                 style = text(13, color = Ink.muted, lineHeight = 18.sp),
             )
         }
@@ -488,7 +488,7 @@ fun WithdrawScreen() {
 }
 
 @Composable
-private fun Pill(label: String, onClick: () -> Unit) {
+internal fun Pill(label: String, onClick: () -> Unit) {
     Box(
         Modifier
             .height(48.dp)
@@ -586,12 +586,44 @@ private fun Summary(dest: Chain, parts: List<Part>?, cost: Cost?, usd: Double?) 
     }
 }
 
-/**
- * The last look before the send: the whole address in groups of four, what leaves, what costs
- * and what arrives, and the fingerprint (or the password, with fingerprint unlock off).
- */
+/** The last look before a withdrawal: what leaves, what costs and what arrives. */
 @Composable
 private fun Review(dest: Chain, to: String, usd: Double, parts: List<Part>, cost: Cost, onBack: () -> Unit, onConfirmed: () -> Unit) {
+    val moved = parts.filter { it.chain != dest }
+    SendReview(dest, to, "Confirm withdrawal", "${Fmt.usdFull(usd)} to ${Fmt.address(to)} on ${dest.title}", onBack, onConfirmed) {
+        val shape = RoundedCornerShape(14.dp)
+        Column(Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line, shape)) {
+            DetailRow("Leaves One Balance", Fmt.usdFull(usd))
+            DetailRow(if (cost.bridged) "Network and move fees" else "Network fee", cost.feeUsd?.let { "about ${Fmt.usdFull(it)}" } ?: Fmt.DASH)
+            DetailRow("Arrives in", if (cost.bridged) cap(Fmt.eta(cost.seconds)) else "A few seconds")
+            Box(Modifier.fillMaxWidth().background(Ink.raised)) {
+                DetailRow("They receive about", cost.receiveUsd?.let { "${Fmt.usdFull(it)} in ${dest.native}" } ?: Fmt.DASH, strong = true)
+            }
+        }
+        if (moved.isNotEmpty()) {
+            Text(
+                moved.joinToString(" and ") { "${Fmt.usdFull(it.usd)} from ${it.chain.title}" } + " is moved to ${dest.title} on the way.",
+                style = text(13, color = Ink.text2, lineHeight = 18.sp),
+            )
+        }
+    }
+}
+
+/**
+ * The last look before any send: the whole address in groups of four, the send's `figures`, and
+ * the fingerprint (or the password, with fingerprint unlock off). `confirmTitle` and
+ * `confirmDetail` are what the fingerprint prompt says.
+ */
+@Composable
+internal fun SendReview(
+    chain: Chain,
+    to: String,
+    confirmTitle: String,
+    confirmDetail: String,
+    onBack: () -> Unit,
+    onConfirmed: () -> Unit,
+    figures: @Composable () -> Unit,
+) {
     val context = LocalContext.current
     val session = AppGraph.session
     val scope = rememberCoroutineScope()
@@ -599,7 +631,6 @@ private fun Review(dest: Chain, to: String, usd: Double, parts: List<Part>, cost
     var note by remember { mutableStateOf<String?>(null) }
     var password by remember { mutableStateOf("") }
     val finger = session.fingerprintOn && Fingerprint.can(context) == Fingerprint.Can.YES
-    val moved = parts.filter { it.chain != dest }
     NestySheet("Check before you send", onBack) {
         if (!finger) SecureWindow()
         Column(
@@ -611,28 +642,14 @@ private fun Review(dest: Chain, to: String, usd: Double, parts: List<Part>, cost
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("To this address on ${dest.title}", style = text(13, color = Ink.muted))
+                Text("To this address on ${chain.title}", style = text(13, color = Ink.muted))
                 Text(
                     inFours(to),
                     style = figure(18, FontWeight.SemiBold).copy(lineHeight = 26.sp),
                     modifier = Modifier.semantics { contentDescription = to },
                 )
             }
-            val shape = RoundedCornerShape(14.dp)
-            Column(Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line, shape)) {
-                DetailRow("Leaves One Balance", Fmt.usdFull(usd))
-                DetailRow(if (cost.bridged) "Network and move fees" else "Network fee", cost.feeUsd?.let { "about ${Fmt.usdFull(it)}" } ?: Fmt.DASH)
-                DetailRow("Arrives in", if (cost.bridged) cap(Fmt.eta(cost.seconds)) else "A few seconds")
-                Box(Modifier.fillMaxWidth().background(Ink.raised)) {
-                    DetailRow("They receive about", cost.receiveUsd?.let { "${Fmt.usdFull(it)} in ${dest.native}" } ?: Fmt.DASH, strong = true)
-                }
-            }
-            if (moved.isNotEmpty()) {
-                Text(
-                    moved.joinToString(" and ") { "${Fmt.usdFull(it.usd)} from ${it.chain.title}" } + " is moved to ${dest.title} on the way.",
-                    style = text(13, color = Ink.text2, lineHeight = 18.sp),
-                )
-            }
+            figures()
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ToneMark(Tone.WARN, 18.dp)
                 Text(
@@ -658,7 +675,7 @@ private fun Review(dest: Chain, to: String, usd: Double, parts: List<Part>, cost
                 scope.launch {
                     try {
                         if (finger) {
-                            val ok = Fingerprint.confirm(context, "Confirm withdrawal", "${Fmt.usdFull(usd)} to ${Fmt.address(to)} on ${dest.title}")
+                            val ok = Fingerprint.confirm(context, confirmTitle, confirmDetail)
                             if (ok) onConfirmed() else note = if (session.fingerprintOn) "Not confirmed. Nothing was sent." else Fingerprint.DROPPED
                         } else {
                             session.checkPassword(password)

@@ -5,6 +5,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -25,21 +26,27 @@ import trade.nesty.app.data.Settings
 import trade.nesty.app.data.Trading
 import trade.nesty.app.data.WalletSession
 import trade.nesty.app.evm.ChainReader
+import trade.nesty.app.evm.Erc20
 import trade.nesty.app.evm.EvmChain
 import trade.nesty.app.evm.EvmTrader
 import trade.nesty.app.evm.GasKind
 import trade.nesty.app.evm.HttpRpc
+import trade.nesty.app.evm.TradeMath
 import trade.nesty.app.evm.TradeStatus
 import trade.nesty.app.evm.TxDraft
 import trade.nesty.app.evm.ValidationContext
 import trade.nesty.app.evm.orNull
 import trade.nesty.app.evm.shortErr
 import trade.nesty.app.sol.HttpSolCall
+import trade.nesty.app.sol.Layouts
 import trade.nesty.app.sol.RelayDepositContext
+import trade.nesty.app.sol.SolAddr
+import trade.nesty.app.sol.SolAsset
 import trade.nesty.app.sol.SolBroadcast
 import trade.nesty.app.sol.SolRpc
 import trade.nesty.app.sol.SolRpcs
 import trade.nesty.app.sol.SolSend
+import trade.nesty.app.sol.SolTokenMeta
 import trade.nesty.app.sol.SolTrader
 import trade.nesty.app.sol.SolTransferContext
 import trade.nesty.app.sol.SolValidator
@@ -52,6 +59,9 @@ import trade.nesty.app.evm.Trade as EngineTrade
 
 /** Why a move did not start. Nothing was signed. */
 class MoveRefused(message: String) : Exception(message)
+
+/** What a coin send reads on its chain right before signing; null where a read failed. */
+private class CoinReads(val held: BigInteger?, val decimals: Int?, val native: BigInteger?, val baseFee: BigInteger?)
 
 /** What a move that ended says at the bottom of the screen. */
 data class MoveNote(val moveId: String, val title: String, val detail: String, val ok: Boolean)
@@ -101,6 +111,9 @@ class Mover(
 
     @Volatile
     private var rent: Pair<Long, BigInteger>? = null
+
+    /** The rent of a new token account, by its size, and when it was read. */
+    private val accountRents = ConcurrentHashMap<Int, Pair<Long, BigInteger>>()
     private val notesFlow = MutableSharedFlow<MoveNote>(extraBufferCapacity = 16)
 
     /** A note for each move that ended, or that needs the user. */
@@ -209,6 +222,43 @@ class Mover(
         return Check(kind.tokenSymbol?.let { Recipient.tokenContract(it) }, kind.contract, newSolana = false)
     }
 
+    /**
+     * A coin send to `recipient`, as the screen shows it before it is confirmed: why it may not go
+     * (`block`), and on Solana the `rent` of the receiver's account for the coin when they have
+     * none yet, and `keep`, what a wallet must keep to exist. Read on the chain's own RPCs.
+     */
+    data class CoinCheck(val block: String?, val rent: BigInteger = BigInteger.ZERO, val keep: BigInteger = BigInteger.ZERO)
+
+    suspend fun checkCoin(chain: Chain, token: String, recipient: String): CoinCheck {
+        // Case counts in a Solana address.
+        if (if (chain.isEvm) sameAddress(recipient, own(chain)) else recipient == own(chain)) return CoinCheck(SAME_WALLET)
+        if (chain == Chain.SOLANA) {
+            val meta = solDirect.tokenMeta(token) ?: return CoinCheck(COIN_UNREAD)
+            SolSend.coinBlock(meta)?.let { return CoinCheck(it) }
+            val accs = solDirectRpc.getMultipleAccounts(listOf(recipient, SolAddr.associatedTokenAddress(recipient, token, meta.tokenProgram)))
+            SolSend.recipientBlock(recipient, accs.getOrNull(0))?.let { return CoinCheck(it) }
+            return CoinCheck(null, if (accs.getOrNull(1) == null) tokenAccountRent(meta) else BigInteger.ZERO, rentMin())
+        }
+        val evm = trading.evmOf(chain) ?: return CoinCheck("This version of Nesty cannot send on ${chain.title}.")
+        return CoinCheck(Recipient.evmKind(directReader(evm), recipient).tokenSymbol?.let { Recipient.tokenContract(it) })
+    }
+
+    /** A coin send's network fee on `chain` now, in the smallest unit of the chain's own coin. */
+    suspend fun coinFee(chain: Chain, preset: Preset): BigInteger? {
+        if (chain == Chain.SOLANA) return solFee(preset)
+        val evm = trading.evmOf(chain) ?: return null
+        return trading.engine.networkFeeWei(evm.id, listOf(GasKind.TOKEN_TRANSFER), Trading.gasOf(evm, preset.speed))
+    }
+
+    /** The rent of a new account for a Solana coin: read from the chain, kept ten minutes. */
+    private suspend fun tokenAccountRent(meta: SolTokenMeta): BigInteger {
+        val size = SolSend.tokenAccountSize(meta.tokenProgram, meta.extensions)
+        accountRents[size]?.let { (at, lamports) -> if (now() - at < RENT_TTL_MS) return lamports }
+        val lamports = orNull { solDirectRpc.minimumBalance(size) } ?: return accountRents[size]?.second ?: SolSend.rentOf(size)
+        accountRents[size] = now() to lamports
+        return lamports
+    }
+
     // ── starting a move ──────────────────────────────────────────────────────────────
 
     private fun newId() = "m${now()}-${counter.incrementAndGet()}"
@@ -296,6 +346,44 @@ class Mover(
         return move
     }
 
+    /**
+     * A send of `amount` (its smallest units) of a coin the wallet holds to `recipient` on the
+     * coin's own chain. `usd` is what it is worth now, null when not priced. Everything is read
+     * again and checked right before signing. Returns at once; the send runs on.
+     */
+    fun sendCoin(chain: Chain, token: String, symbol: String?, decimals: Int, recipient: String, amount: BigInteger, usd: Double?, preset: Preset): Move {
+        val wallet = session.active ?: throw MoveRefused("Add a wallet first.")
+        if (own(chain) == null) throw MoveRefused(if (chain == Chain.SOLANA) Trading.NO_SOL else Trading.NO_EVM)
+        if (chain.isEvm && trading.evmOf(chain) == null) throw MoveRefused("This version of Nesty cannot send on ${chain.title}.")
+        if ((if (chain.isEvm) session.evmSigner() else session.solSigner()) == null) throw MoveRefused("Unlock your wallets first.")
+        if (amount.signum() <= 0) throw MoveRefused("Enter an amount.")
+        val leg = MoveLeg(
+            kind = LegKind.SEND,
+            from = chain.feed,
+            to = chain.feed,
+            amountIn = amount.toString(),
+            amountOut = amount.toString(),
+            usdIn = usd,
+            usdOut = usd,
+        )
+        val move = Move(
+            newId(), MoveKind.SEND_COIN, wallet.id, now(), chain.feed, recipient, usd ?: 0.0, listOf(leg),
+            token = token, symbol = symbol, decimals = decimals,
+            preset = settings.presets.indexOf(preset).coerceAtLeast(0),
+        )
+        store.put(move)
+        running += move.id
+        scope.launch {
+            try {
+                runLeg(move.id, 0, preset)
+            } finally {
+                settle(move.id)
+                running -= move.id
+            }
+        }
+        return move
+    }
+
     /** The user's answer to a buy whose moved funds landed: keep them on the chain instead. */
     fun keep(id: String) {
         val m = store.update(id) { if (it.state == MoveState.ASK) it.copy(state = MoveState.KEPT) else it } ?: return
@@ -332,10 +420,17 @@ class Mover(
         val leg = store.get(id)?.legs?.getOrNull(i) ?: return
         val from = leg.fromChain ?: return fail(id, i, "Unknown chain.")
         val to = leg.toChain ?: return fail(id, i, "Unknown chain.")
-        val recipient = store.get(id)?.recipient ?: return
+        val m = store.get(id) ?: return
+        val recipient = m.recipient
         store.leg(id, i) { it.copy(status = LegStatus.SENDING, error = null) }
         try {
             when {
+                m.kind == MoveKind.SEND_COIN -> {
+                    val token = m.token ?: throw MoveRefused("Unknown coin.")
+                    val decimals = m.decimals ?: throw MoveRefused("Unknown coin.")
+                    if (from == Chain.SOLANA) sendCoinSol(id, i, token, m.symbol, decimals, recipient, BigInteger(leg.amountIn), preset)
+                    else sendCoinEvm(id, i, from, token, decimals, recipient, BigInteger(leg.amountIn), preset)
+                }
                 leg.kind == LegKind.SEND && from == Chain.SOLANA -> sendSol(id, i, recipient, BigInteger(leg.amountIn), preset)
                 leg.kind == LegKind.SEND -> sendEvm(id, i, from, recipient, BigInteger(leg.amountIn), preset)
                 from == Chain.SOLANA -> bridgeFromSol(id, i, to, recipient, BigInteger(leg.amountIn), preset, exactOut, cap)
@@ -399,6 +494,98 @@ class Mover(
         val ctx = SolTransferContext(wallet = signer.address, to = recipient, asset = null, amount = value, maxPriorityLamports = prefs.priorityLamports)
         val shortfall: suspend (BigInteger) -> String? = { priority -> SolSend.sendBlock(solDirectRpc.getBalance(signer.address), value, SolSend.networkFee(priority), min) }
         val r = solDirect.sendPlain(signer, listOf(Spl.transfer(signer.address, recipient, value)), SolSend.SOL_UNITS, prefs, { SolValidator.validateTransfer(it, ctx) }, shortfall) { sig -> signedAt(id, i, sig) }
+        when (r) {
+            is SolTrader.Plain.Refused -> fail(id, i, r.reason)
+            is SolTrader.Plain.Out -> {
+                signedAt(id, i, r.sig)
+                when (val end = solDirect.landed(r)) {
+                    is SolTrader.PlainEnd.Landed -> store.leg(id, i) { it.copy(status = LegStatus.DONE, gasUsd = gasUsd(Chain.SOLANA, end.feeLamports), endedAt = now()) }
+                    is SolTrader.PlainEnd.Failed -> fail(id, i, end.reason, if (end.unknown) LegStatus.UNKNOWN else LegStatus.FAILED)
+                }
+            }
+        }
+    }
+
+    /**
+     * A send of `amount` of an ERC-20 the wallet holds to `recipient`, as the extension sends one:
+     * its balance and decimals read again, the fee covered, the transfer validated (no value, to
+     * this payee only) and simulated, all on the chain's own RPCs.
+     */
+    private suspend fun sendCoinEvm(id: String, i: Int, chain: Chain, token: String, decimals: Int, recipient: String, amount: BigInteger, preset: Preset) {
+        val evm = trading.evmOf(chain) ?: throw MoveRefused("This version of Nesty cannot send on ${chain.title}.")
+        val signer = session.evmSigner() ?: throw MoveRefused("Unlock your wallets first.")
+        if (sameAddress(recipient, signer.address)) throw MoveRefused(SAME_WALLET)
+        val reader = directReader(evm)
+        // The receiver again, right before signing.
+        Recipient.evmKind(reader, recipient).tokenSymbol?.let { throw MoveRefused(Recipient.tokenContract(it)) }
+        // Read together: one round trip.
+        val reads = coroutineScope {
+            val h = async { orNull { reader.read1(token, Erc20.balanceOf, signer.address) as? BigInteger } }
+            val d = async { orNull { (reader.read1(token, Erc20.decimals) as? BigInteger)?.toInt() } }
+            val n = async { orNull { reader.balance(signer.address) } }
+            val b = async { orNull { reader.baseFee() } }
+            CoinReads(h.await(), d.await(), n.await(), b.await())
+        }
+        val held = reads.held
+        val nativeHeld = reads.native
+        val base = reads.baseFee
+        if (held == null || nativeHeld == null || base == null) throw MoveRefused("Could not read your balances just now. Try again.")
+        // The amount was typed in whole coins at these decimals: a coin that says otherwise is not sent.
+        if (reads.decimals != null && reads.decimals != decimals) throw MoveRefused(COIN_CHANGED)
+        if (held < amount) throw MoveRefused("Not enough tokens.")
+        val fees = TradeMath.computeFees(evm, base, Trading.gasOf(evm, preset.speed))
+        val short = "Not enough ${evm.nativeSymbol} for the fee."
+        if (nativeHeld < TradeMath.staticGas(evm, GasKind.TOKEN_TRANSFER) * fees.maxFeePerGas) throw MoveRefused(short)
+        val tx = TxDraft(token, Erc20.transfer.encode(recipient, amount), BigInteger.ZERO)
+        val vctx = ValidationContext(chain = evm, from = signer.address, ownWallets = session.ownEvm(), token = token, maxValue = BigInteger.ZERO, payee = recipient, nowS = now() / 1000)
+        // The node refuses a transaction whose gas limit at its top fee is above the balance.
+        val gate: (BigInteger) -> String? = { gas -> if (nativeHeld < gas * fees.maxFeePerGas) short else null }
+        // Simulated: catches coins that cannot be moved (paused, blocked wallets) before signing.
+        val r = trading.engine.sendPlain(evm.id, signer, tx, vctx, GasKind.TOKEN_TRANSFER, Trading.prefsOf(evm, preset), simulate = true, gate = gate, reader = reader) { h -> signedAt(id, i, h) }
+        when (r) {
+            is EvmTrader.Plain.Refused -> fail(id, i, r.reason)
+            is EvmTrader.Plain.Out -> {
+                signedAt(id, i, r.hash)
+                val receipt = trading.engine.receiptOf(evm.id, r.hash, signer.address, reader)
+                when {
+                    receipt == null -> fail(id, i, "Not confirmed. Check the explorer.", LegStatus.UNKNOWN)
+                    !receipt.success -> fail(id, i, "The send failed on chain.")
+                    else -> store.leg(id, i) { it.copy(status = LegStatus.DONE, gasUsd = gasUsd(chain, receipt.feeWei), endedAt = now()) }
+                }
+            }
+        }
+    }
+
+    /**
+     * A send of `amount` of a Solana coin the wallet holds to `recipient`, as the extension sends
+     * one: the receiver's account for the coin opened when missing (paid by the wallet), then one
+     * checked transfer, on Solana's public RPC.
+     */
+    private suspend fun sendCoinSol(id: String, i: Int, mint: String, symbol: String?, decimals: Int, recipient: String, amount: BigInteger, preset: Preset) {
+        val signer = session.solSigner() ?: throw MoveRefused("Unlock your wallets first.")
+        if (recipient == signer.address) throw MoveRefused(SAME_WALLET)
+        val meta = orNull { solDirect.tokenMeta(mint) } ?: throw MoveRefused(COIN_UNREAD)
+        SolSend.coinBlock(meta)?.let { throw MoveRefused(it) }
+        if (meta.decimals != decimals) throw MoveRefused(COIN_CHANGED)
+        val program = meta.tokenProgram
+        val accs = solDirectRpc.getMultipleAccounts(
+            listOf(recipient, SolAddr.associatedTokenAddress(signer.address, mint, program), SolAddr.associatedTokenAddress(recipient, mint, program)),
+        )
+        SolSend.recipientBlock(recipient, accs.getOrNull(0))?.let { throw MoveRefused(it) }
+        val held = accs.getOrNull(1)?.let { Layouts.decodeTokenAccount(it.data)?.amount } ?: BigInteger.ZERO
+        if (held < amount) throw MoveRefused("Not enough ${meta.symbol.ifBlank { "tokens" }}.")
+        val rent = if (accs.getOrNull(2) == null) tokenAccountRent(meta) else BigInteger.ZERO
+        val min = rentMin()
+        val prefs = Trading.solPrefsOf(preset)
+        val asset = SolAsset(mint, program, meta.decimals, symbol ?: meta.symbol)
+        val ctx = SolTransferContext(wallet = signer.address, to = recipient, asset = asset, amount = amount, maxPriorityLamports = prefs.priorityLamports)
+        // Opened if missing (idempotent): the receiver may close it before this lands.
+        val ixs = listOf(
+            Spl.createAtaIdempotent(recipient, mint, program, payer = signer.address),
+            Spl.transferChecked(signer.address, recipient, mint, program, amount, meta.decimals),
+        )
+        val shortfall: suspend (BigInteger) -> String? = { priority -> SolSend.coinSendBlock(solDirectRpc.getBalance(signer.address), rent, SolSend.networkFee(priority), min) }
+        val r = solDirect.sendPlain(signer, ixs, SolSend.COIN_UNITS, prefs, { SolValidator.validateTransfer(it, ctx) }, shortfall) { sig -> signedAt(id, i, sig) }
         when (r) {
             is SolTrader.Plain.Refused -> fail(id, i, r.reason)
             is SolTrader.Plain.Out -> {
@@ -555,13 +742,14 @@ class Mover(
         fail(id, i, "The bridge has not said it paid out yet. Check your balances later.", LegStatus.UNKNOWN)
     }
 
-    /** A withdrawal whose legs all ended: its state and a note. */
+    /** A withdrawal or a coin send whose legs all ended: its state and a note. */
     private fun settle(id: String) {
         val m = store.get(id) ?: return
-        if (m.kind != MoveKind.WITHDRAW) return
+        if (m.kind == MoveKind.BUY) return
         val s = m.settled()
         if (s == MoveState.WORKING) return
         store.update(id) { it.copy(state = s) }
+        if (m.kind == MoveKind.SEND_COIN) return settleCoin(m, s)
         val to = m.toChain?.title ?: "the chain"
         val who = Fmt.address(m.recipient)
         notesFlow.tryEmit(
@@ -569,6 +757,36 @@ class Mover(
                 MoveState.DONE -> MoveNote(id, "Sent ${Fmt.usdFull(m.usd)}", "to $who on $to", ok = true)
                 MoveState.PARTIAL -> MoveNote(id, "Part of your withdrawal arrived", "About ${Fmt.usdFull(m.arrivedUsd)} to $who. See Activity.", ok = false)
                 else -> MoveNote(id, "Withdrawal not sent", m.legs.firstNotNullOfOrNull { it.error } ?: "Stopped", ok = false)
+            },
+        )
+    }
+
+    /**
+     * A coin send that ended. One that landed is kept with the coin's fills at what it was worth
+     * then, so the position's result stays where it stood; then its note.
+     */
+    private fun settleCoin(m: Move, s: MoveState) {
+        val leg = m.legs.firstOrNull() ?: return
+        val chain = m.toChain ?: return
+        val coin = m.symbol ?: "coins"
+        val token = m.token
+        val decimals = m.decimals
+        val hash = leg.hash
+        if (s == MoveState.DONE && token != null && decimals != null && hash != null) {
+            val wallet = session.wallets.firstOrNull { it.id == m.walletId }
+            val address = wallet?.let { if (chain.isEvm) it.evm else it.sol }
+            if (address != null) {
+                val price = trading.prices[Balances.tokenKey(chain, token)]
+                val usd = price?.let { trading.usdOf(m.coinRaw, decimals, it) } ?: leg.usdIn
+                trading.recordSend(address, chain, token, m.symbol, decimals, m.coinRaw, hash, usd, leg.gasUsd)
+            }
+        }
+        val who = Fmt.address(m.recipient)
+        notesFlow.tryEmit(
+            when (s) {
+                MoveState.DONE -> MoveNote(m.id, "Sent ${Fmt.amount(m.coinTokens)} $coin", "to $who on ${chain.title}", ok = true)
+                MoveState.PARTIAL -> MoveNote(m.id, "Send not confirmed", leg.error ?: "Check the explorer.", ok = false)
+                else -> MoveNote(m.id, "$coin not sent", leg.error ?: "Stopped", ok = false)
             },
         )
     }
@@ -657,7 +875,7 @@ class Mover(
                 try {
                     coroutineScope { m.legs.indices.forEach { i -> launch { resumeLeg(m.id, i) } } }
                     when (m.kind) {
-                        MoveKind.WITHDRAW -> settle(m.id)
+                        MoveKind.WITHDRAW, MoveKind.SEND_COIN -> settle(m.id)
                         MoveKind.BUY -> {
                             val now = store.get(m.id) ?: return@launch
                             when {
@@ -723,6 +941,10 @@ class Mover(
         fun bridgeSays(message: String?): String = (message ?: "The bridge did not answer.").replace(Regex("(?i)\\brelay\\b"), "bridge")
 
         const val ELYSIUM_OUT = "Funds cannot leave Elysium for another chain in this version of Nesty. They can still be sent on Elysium."
+
+        const val SAME_WALLET = "This is the wallet you are sending from."
+        const val COIN_UNREAD = "Could not read this coin just now. Try again."
+        const val COIN_CHANGED = "This coin's details changed. Open it again and check the amount."
 
         /** A wallet's rent exemption until the chain is read (it was 890,880 lamports for years). */
         val DEFAULT_RENT: BigInteger = BigInteger.valueOf(890_880)

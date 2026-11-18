@@ -10,15 +10,18 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.CoinInfo
 import trade.nesty.app.data.Fill
 import trade.nesty.app.data.Holding
+import trade.nesty.app.data.Imported
+import trade.nesty.app.data.Position
 import trade.nesty.app.data.Positions
 import trade.nesty.app.data.WalletBalance
 import trade.nesty.app.data.Coin
 import trade.nesty.app.data.PoolRef
 import trade.nesty.app.data.ChartRef
 import trade.nesty.app.ui.trade.cleanAmount
+import trade.nesty.app.ui.trade.closedLine
 import java.math.BigInteger
 
-/** A position from its fills, and the buy sheet's amount box. The addresses are made up. */
+/** A position from its fills and the coins added by hand, and the buy sheet's amount box. The addresses are made up. */
 class PositionsTest {
     private val wallet = "0x00000000000000000000000000000000000000aa"
     private val coin = "0x00000000000000000000000000000000000000c0"
@@ -104,6 +107,98 @@ class PositionsTest {
         assertEquals(BigInteger(tokens(400_000)), h.held)
         // Without a reading, what the fills say is held.
         assertEquals(BigInteger(tokens(1_000_000)), Positions.holdings(fills, null) { _, _ -> null }.single().held)
+    }
+
+    @Test
+    fun aSendCountsAsTakenOutAtWhatItWasWorth() {
+        val fills = listOf(
+            fill("buy", "0x1", 1_000, tokens(1_000_000), 25.0, 0.05, 15_000.0),
+            fill("send", "0x2", 2_000, tokens(400_000), 20.0, 0.02),
+        )
+        val p = Positions.of(fills).single()
+        assertEquals(BigInteger.ZERO, p.sold)
+        assertEquals(BigInteger(tokens(400_000)), p.sent)
+        assertEquals(BigInteger(tokens(600_000)), p.booked)
+        // What the sent tokens were worth less the send's network fee: taken out, and kept apart.
+        assertEquals(19.98, p.sentUsd, 1e-9)
+        assertEquals(19.98, p.taken, 1e-9)
+        assertTrue(p.traded)
+        assertEquals(15_000.0, p.entryMcap!!, 1e-6)
+        // The result stays where it stood, less the fee: $30 still held, $19.98 sent, $25.05 paid.
+        val h = Holding(p, BigInteger(tokens(600_000)), 0.00005)
+        assertTrue(h.known)
+        assertEquals(30.0 + 19.98 - 25.05, h.pnl!!, 1e-9)
+    }
+
+    @Test
+    fun aClosedPositionSaysWhatWasSentApartFromWhatCameBack() {
+        val now = 600_000L
+        val sentAll = Positions.of(listOf(
+            fill("buy", "0x1", 1_000, tokens(1_000_000), 25.0, 0.05),
+            fill("send", "0x2", 60_000, tokens(1_000_000), 50.0, 0.02),
+        )).single()
+        assertEquals("Paid \$25.05 · sent \$49.98 · 9m ago", closedLine(sentAll, now))
+        val soldThenSent = Positions.of(listOf(
+            fill("buy", "0x1", 1_000, tokens(1_000_000), 25.0, 0.05),
+            fill("sell", "0x2", 30_000, tokens(500_000), 30.0, 0.04),
+            fill("send", "0x3", 60_000, tokens(500_000), 20.0, 0.02),
+        )).single()
+        assertEquals("Paid \$25.05 · got back \$29.96 · sent \$19.98 · 9m ago", closedLine(soldThenSent, now))
+        val sold = Positions.of(listOf(
+            fill("buy", "0x1", 1_000, tokens(1), 25.0, 0.05),
+            fill("sell", "0x2", 60_000, tokens(1), 30.0, 0.04),
+        )).single()
+        assertEquals("Paid \$25.05 · got back \$29.96 · 9m ago", closedLine(sold, now))
+    }
+
+    private fun added(token: String = coin) = Imported(wallet, "56", token, "KILN", 18, 500)
+
+    private fun holding(raw: BigInteger) = WalletBalance(emptyMap(), emptySet(), tokens = mapOf(Balances.tokenKey(Chain.BSC, coin) to raw))
+
+    @Test
+    fun aCoinAddedByHandShowsWhatIsHeldAndNoResult() {
+        val p = Position.of(added(), Chain.BSC)
+        val h = Holding(p, BigInteger(tokens(1_000_000)), 0.00005)
+        // Its cost is not on record: worth something, no result, no initials to take out.
+        assertFalse(h.known)
+        assertEquals(50.0, h.value!!, 1e-9)
+        assertNull(h.pnl)
+        assertNull(h.initials)
+        assertTrue(h.open)
+        // Any of it is held, worth a cent or not.
+        assertTrue(Holding(p, BigInteger.valueOf(100), 0.00005).open)
+        assertFalse(Holding(p, BigInteger.ZERO, 0.00005).open)
+    }
+
+    @Test
+    fun addedCoinsShowWhileHeld() {
+        val added = added(coin.uppercase().replace("0X", "0x"))
+        val only = Positions.holdings(emptyList(), holding(BigInteger(tokens(2_000_000))), listOf(added)) { _, _ -> 0.00005 }.single()
+        assertFalse(only.known)
+        assertEquals(BigInteger(tokens(2_000_000)), only.held)
+        // None of it left: not shown at all.
+        assertTrue(Positions.holdings(emptyList(), holding(BigInteger.ZERO), listOf(added)) { _, _ -> 0.00005 }.isEmpty())
+        // Bought here as well: still one position, and not all of its cost is on record.
+        val bought = Positions.holdings(listOf(fill("buy", "0x1", 1_000, tokens(1_000_000), 25.0, 0.05)), holding(BigInteger(tokens(3_000_000))), listOf(added)) { _, _ -> 0.00005 }.single()
+        assertTrue(bought.position.imported)
+        assertNull(bought.pnl)
+        // Sold out from here: closed, still without a result.
+        val soldOut = listOf(fill("buy", "0x1", 1_000, tokens(1_000), 5.0, 0.01), fill("sell", "0x2", 2_000, tokens(4_000), 30.0, 0.01))
+        val closed = Positions.holdings(soldOut, holding(BigInteger.ZERO), listOf(added)) { _, _ -> 0.00005 }.single()
+        assertFalse(closed.open)
+        assertNull(closed.pnl)
+    }
+
+    @Test
+    fun aCoinOnlySentFromHereIsNoPositionOnceItIsNoLongerAdded() {
+        val sentOnly = listOf(fill("send", "0x1", 1_000, tokens(1_000), 5.0, 0.01))
+        assertFalse(Positions.of(sentOnly).single().traded)
+        assertTrue(Positions.holdings(sentOnly, null) { _, _ -> 0.00005 }.isEmpty())
+        // While it is added, it shows from what the wallet holds, without a result.
+        val h = Positions.holdings(sentOnly, holding(BigInteger(tokens(3_000))), listOf(added())) { _, _ -> 0.00005 }.single()
+        assertFalse(h.known)
+        assertNull(h.pnl)
+        assertEquals(BigInteger(tokens(3_000)), h.held)
     }
 
     @Test

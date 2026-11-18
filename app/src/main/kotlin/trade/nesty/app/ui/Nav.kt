@@ -49,6 +49,9 @@ sealed interface Route {
     /** Sending One Balance to an address. */
     data object Withdraw : Route
 
+    /** Sending a coin the wallet holds to an address, on the coin's own chain. */
+    data class SendCoin(val chain: Chain, val address: String) : Route
+
     /** The alerts kept on the phone: New and Seen. */
     data object Alerts : Route
 

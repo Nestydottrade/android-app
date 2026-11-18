@@ -96,8 +96,9 @@ class NestyApi(
 
     /**
      * A wallet's own coin on each chain of its kind: every EVM chain for a 0x address, Solana for a
-     * Solana one, and the tokens named (50 at most: the coins of its positions, since EVM chains
-     * cannot list what a wallet holds). The server sees the address and the coins asked about.
+     * Solana one, and the tokens named (50 at most: the coins added to Portfolio and those of its
+     * positions, since EVM chains cannot list what a wallet holds). The server sees the address and
+     * the coins asked about.
      */
     suspend fun balances(address: String, tokens: List<Pair<Chain, String>> = emptyList()): BalancesAnswer =
         get("balances/$address", "tokens" to tokens.take(50).takeIf { it.isNotEmpty() }?.joinToString(",") { "${it.first.feed}:${it.second}" })

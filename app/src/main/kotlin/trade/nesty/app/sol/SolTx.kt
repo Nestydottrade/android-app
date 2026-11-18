@@ -144,6 +144,22 @@ object Spl {
             bytesOf(ATA_CREATE_IDEMPOTENT),
         )
 
+    /**
+     * Moves `amount` of `mint` from `owner`'s token account to `to`'s, checked against the mint's
+     * `decimals`: the one token transfer the validator lets a send make.
+     */
+    fun transferChecked(owner: String, to: String, mint: String, tokenProgram: String, amount: BigInteger, decimals: Int): Instruction =
+        Instruction(
+            tokenProgram,
+            listOf(
+                meta(SolAddr.associatedTokenAddress(owner, mint, tokenProgram), true),
+                meta(mint),
+                meta(SolAddr.associatedTokenAddress(to, mint, tokenProgram), true),
+                meta(owner, false, true),
+            ),
+            concat(bytesOf(TOKEN_TRANSFER_CHECKED), u64(amount), bytesOf(decimals)),
+        )
+
     fun syncNative(account: String): Instruction =
         Instruction(SolAddr.TOKEN_PROGRAM, listOf(meta(account, true)), bytesOf(TOKEN_SYNC_NATIVE))
 

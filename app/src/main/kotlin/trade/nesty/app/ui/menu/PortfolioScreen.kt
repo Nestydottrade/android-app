@@ -9,9 +9,19 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.text.style.TextOverflow
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import trade.nesty.app.data.Fill
+import trade.nesty.app.ui.GhostButton
+import trade.nesty.app.ui.SecretClipboard
+import trade.nesty.app.ui.TextBox
+import trade.nesty.app.ui.trade.closedLine
+import trade.nesty.app.ui.withdraw.Pill
 import androidx.compose.ui.platform.LocalUriHandler
 import trade.nesty.app.move.Move
 import trade.nesty.app.move.MoveKind
@@ -106,7 +116,8 @@ fun PortfolioScreen() {
     val holdings = if (wallet != null) trading.holdings() else emptyList()
     val open = holdings.filter { it.open }
     val closed = holdings.filter { !it.open }
-    val activity = if (wallet != null) trading.activity() else emptyList()
+    // Coin sends list as their moves, with the withdrawals.
+    val activity = if (wallet != null) trading.activity().filter { !it.isSend } else emptyList()
     val mover = AppGraph.mover
     val moves = if (wallet != null) mover.ofActive() else emptyList()
     val openMoves = moves.filter { it.state.open }
@@ -119,7 +130,7 @@ fun PortfolioScreen() {
         if (m.kind == MoveKind.BUY && c != null && t != null) {
             nav.push(Route.Token(c, t, buy = m.state == MoveState.ASK))
         } else {
-            // A withdrawal: its first transaction on the explorer of the chain it left.
+            // A withdrawal or a coin send: its first transaction on the explorer of the chain it left.
             m.legs.firstOrNull { it.hash != null }?.let { l -> l.fromChain?.let { fc -> runCatching { uri.openUri("${fc.explorer}/tx/${l.hash}") } } }
         }
     }
@@ -170,14 +181,17 @@ fun PortfolioScreen() {
                         )
                     }
                     when (tab) {
-                        0 -> if (open.isEmpty()) {
-                            item(key = "none") { EmptyNote("No open positions. Buy a coin from Discover or from its page.") }
-                        } else {
-                            uniqueItems(open, { "o:" + it.position.chain.feed + it.position.token }) { h ->
-                                OpenRow(h, trading.mcaps[Balances.tokenKey(h.position.chain, h.position.token)]) {
-                                    nav.push(Route.Position(h.position.chain, h.position.token))
+                        0 -> {
+                            if (open.isEmpty()) {
+                                item(key = "none") { EmptyNote("No open positions. Buy a coin from Discover or from its page.") }
+                            } else {
+                                uniqueItems(open, { "o:" + it.position.chain.feed + it.position.token }) { h ->
+                                    OpenRow(h, trading.mcaps[Balances.tokenKey(h.position.chain, h.position.token)]) {
+                                        nav.push(Route.Position(h.position.chain, h.position.token))
+                                    }
                                 }
                             }
+                            item(key = "import") { ImportCoin() }
                         }
                         1 -> if (closed.isEmpty()) {
                             item(key = "none") { EmptyNote("Nothing closed yet.") }
@@ -251,16 +265,16 @@ private fun BalanceCard(wallet: WalletInfo?, balance: WalletBalance?, onDeposit:
     }
 }
 
-/** A position's result: what it is worth now, plus what was taken out, less what was paid. */
+/** A position's result: what it is worth now, plus what was taken out, less what was paid. None when its cost is not on record. */
 private fun resultOf(h: Holding): Double? =
-    (if (h.open) h.value else h.value ?: 0.0)?.let { it + h.position.taken - h.position.paid }
+    if (!h.known) null else (if (h.open) h.value else h.value ?: 0.0)?.let { it + h.position.taken - h.position.paid }
 
 @Composable
 private fun Totals(open: List<Holding>, all: List<Holding>) {
     val inOpen = open.sumOf { it.value ?: 0.0 }
     val results = all.mapNotNull { resultOf(it) }
     val profit = results.sum()
-    val paid = all.sumOf { it.position.paid }
+    val paid = all.filter { it.known }.sumOf { it.position.paid }
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Stat("In open positions", Fmt.usdFull(inOpen), Modifier.weight(1f))
         Stat(
@@ -310,11 +324,12 @@ private fun OpenRow(h: Holding, mcapNow: Double?, onOpen: () -> Unit) {
     val p = h.position
     val symbol = p.symbol?.takeIf { it.isNotBlank() } ?: Fmt.address(p.token)
     val pnl = h.pnl
-    val times = h.value?.let { v -> if (p.paid > 0) (v + p.taken) / p.paid else null }
+    val times = if (!h.known) null else h.value?.let { v -> if (p.paid > 0) (v + p.taken) / p.paid else null }
     PositionRow(
         symbol,
         h,
-        "Entry ${Fmt.usd(p.entryMcap)} → now ${Fmt.usd(mcapNow)}",
+        // A coin got from outside Nesty has no entry on record: what is held, and its market cap now.
+        if (h.known) "Entry ${Fmt.usd(p.entryMcap)} → now ${Fmt.usd(mcapNow)}" else "${Fmt.amount(h.tokens)} · MC ${Fmt.usd(mcapNow)}",
         h.value?.let { Fmt.usdFull(it) } ?: Fmt.DASH,
         Ink.text,
         listOfNotNull(pnl?.let { Fmt.usdSigned(it) }, times?.let { Fmt.times(it) }).joinToString(" · ").ifEmpty { null },
@@ -331,7 +346,7 @@ private fun ClosedRow(h: Holding, now: Long, onOpen: () -> Unit) {
     PositionRow(
         symbol,
         h,
-        "Paid ${Fmt.usdFull(p.paid)} · got back ${Fmt.usdFull(p.taken)} · ${Fmt.age(now - p.lastAt)}",
+        closedLine(p, now),
         result?.let { Fmt.usdSigned(it) } ?: Fmt.DASH,
         signColor(result),
         result?.let { r -> if (p.paid > 0) Fmt.pctChange(r / p.paid * 100) else null },
@@ -397,6 +412,92 @@ private fun SetupCard(title: String, body: String, action: String, onAction: () 
             Text(title, style = text(16, FontWeight.Bold))
             Text(body, style = text(13, color = Ink.text2, lineHeight = 19.sp))
             GreenButton(action, onAction, Modifier.fillMaxWidth(), solid = true, height = 48.dp, fontSize = 15)
+        }
+    }
+}
+
+/**
+ * Import a coin: one this wallet got from outside Nesty, by its address. It is added on each chain
+ * of the address's kind where the wallet holds some. The form opens in the button's place.
+ */
+@Composable
+private fun ImportCoin() {
+    val context = LocalContext.current
+    val toasts = LocalToasts.current
+    val scope = rememberCoroutineScope()
+    var open by rememberSaveable { mutableStateOf(false) }
+    var address by rememberSaveable { mutableStateOf("") }
+    var busy by remember { mutableStateOf(false) }
+    var note by remember { mutableStateOf<String?>(null) }
+    val close = {
+        open = false
+        address = ""
+        note = null
+    }
+    Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+        if (!open) {
+            GhostButton("Import a coin", { open = true }, Modifier.fillMaxWidth())
+            return@Box
+        }
+        Card {
+            Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text("Import a coin", style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+                Text(
+                    "Paste the address of a coin this wallet holds. It shows here while you hold it.",
+                    style = text(13, color = Ink.text2, lineHeight = 18.sp),
+                )
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    TextBox(
+                        address,
+                        {
+                            address = it.trim()
+                            note = null
+                        },
+                        "Coin address",
+                        Modifier.weight(1f),
+                        placeholder = "Coin address",
+                        bad = note,
+                    )
+                    Pill("Paste") {
+                        val pasted = SecretClipboard.paste(context)?.trim()
+                        if (pasted.isNullOrEmpty()) toasts.show("Nothing to paste", "Copy the coin's address first.") else {
+                            address = pasted
+                            note = null
+                        }
+                    }
+                }
+                note?.let { Text(it, style = text(13, color = Ink.pink, lineHeight = 18.sp), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    GreenButton(
+                        if (busy) "Reading…" else "Import",
+                        {
+                            if (!busy && address.isNotEmpty()) {
+                                busy = true
+                                note = null
+                                scope.launch {
+                                    try {
+                                        val added = AppGraph.trading.importCoin(address)
+                                        val name = added.firstNotNullOfOrNull { it.symbol } ?: Fmt.address(added.first().token)
+                                        toasts.show("Imported $name", "On " + added.mapNotNull { it.chain?.title }.joinToString(" and "))
+                                        close()
+                                    } catch (e: CancellationException) {
+                                        throw e
+                                    } catch (e: Exception) {
+                                        note = e.message ?: "Could not import it. Try again."
+                                    } finally {
+                                        busy = false
+                                    }
+                                }
+                            }
+                        },
+                        Modifier.weight(1f),
+                        solid = true,
+                        height = 44.dp,
+                        fontSize = 15,
+                    )
+                    GhostButton("Cancel", close, Modifier.weight(1f))
+                }
+            }
         }
     }
 }

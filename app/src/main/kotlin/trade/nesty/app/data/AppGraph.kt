@@ -60,6 +60,8 @@ object AppGraph {
         private set
     lateinit var positions: PositionStore
         private set
+    lateinit var imports: ImportStore
+        private set
     lateinit var trading: Trading
         private set
     lateinit var mover: Mover
@@ -113,9 +115,17 @@ object AppGraph {
         val vault = Vault(FileVaultStore(context.applicationContext), AndroidKeyWrap(), watchWrap = AndroidKeyWrap(WATCH_KEY))
         session = WalletSession(vault, settings, fingerprint).also { s -> s.keepWatch = { exitStore.plans.isNotEmpty() } }
         positions = PositionStore(context.applicationContext)
-        // A wallet's balance names the coins it has traded: EVM chains cannot list what it holds.
-        balances = BalanceModel(api, session) { wallet -> positions.coinsOf(wallet.evm) + positions.coinsOf(wallet.sol) }
-        trading = Trading(api, session, positions, base).also { it.balances = balances }
+        imports = ImportStore(PrefsImportDisk(context.applicationContext))
+        // A wallet's balance names the coins added to Portfolio and those it has traded: EVM chains
+        // cannot list what it holds. The added ones come first, so a long trading past never pushes them out.
+        balances = BalanceModel(api, session) { wallet ->
+            val added = imports.of(wallet.evm) + imports.of(wallet.sol)
+            (added.mapNotNull { i -> i.chain?.let { it to i.token } } + positions.coinsOf(wallet.evm) + positions.coinsOf(wallet.sol)).distinct()
+        }
+        trading = Trading(api, session, positions, base).also {
+            it.balances = balances
+            it.imports = imports
+        }
         // Moves of funds between chains and out of One Balance, kept on the phone; bridge quotes are
         // asked of the bridge from the phone. A move the app was closed in is followed again.
         mover = Mover(session, trading, balances, settings, MoveStore(PrefsMoveDisk(context.applicationContext)), HttpRelay(base), base)

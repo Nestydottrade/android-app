@@ -59,6 +59,7 @@ import trade.nesty.app.ui.vault.SetupScreen
 import trade.nesty.app.ui.vault.UnlockScreen
 import trade.nesty.app.ui.vault.WalletsScreen
 import trade.nesty.app.ui.wallet.WalletScreen
+import trade.nesty.app.ui.withdraw.SendCoinScreen
 import trade.nesty.app.ui.withdraw.WithdrawScreen
 
 /** The models of the four tabs, kept while the app runs so a tab comes back as it was left. */
@@ -233,6 +234,7 @@ private fun Screen(route: Route) {
         Route.Updates -> UpdatesScreen()
         Route.AppUpdate -> AppUpdateScreen()
         Route.Withdraw -> WithdrawScreen()
+        is Route.SendCoin -> SendCoinScreen(route.chain, route.address)
         Route.Alerts -> AlertsScreen()
         Route.Setup -> SetupScreen()
         is Route.Wallets -> WalletsScreen(route.adding)

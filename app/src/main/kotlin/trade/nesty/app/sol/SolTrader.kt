@@ -1077,6 +1077,9 @@ class SolTrader(
     /**
      * One plain transaction from `wallet` on the same path as a trade's: the exact instructions,
      * compute budget included, pass `validate` before every signature; it is simulated first.
+     * Never tipped, whatever `prefs` say: a send or a deposit moves no price, so there is nothing
+     * to front-run. It goes through the public RPCs, as the extension's sends do, and the
+     * validators of sends and deposits take no tip.
      */
     suspend fun sendPlain(
         wallet: SolSigner,
@@ -1087,7 +1090,7 @@ class SolTrader(
         shortfall: (suspend (BigInteger) -> String?)? = null,
         /** The signature, right before the transaction is sent: a caller keeps it in case the app closes. */
         onSigned: (String) -> Unit = {},
-    ): Plain = when (val s = submitLeg(wallet, instructions, units, prefs, validate, shortfall, onSigned)) {
+    ): Plain = when (val s = submitLeg(wallet, instructions, units, prefs.copy(tipLamports = BigInteger.ZERO), validate, shortfall, onSigned)) {
         is LegSubmit.Blocked -> Plain.Refused(s.actions.firstOrNull { !it.ok }?.reason ?: "Blocked", s.actions)
         is LegSubmit.Skipped -> Plain.Refused(s.reason)
         is LegSubmit.Failed -> Plain.Refused(s.error)

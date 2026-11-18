@@ -64,6 +64,7 @@ fun MoveCard(m: Move, onBuy: () -> Unit, onKeep: () -> Unit) {
     val dest = destOf(m)
     val leg = m.legs.firstOrNull()
     val (title, detail) = when {
+        m.kind == MoveKind.SEND_COIN -> "Sending ${Fmt.amount(m.coinTokens)} ${coinOf(m)} to ${Fmt.address(m.recipient)} on $dest" to legWords(leg, dest)
         m.kind == MoveKind.WITHDRAW -> {
             val moving = m.legs.firstOrNull { it.kind == LegKind.BRIDGE && it.status != LegStatus.DONE }
             "Sending ${Fmt.usdFull(m.usd)} to ${Fmt.address(m.recipient)} on $dest" to
@@ -111,6 +112,12 @@ private fun stateWords(m: Move): String = when (m.kind) {
         MoveState.FAILED -> "Not sent"
         else -> "On its way"
     }
+    MoveKind.SEND_COIN -> when (m.state) {
+        MoveState.DONE -> "Sent"
+        MoveState.PARTIAL -> "Not confirmed"
+        MoveState.FAILED -> "Not sent"
+        else -> "On its way"
+    }
     MoveKind.BUY -> when (m.state) {
         MoveState.WORKING -> "Moving"
         MoveState.ASK -> "Waiting for you"
@@ -136,24 +143,37 @@ fun MoveRow(m: Move, now: Long, onOpen: (() -> Unit)?) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        val send = m.kind != MoveKind.BUY
         Text(
-            if (m.kind == MoveKind.WITHDRAW) "Send" else "Move",
+            if (send) "Send" else "Move",
             style = text(13, FontWeight.Bold, Ink.text2),
             modifier = Modifier.widthIn(min = 36.dp),
         )
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.Bottom) {
                 Text(
-                    if (m.kind == MoveKind.WITHDRAW) "To ${Fmt.address(m.recipient)}" else "${leg?.fromChain?.title ?: "?"} to ${destOf(m)}",
+                    if (send) "To ${Fmt.address(m.recipient)}" else "${leg?.fromChain?.title ?: "?"} to ${destOf(m)}",
                     style = text(15, FontWeight.Bold),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f, fill = false),
                 )
-                Text(Fmt.usdFull(if (m.kind == MoveKind.WITHDRAW) m.usd else leg?.usdIn ?: m.usd), style = figure(15, FontWeight.SemiBold))
+                Text(
+                    when {
+                        m.kind == MoveKind.WITHDRAW -> Fmt.usdFull(m.usd)
+                        // A coin send: its worth then; a dash when it was not priced.
+                        m.kind == MoveKind.SEND_COIN -> if (m.usd > 0) Fmt.usdFull(m.usd) else Fmt.DASH
+                        else -> Fmt.usdFull(leg?.usdIn ?: m.usd)
+                    },
+                    style = figure(15, FontWeight.SemiBold),
+                )
             }
             Text(
-                (if (m.kind == MoveKind.WITHDRAW) "On ${destOf(m)}" else "For ${coinOf(m)}") + " · " + stateWords(m),
+                when (m.kind) {
+                    MoveKind.WITHDRAW -> "On ${destOf(m)}"
+                    MoveKind.SEND_COIN -> "${Fmt.amount(m.coinTokens)} ${coinOf(m)} on ${destOf(m)}"
+                    MoveKind.BUY -> "For ${coinOf(m)}"
+                } + " · " + stateWords(m),
                 style = text(13, color = if (bad) Ink.pink else Ink.muted),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

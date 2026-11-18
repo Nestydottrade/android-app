@@ -77,12 +77,13 @@ object Balances {
  * is on screen, and right after each of its trades; the others only when the Wallets screen asks.
  *
  * The server sees each address it is asked about and the coins named with it (the wallet's
- * positions), as the app's privacy note has to say. Nothing else of a wallet goes to it.
+ * positions and the coins added to Portfolio), as the app's privacy note says. Nothing else of a
+ * wallet goes to it.
  */
 class BalanceModel(
     private val api: NestyApi,
     private val session: WalletSession,
-    /** The coins a wallet holds positions in, to name with its address. */
+    /** The coins a wallet holds positions in, and those added by hand, to name with its address. */
     private val coinsOf: (WalletInfo) -> List<Pair<Chain, String>> = { emptyList() },
 ) {
     private val byWallet = mutableStateMapOf<String, WalletBalance>()

@@ -25,6 +25,7 @@ import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
 import trade.nesty.app.data.Holding
+import trade.nesty.app.data.Position
 import trade.nesty.app.data.Served
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.Checks
@@ -33,8 +34,10 @@ import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
 import trade.nesty.app.ui.Fmt
+import trade.nesty.app.ui.GhostButton
 import trade.nesty.app.ui.IconButton48
 import trade.nesty.app.ui.LocalNavigator
+import trade.nesty.app.ui.LocalToasts
 import trade.nesty.app.ui.NIcons
 import trade.nesty.app.ui.NavRow
 import trade.nesty.app.ui.Route
@@ -55,6 +58,7 @@ import trade.nesty.app.ui.venueName
 @Composable
 fun PositionScreen(chain: Chain, address: String) {
     val nav = LocalNavigator.current
+    val toasts = LocalToasts.current
     val model = rememberTokenModel(chain, address)
     WhileShown { model.live(withChart = false) }
     val coin = model.coin
@@ -82,12 +86,29 @@ fun PositionScreen(chain: Chain, address: String) {
                 EmptyNote("No trades of $symbol from this wallet yet.")
             } else {
                 Yours(holding, symbol, coin, now)
-                if (holding.open) ExitPlanCard(chain, address, symbol, holding, coin, now)
+                // An exit plan works from what was paid: a coin whose cost is not on record has none.
+                if (holding.open && holding.known) ExitPlanCard(chain, address, symbol, holding, coin, now)
             }
             Card {
+                if (holding != null && holding.held.signum() > 0 && AppGraph.trading.canTrade(chain)) {
+                    NavRow("Send $symbol", onClick = { nav.push(Route.SendCoin(chain, address)) })
+                    Divider()
+                }
                 NavRow("Coin checks and details", onClick = openToken)
                 Divider()
                 NavRow("Trades and holders", onClick = { nav.push(Route.TradesHolders(chain, address)) })
+            }
+            // A coin added by hand and never traded here leaves Portfolio as it came.
+            if (holding != null && holding.position.imported && !holding.position.traded) {
+                GhostButton(
+                    "Remove from Portfolio",
+                    {
+                        AppGraph.trading.removeImport(chain, address)
+                        toasts.show("Removed $symbol from Portfolio")
+                        nav.pop()
+                    },
+                    Modifier.fillMaxWidth(),
+                )
             }
         }
         if (coin != null) {
@@ -143,6 +164,11 @@ private fun Yours(h: Holding, symbol: String, coin: Coin?, now: Long) {
                     }
                 }
                 val bought = "${Fmt.amount(h.tokens)} $symbol"
+                if (!h.known) {
+                    // Got from outside Nesty: what it cost is not on record, so no result and no entry.
+                    Text(bought, style = text(14, color = Ink.text2, lineHeight = 20.sp))
+                    return@Column
+                }
                 val paid = "paid ${Fmt.usdFull(p.paid)}" + (p.entryMcap?.let { " at MC ${Fmt.usd(it)}" } ?: "")
                 Text("$bought · $paid", style = text(14, color = Ink.text2, lineHeight = 20.sp))
                 if (p.taken >= 0.01) Text("Taken out so far: ${Fmt.usdFull(p.taken)}", style = text(14, color = Ink.text2))
@@ -155,13 +181,21 @@ private fun Yours(h: Holding, symbol: String, coin: Coin?, now: Long) {
                     )
                 }
             } else {
-                // Gone without a sell from this phone: sent elsewhere, or sold from another app.
-                val title = if (p.sold.signum() == 0) "You no longer hold $symbol" else "You sold your $symbol"
+                // Gone without a sell from this phone: sent from here or elsewhere, or sold from another app.
+                val title = when {
+                    p.sold.signum() > 0 -> "You sold your $symbol"
+                    p.sent.signum() > 0 -> "You sent your $symbol"
+                    else -> "You no longer hold $symbol"
+                }
                 Text(title, style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.semantics { heading() })
+                if (!h.known) {
+                    Text("${Fmt.age(now - p.lastAt)} ago", style = text(14, color = Ink.text2, lineHeight = 20.sp))
+                    return@Column
+                }
                 val result = (h.value ?: 0.0) + p.taken - p.paid
                 Text(Fmt.usdSigned(result), style = figure(38, FontWeight.SemiBold, signColor(result)).copy(lineHeight = 40.sp))
                 Text(
-                    "Paid ${Fmt.usdFull(p.paid)} · got back ${Fmt.usdFull(p.taken)} · ${Fmt.age(now - p.lastAt)} ago",
+                    closedLine(p, now),
                     style = text(14, color = Ink.text2, lineHeight = 20.sp),
                 )
             }
@@ -171,3 +205,12 @@ private fun Yours(h: Holding, symbol: String, coin: Coin?, now: Long) {
 
 /** How long after the first buy the cost note shows. */
 private const val FRESH_MS = 15 * 60_000L
+
+/** A closed position in a line: paid, got back from sells, what was sent at its worth then, how long ago. */
+fun closedLine(p: Position, now: Long): String = listOfNotNull(
+    "Paid ${Fmt.usdFull(p.paid)}",
+    // Sent away and never sold: nothing came back to name.
+    if (p.sold.signum() > 0 || p.sent.signum() == 0) "got back ${Fmt.usdFull(p.taken - p.sentUsd)}" else null,
+    if (p.sent.signum() > 0) "sent ${Fmt.usdFull(p.sentUsd)}" else null,
+    "${Fmt.age(now - p.lastAt)} ago",
+).joinToString(" · ")
