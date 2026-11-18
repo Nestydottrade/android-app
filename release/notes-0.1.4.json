@@ -1,0 +1,26 @@
+[
+  {
+    "title": "Key wallets",
+    "text": "A coin's page lists its creator, team, top holders and big buys: what each bought, sold or sent, and holds now"
+  },
+  {
+    "title": "Send a coin",
+    "text": "Send a coin you hold to any address on its chain, from the coin's page in Portfolio"
+  },
+  {
+    "title": "Import a coin",
+    "text": "Paste the address of a coin your wallet got outside Nesty to see it in Portfolio"
+  },
+  {
+    "title": "A coin's past as its page opens",
+    "text": "Trades read back to a launchpad coin's first trade as its page opens, where Nesty's server keeps them"
+  },
+  {
+    "title": "Socials, chart lengths and 24h volume",
+    "text": "X, Telegram and website beside the market cap, 24 hour volume, and every chart length from 1 second to 1 week"
+  },
+  {
+    "title": "Solana withdrawals work again",
+    "text": "Withdrawing SOL and moving funds off Solana were refused since 0.1.2; both go through again"
+  }
+]
