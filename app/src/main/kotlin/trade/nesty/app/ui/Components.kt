@@ -297,23 +297,43 @@ fun ChainChips(chains: List<Chain>, selected: Chain?, onPick: (Chain?) -> Unit, 
 /** A pill group with the picked one in white. */
 @Composable
 fun Segmented(options: List<String>, selected: Int, onPick: (Int) -> Unit, modifier: Modifier = Modifier, minWidth: Dp = 46.dp) {
-    Row(modifier.clip(RoundedCornerShape(22.dp)).background(Ink.raised), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        options.forEachIndexed { i, o ->
-            val on = i == selected
-            Box(
-                Modifier
-                    .widthIn(min = minWidth)
-                    .height(44.dp)
-                    .clip(RoundedCornerShape(22.dp))
-                    .background(if (on) Ink.text else Color.Transparent)
-                    .clickable(role = Role.Button) { onPick(i) }
-                    .semantics { this.selected = on }
-                    .padding(horizontal = 8.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(o, style = text(14, FontWeight.Bold, if (on) Ink.ground else Ink.text2), maxLines = 1)
-            }
-        }
+    PillGroup(modifier) {
+        options.forEachIndexed { i, o -> Pill(o, i == selected, minWidth = minWidth) { onPick(i) } }
+    }
+}
+
+/** The rounded ground of a pill group. */
+@Composable
+fun PillGroup(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    Row(modifier.clip(RoundedCornerShape(22.dp)).background(Ink.raised), horizontalArrangement = Arrangement.spacedBy(2.dp), content = content)
+}
+
+/** One pill of a group, white while picked; [trailing] follows its label. */
+@Composable
+fun Pill(
+    label: String?,
+    on: Boolean,
+    modifier: Modifier = Modifier,
+    minWidth: Dp = 46.dp,
+    role: Role = Role.Button,
+    trailing: (@Composable (Color) -> Unit)? = null,
+    onClick: () -> Unit,
+) {
+    val ink = if (on) Ink.ground else Ink.text2
+    Row(
+        modifier
+            .widthIn(min = minWidth)
+            .height(44.dp)
+            .clip(RoundedCornerShape(22.dp))
+            .background(if (on) Ink.text else Color.Transparent)
+            .clickable(role = role, onClick = onClick)
+            .semantics { this.selected = on }
+            .padding(horizontal = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterHorizontally),
+    ) {
+        if (label != null) Text(label, style = text(14, FontWeight.Bold, ink), maxLines = 1)
+        trailing?.invoke(ink)
     }
 }
 

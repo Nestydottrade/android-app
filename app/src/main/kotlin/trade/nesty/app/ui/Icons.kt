@@ -54,6 +54,11 @@ object NIcons {
     val pie = line("M21 12a9 9 0 1 1-9-9v9z", "M15 3.6A9 9 0 0 1 20.4 9H15z")
     val doneCircle = line(circle(12f, 12f, 9f), "M8 12.5l2.5 2.5 5.5-5.5", width = 2.2f)
 
+    // A coin's own pages. X's mark: its wide stroke hollow, the thin one meeting it on each side.
+    val x = line("M4 4h4.6L20 20h-4.6z", "M4 20l6.66-6.66M13.34 10.66L20 4", width = 1.9f)
+    val telegram = line("M21 5L3 11.5l6.5 2L16.5 19.5z", "M9.5 13.5L21 5", "M9.5 13.5l.8 5 2.4-2.8", width = 1.9f)
+    val globe = line(circle(12f, 12f, 9f), "M3 12h18", "M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z", width = 1.9f)
+
     // The small round marks beside a figure, drawn on an 18 unit circle.
     val toneBad = line("M6 6l6 6M12 6l-6 6", box = 18f)
     val toneWarn = line("M9 5v5M9 13v.01", box = 18f)

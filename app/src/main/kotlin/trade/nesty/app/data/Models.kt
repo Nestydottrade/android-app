@@ -117,6 +117,8 @@ data class Coin(
     val volume5: Double? = null,
     val buys5: Int? = null,
     val sells5: Int? = null,
+    /** Dollars traded over the last day; null where nothing covers it, and from a server before it. */
+    val volume24: Double? = null,
     val change: Change? = null,
     val tax: Tax? = null,
     val creatorFee: CreatorFee? = null,

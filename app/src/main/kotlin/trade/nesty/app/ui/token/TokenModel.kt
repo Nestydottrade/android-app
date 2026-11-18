@@ -75,7 +75,7 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
     var coinPhase by mutableStateOf(Phase.LOADING)
         private set
 
-    var frame by mutableStateOf(Frame.S15)
+    var frame by mutableStateOf(Frame.DEFAULT)
     private var raw by mutableStateOf<List<Candle>>(emptyList())
     private var rawFrame by mutableStateOf<Frame?>(null)
     var supply by mutableStateOf<Double?>(null)
@@ -156,7 +156,7 @@ class TokenModel(private val api: NestyApi, val chain: Chain, val address: Strin
     fun candles(): List<Candle> {
         val f = frame
         if (rawFrame?.interval != f.interval) return emptyList()
-        return if (f.seconds > 1 && f.interval == "1s") CandleMath.aggregate(raw, f.seconds) else raw
+        return if (f.seconds > f.step) CandleMath.aggregate(raw, f.seconds, f.anchor) else raw
     }
 
     val holderCount: Int? get() = share?.holders ?: holders?.holders

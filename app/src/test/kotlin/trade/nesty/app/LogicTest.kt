@@ -19,6 +19,7 @@ import trade.nesty.app.ui.Tone
 import trade.nesty.app.ui.holders.holdState
 import trade.nesty.app.ui.menu.sumBars
 import trade.nesty.app.ui.token.CandleMath
+import trade.nesty.app.ui.token.Frame
 import trade.nesty.app.ui.token.followedTrades
 import trade.nesty.app.ui.wallet.unrealized
 
@@ -37,6 +38,47 @@ class LogicTest {
         assertEquals(Candle(90, 1.0, 1.5, 0.9, 1.4, 2.0), out[0])
         assertEquals(Candle(105, 1.4, 1.4, 0.8, 0.95, 2.0), out[1])
         assertEquals(Candle(120, 0.95, 2.0, 0.95, 1.9, 1.0), out[2])
+    }
+
+    @Test
+    fun theChartOpensInFiveMinutesWithFourLengthsOnItAndEveryLengthInItsList() {
+        assertEquals(Frame.M5, Frame.DEFAULT)
+        assertEquals(listOf("5m", "15m", "1h", "4h"), Frame.QUICK.map { it.label })
+        assertEquals(
+            listOf("1s", "15s", "1m", "5m", "15m", "30m", "1h", "4h", "6h", "12h", "1d", "3d", "1w"),
+            Frame.ROWS.flatten().map { it.label },
+        )
+        assertEquals(Frame.entries.toList(), Frame.ROWS.flatten())
+        for (f in Frame.entries) {
+            // Each is a whole number of the server's candles it reads, and starts where one of those does.
+            assertEquals(f.label, 0L, f.seconds % f.step)
+            assertEquals(f.label, 0L, f.anchor % f.step)
+            assertTrue(f.label, f.interval in setOf("1s", "1m", "5m", "15m", "1h", "4h", "D"))
+            assertTrue(f.label, f.limit in 1..1_500)
+        }
+    }
+
+    @Test
+    fun longerLengthsAreSummedFromTheServersCandles() {
+        // 15 minute candles from midnight: two to each half hour.
+        val quarters = listOf(c(0, 1.0, 2.0, 1.0, 2.0), c(900, 2.0, 3.0, 2.0, 3.0), c(1_800, 3.0, 3.0, 1.0, 1.5), c(2_700, 1.5, 4.0, 1.5, 4.0))
+        val halves = CandleMath.aggregate(quarters, Frame.M30.seconds, Frame.M30.anchor)
+        assertEquals(listOf(Candle(0, 1.0, 3.0, 1.0, 3.0, 2.0), Candle(1_800, 3.0, 4.0, 1.0, 4.0, 2.0)), halves)
+        // 4 hour candles: three to the first 12 hours of a day, one to the next.
+        val fours = (0 until 4).map { c(it * 14_400L, 1.0, 1.0 + it, 1.0, 1.0) }
+        assertEquals(listOf(0L, 43_200L), CandleMath.aggregate(fours, Frame.H12.seconds, Frame.H12.anchor).map { it.time })
+    }
+
+    @Test
+    fun aWeekOpensOnAMonday() {
+        val monday = 1_794_182_400L // 2026-11-09, a Monday
+        // Daily candles from the Sunday before it to the Tuesday after the next.
+        val days = (-1..8).map { c(monday + it * 86_400L, 1.0, 1.0, 1.0, 1.0) }
+        val weeks = CandleMath.aggregate(days, Frame.W1.seconds, Frame.W1.anchor)
+        assertEquals(listOf(monday - 7 * 86_400L, monday, monday + 7 * 86_400L), weeks.map { it.time })
+        assertEquals(listOf(1.0, 7.0, 2.0), weeks.map { it.volume })
+        // Three days count from 1970 on, as the server's days do.
+        assertTrue(CandleMath.aggregate(days, Frame.D3.seconds).all { it.time % Frame.D3.seconds == 0L })
     }
 
     @Test

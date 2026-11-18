@@ -14,9 +14,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -49,11 +52,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Coin
+import trade.nesty.app.data.Links
 import trade.nesty.app.data.Served
 import trade.nesty.app.data.Trade
 import trade.nesty.app.data.TradersAnswer
@@ -72,8 +77,9 @@ import trade.nesty.app.ui.LocalToasts
 import trade.nesty.app.ui.Meter
 import trade.nesty.app.ui.NIcons
 import trade.nesty.app.ui.NavRow
+import trade.nesty.app.ui.Pill
+import trade.nesty.app.ui.PillGroup
 import trade.nesty.app.ui.Route
-import trade.nesty.app.ui.Segmented
 import trade.nesty.app.ui.Stat
 import trade.nesty.app.ui.Tone
 import trade.nesty.app.ui.ToneChip
@@ -250,15 +256,6 @@ private fun TokenHeader(coin: Coin?, chain: Chain, address: String, now: Long, o
                     menu = false
                     runCatching { uri.openUri(chain.tokenUrl(address)) }
                 })
-                coin?.links?.x?.takeIf { it.startsWith("http") }?.let { x ->
-                    DropdownMenuItem(text = { MenuText("X") }, onClick = { menu = false; runCatching { uri.openUri(x) } })
-                }
-                coin?.links?.telegram?.takeIf { it.startsWith("http") }?.let { t ->
-                    DropdownMenuItem(text = { MenuText("Telegram") }, onClick = { menu = false; runCatching { uri.openUri(t) } })
-                }
-                coin?.links?.website?.takeIf { it.startsWith("http") }?.let { w ->
-                    DropdownMenuItem(text = { MenuText("Website") }, onClick = { menu = false; runCatching { uri.openUri(w) } })
-                }
             }
         }
     }
@@ -275,11 +272,31 @@ private fun MenuText(title: String, note: String? = null) {
 @Composable
 private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Double?, onChecks: () -> Unit, onWallets: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(Fmt.usd(coin.mcapUsd), style = figure(44, FontWeight.SemiBold, Ink.green).copy(lineHeight = 44.sp))
-            val m5 = coin.change?.m5
-            if (m5 != null) Text(Fmt.pctChange(m5), style = text(17, FontWeight.Bold, pctColor(m5)), modifier = Modifier.padding(bottom = 4.dp))
-            Text(if (m5 != null) "market cap, 5m" else "market cap", style = text(13, color = Ink.muted), modifier = Modifier.padding(bottom = 5.dp))
+        Column {
+            Text("Market cap", style = text(13, color = Ink.muted))
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Smaller only where the coin's pages beside it leave it too little room.
+                    BasicText(
+                        Fmt.usd(coin.mcapUsd),
+                        Modifier.weight(1f, fill = false),
+                        style = figure(44, FontWeight.SemiBold, Ink.green).copy(lineHeight = 1.em),
+                        softWrap = false,
+                        maxLines = 1,
+                        autoSize = TextAutoSize.StepBased(minFontSize = 28.sp, maxFontSize = 44.sp),
+                    )
+                    // Over the last day, as the volume under it.
+                    val day = coin.change?.h24
+                    if (day != null) {
+                        Text(
+                            Fmt.pctChange(day),
+                            style = text(17, FontWeight.Bold, pctColor(day)),
+                            modifier = Modifier.padding(bottom = 4.dp).semantics { contentDescription = "${Fmt.pctChange(day)} over 24 hours" },
+                        )
+                    }
+                }
+                Socials(coin.links)
+            }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             // Its all-time high right after its market cap: a market cap where the supply is known, else a price.
@@ -288,7 +305,7 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Doub
                 Stat("ATH", if (supply != null && supply > 0) Fmt.usd(ath * supply) else "$" + Fmt.amount(ath), Modifier.weight(1f))
             }
             Stat("Liquidity", Fmt.usd(coin.liquidityUsd), Modifier.weight(1f))
-            Stat("Volume 5m", Fmt.usd(coin.volume5), Modifier.weight(1f))
+            Stat("Volume 24h", Fmt.usd(coin.volume24), Modifier.weight(1f))
             Stat("Holders", model.holderCount?.let { Fmt.count(it.toLong()) } ?: Fmt.DASH, Modifier.weight(1f))
         }
         val progress = coin.progress
@@ -313,13 +330,63 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Doub
     }
 }
 
+/** The coin's own pages, as its launchpad and listings name them, beside its market cap. */
+@Composable
+private fun Socials(links: Links?) {
+    val uri = LocalUriHandler.current
+    val pages = listOfNotNull(
+        links?.x?.let { Triple(NIcons.x, "Open X", it) },
+        links?.telegram?.let { Triple(NIcons.telegram, "Open Telegram", it) },
+        links?.website?.let { Triple(NIcons.globe, "Open website", it) },
+    ).filter { it.third.startsWith("http") }
+    if (pages.isEmpty()) return
+    // Their marks line up under the header's buttons.
+    Row(Modifier.offset(x = 12.dp)) {
+        for ((icon, label, url) in pages) IconButton48(icon, label, size = 20.dp) { runCatching { uri.openUri(url) } }
+    }
+}
+
+/** The four lengths most looked at, and in a fifth place the list of every length. */
+@Composable
+private fun FramePicker(frame: Frame, onPick: (Frame) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    // A length picked from the list shows in the list's own place.
+    val listed = frame.takeIf { it !in Frame.QUICK }
+    PillGroup {
+        for (f in Frame.QUICK) Pill(f.label, f == frame) { onPick(f) }
+        Box {
+            Pill(
+                listed?.label,
+                listed != null,
+                modifier = Modifier.semantics { contentDescription = listed?.let { "${it.words} candles. More lengths" } ?: "More lengths" },
+                role = Role.DropdownList,
+                trailing = { ink -> Icon(NIcons.chevronDown, contentDescription = null, tint = ink, modifier = Modifier.size(14.dp)) },
+            ) { open = true }
+            DropdownMenu(expanded = open, onDismissRequest = { open = false }, containerColor = Ink.raised) {
+                Column(Modifier.padding(horizontal = 8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    for (row in Frame.ROWS) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            for (f in row) {
+                                Pill(f.label, f == frame, minWidth = 56.dp) {
+                                    open = false
+                                    onPick(f)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 @Composable
 private fun ChartSection(model: TokenModel, coin: Coin, ath: Double?) {
     val candles = model.candles()
     val supply = model.supply ?: coin.supply
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-            Segmented(Frame.entries.map { it.label }, model.frame.ordinal, { model.frame = Frame.entries[it] })
+            FramePicker(model.frame) { model.frame = it }
             if (model.live) LiveMark(Modifier.padding(end = 4.dp))
         }
         val symbol = coin.symbol ?: "This coin"

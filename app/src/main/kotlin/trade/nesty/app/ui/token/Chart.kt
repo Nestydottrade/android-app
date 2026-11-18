@@ -66,23 +66,60 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
 
-/** The lengths a chart's candles can have. The server has no 15 second candle: it is summed from 1 second ones. */
-enum class Frame(val label: String, val interval: String, val seconds: Long, val limit: Int, val words: String) {
-    S1("1s", "1s", 1, 300, "1 second"),
-    S15("15s", "1s", 15, 1_500, "15 second"),
-    M1("1m", "1m", 60, 500, "1 minute"),
-    M5("5m", "5m", 300, 500, "5 minute"),
-    H1("1h", "1h", 3_600, 500, "1 hour"),
+/** 1970-01-05, the first Monday: a week's candle opens on a Monday, as charts count weeks. */
+private const val MONDAY = 4 * 86_400L
+
+/**
+ * The lengths a chart's candles can have. Each reads the server's candles of [interval], [step]
+ * seconds long; a length the server has no candle of is summed from those: 15 seconds from 1
+ * second ones, 30 minutes from 15 minute ones, 6 hours from hourly ones, 12 hours from 4 hour
+ * ones, 3 days and a week from daily ones. [limit] is how many of the server's it reads.
+ */
+enum class Frame(
+    val label: String,
+    val interval: String,
+    val step: Long,
+    val seconds: Long,
+    val limit: Int,
+    val words: String,
+    /** Where its candles start, in seconds past a whole number of them since 1970. */
+    val anchor: Long = 0,
+) {
+    S1("1s", "1s", 1, 1, 300, "1 second"),
+    S15("15s", "1s", 1, 15, 1_500, "15 second"),
+    M1("1m", "1m", 60, 60, 500, "1 minute"),
+    M5("5m", "5m", 300, 300, 500, "5 minute"),
+    M15("15m", "15m", 900, 900, 500, "15 minute"),
+    M30("30m", "15m", 900, 1_800, 1_000, "30 minute"),
+    H1("1h", "1h", 3_600, 3_600, 500, "1 hour"),
+    H4("4h", "4h", 14_400, 14_400, 500, "4 hour"),
+    H6("6h", "1h", 3_600, 21_600, 1_000, "6 hour"),
+    H12("12h", "4h", 14_400, 43_200, 1_500, "12 hour"),
+    D1("1d", "D", 86_400, 86_400, 500, "1 day"),
+    D3("3d", "D", 86_400, 259_200, 1_500, "3 day"),
+    W1("1w", "D", 86_400, 604_800, 1_500, "1 week", anchor = MONDAY),
+    ;
+
+    companion object {
+        /** A coin's chart opens in these. */
+        val DEFAULT = M5
+
+        /** The lengths on the chart itself; every length is in its list. */
+        val QUICK = listOf(M5, M15, H1, H4)
+
+        /** That list, a unit to a row: seconds, minutes, hours, then days and the week. */
+        val ROWS = listOf(listOf(S1, S15), listOf(M1, M5, M15, M30), listOf(H1, H4, H6, H12), listOf(D1, D3, W1))
+    }
 }
 
 object CandleMath {
-    /** Candles summed into longer ones of [seconds], oldest first. */
-    fun aggregate(candles: List<Candle>, seconds: Long): List<Candle> {
+    /** Candles summed into longer ones of [seconds], oldest first, each starting [anchor] seconds past a whole number of them. */
+    fun aggregate(candles: List<Candle>, seconds: Long, anchor: Long = 0): List<Candle> {
         if (seconds <= 1 || candles.isEmpty()) return candles
         val out = ArrayList<Candle>(candles.size / seconds.toInt() + 1)
         var cur: Candle? = null
         for (c in candles) {
-            val bucket = c.time - Math.floorMod(c.time, seconds)
+            val bucket = c.time - Math.floorMod(c.time - anchor, seconds)
             val k = cur
             cur = if (k == null || k.time != bucket) {
                 if (k != null) out += k
