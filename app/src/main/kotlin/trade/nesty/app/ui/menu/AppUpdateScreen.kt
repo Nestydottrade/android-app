@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -27,9 +26,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,11 +54,9 @@ import trade.nesty.app.ui.NIcons
 import trade.nesty.app.ui.Route
 import trade.nesty.app.ui.Tone
 import trade.nesty.app.ui.ToneMark
-import trade.nesty.app.ui.alerts.SwitchMark
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.text
 import trade.nesty.app.ui.trade.BottomBarFrame
-import trade.nesty.app.update.Installer
 import trade.nesty.app.update.Releases
 import trade.nesty.app.update.UpdateState
 
@@ -142,7 +137,6 @@ fun AppUpdateScreen() {
                         )
                     }
                 }
-                if (Installer.canSkipQuestion) Quiet()
             }
         }
         if (r != null) {
@@ -231,33 +225,6 @@ private fun CheckRow(title: String, sub: String?, figure: String? = null) {
             Text(title, style = text(15, FontWeight.SemiBold))
             if (sub != null) Text(sub, style = text(13, color = Ink.muted, lineHeight = 18.sp))
             if (figure != null) FigureText(figure, 14, Ink.muted)
-        }
-    }
-}
-
-/** Android 12 and later: install without Android's own question, once the user turns it on. */
-@Composable
-private fun Quiet() {
-    val updater = AppGraph.updater
-    var on by remember { mutableStateOf(updater.quiet) }
-    Card {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 64.dp)
-                .toggleable(value = on, role = Role.Switch, onValueChange = { v ->
-                    on = v
-                    updater.quiet = v
-                })
-                .padding(start = 16.dp, end = 10.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Install without Android's question", style = text(15, FontWeight.SemiBold))
-                Text("Install update installs it at once. Some phones ask anyway.", style = text(13, color = Ink.muted, lineHeight = 18.sp))
-            }
-            SwitchMark(on)
         }
     }
 }

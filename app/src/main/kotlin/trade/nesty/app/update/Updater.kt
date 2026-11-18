@@ -68,7 +68,7 @@ sealed interface UpdateState {
 
     data class Failed(override val release: AppRelease, val why: String) : UpdateState
 
-    /** Handed to Android, which asks the user (or, with the switch on, may not). */
+    /** Handed to Android, which asks the user. */
     data class Installing(override val release: AppRelease) : UpdateState
 
     /** The newer version this state is about, if any. */
@@ -90,8 +90,8 @@ class Updater(
     /** Where fetched APKs are kept: the app's own cache. */
     private val dir: File,
     private val disk: UpdateDisk,
-    /** Hands a checked APK to Android (PackageInstaller); `quiet` asks it to skip its question. */
-    private val install: (File, Boolean) -> Unit,
+    /** Hands a checked APK to Android (PackageInstaller), which asks the user. */
+    private val install: (File) -> Unit,
     private val host: String = Releases.HOST,
     private val now: () -> Long = System::currentTimeMillis,
     /** A verified update is ready: said once per version (a notification while Nesty is away). */
@@ -105,11 +105,6 @@ class Updater(
     /** The version Nesty was just updated to, until its screen has said so. */
     var justUpdated: String? = null
         private set
-
-    /** Install without Android's question (Android 12 and later; some phones ask anyway). */
-    var quiet: Boolean
-        get() = disk.flag(QUIET)
-        set(on) = disk.putFlag(QUIET, on)
 
     private var job: Job? = null
     /** When nesty.trade last answered; null before the first answer. */
@@ -285,7 +280,7 @@ class Updater(
         handed = again
         _state.value = UpdateState.Installing(s.release)
         try {
-            withContext(io) { install(s.file, quiet) }
+            withContext(io) { install(s.file) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -334,7 +329,6 @@ class Updater(
         private const val LAST_RUN = "lastRun"
         private const val UPDATED_TO = "updatedTo"
         private const val NOTIFIED = "notified"
-        private const val QUIET = "quiet"
 
         const val STOPPED = "The download stopped. Check your connection and try again."
         const val MISMATCH = "The file did not match the published fingerprint, so Nesty deleted it."

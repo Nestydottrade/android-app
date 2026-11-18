@@ -17,20 +17,14 @@ import java.io.File
 object Installer {
     private const val ACTION_STATUS = "trade.nesty.app.update.STATUS"
 
-    /** Android 12 and later can install an update without its own question, when the user turns it on. */
-    val canSkipQuestion: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-
-    fun commit(context: Context, file: File, quiet: Boolean) {
+    /** Android asks "Update Nesty?" before every install; the user's answer decides. */
+    fun commit(context: Context, file: File) {
         val installer = context.packageManager.packageInstaller
         val params = PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL).apply {
             setAppPackageName(context.packageName)
             setSize(file.length())
             setInstallReason(PackageManager.INSTALL_REASON_USER)
-            if (canSkipQuestion) {
-                setRequireUserAction(
-                    if (quiet) PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED else PackageInstaller.SessionParams.USER_ACTION_REQUIRED,
-                )
-            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED)
         }
         val id = installer.createSession(params)
         try {

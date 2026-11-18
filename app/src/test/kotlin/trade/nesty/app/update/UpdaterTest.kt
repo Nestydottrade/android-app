@@ -80,7 +80,7 @@ class UpdaterTest {
         val phone: FakePhone,
         val disk: MemoryDisk,
         val dir: File,
-        val installs: MutableList<Pair<File, Boolean>>,
+        val installs: MutableList<File>,
         val ready: MutableList<AppRelease>,
         val asks: IntArray,
     )
@@ -94,7 +94,7 @@ class UpdaterTest {
         clock: () -> Long = { 1_000_000L },
     ): Rig {
         val source = FakeSource(bytes)
-        val installs = mutableListOf<Pair<File, Boolean>>()
+        val installs = mutableListOf<File>()
         val ready = mutableListOf<AppRelease>()
         val asks = IntArray(1)
         val io = StandardTestDispatcher(testScheduler)
@@ -108,7 +108,7 @@ class UpdaterTest {
             phone = phone,
             dir = dir,
             disk = disk,
-            install = { f, quiet -> installs += f to quiet },
+            install = { f -> installs += f },
             now = clock,
             onReady = { ready += it },
             io = io,
@@ -349,11 +349,10 @@ class UpdaterTest {
         val g = rig({ r }, bytes)
         g.updater.checkSoon()
         advanceUntilIdle()
-        g.updater.quiet = true
         g.updater.installNow()
         advanceUntilIdle()
         assertEquals(UpdateState.Installing(r), g.updater.state.value)
-        assertEquals(listOf(File(g.dir, "nesty-2.apk") to true), g.installs)
+        assertEquals(listOf(File(g.dir, "nesty-2.apk")), g.installs)
 
         // The user said no to Android's question: offered again as it was.
         g.updater.installEnded(InstallEnd.ABORTED)

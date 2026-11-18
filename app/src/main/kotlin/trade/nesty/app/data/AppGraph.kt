@@ -174,7 +174,7 @@ object AppGraph {
             phone = AndroidUpdatePhone(app),
             dir = File(app.cacheDir, "update"),
             disk = PrefsUpdateDisk(app),
-            install = { file, quiet -> Installer.commit(app, file, quiet) },
+            install = { file -> Installer.commit(app, file) },
             host = testBase?.toHttpUrl()?.host ?: Releases.HOST,
             onReady = { r -> if (!alerts.visible) Notifier.updateReady(app, r.version) },
         )

@@ -285,15 +285,11 @@ it does not list is asked for with `/token` on each chain it can be on
   (exit plans wait for the unlock: the vault's watch key was in memory only),
   posts "Nesty X is installed", and says so on its first screen after the
   unlock.
-- **Install without Android's question** (Android 12 and later, off by
-  default) asks Android to skip its question (`USER_ACTION_NOT_REQUIRED`,
-  allowed by the `UPDATE_PACKAGES_WITHOUT_USER_ACTION` permission). Measured
-  on the Android 16 emulator: the first update still asks, once to let Nesty
-  install apps and then "Update Nesty?"; every update after that installed at
-  once, for a copy a file manager had installed as well as once Nesty had
-  installed itself. Android then closes Nesty, and its notification opens the
-  new version. Untested on Xiaomi, Oppo and Vivo, whose own installers may ask
-  anyway.
+- Every update asks: the installer session requires the user's answer
+  (`USER_ACTION_REQUIRED` on Android 12 and later), and the app does not hold
+  `UPDATE_PACKAGES_WITHOUT_USER_ACTION`. Versions up to 0.1.5 had a switch,
+  "Install without Android's question", that asked Android to skip it; it was
+  removed in 0.1.6.
 - Nothing is ever downloaded to run inside the app: an update is a whole APK,
   installed by Android.
 - A debug build can point the updater at a test server on this computer, for
