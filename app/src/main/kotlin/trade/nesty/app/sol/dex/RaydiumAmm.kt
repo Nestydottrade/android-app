@@ -1,6 +1,7 @@
 package trade.nesty.app.sol.dex
 
 import trade.nesty.app.evm.Side
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.Instruction
 import trade.nesty.app.sol.Layouts
 import trade.nesty.app.sol.QuoteAsset
@@ -157,8 +158,8 @@ object RaydiumAmm : DexModule<RaydiumAmmVenue>(DexKind.RAYDIUM_AMM, "675kPX9MHTj
     }
 
     override fun idle(v: RaydiumAmmVenue, nowSec: Double): String? {
-        if (v.status !in SWAP_STATUSES) return "Raydium has paused this pool."
-        if (v.status == WAITING_TRADE && BigInteger.valueOf(floor(nowSec).toLong()) < v.openTime) return "This Raydium pool has not opened yet."
+        if (v.status !in SWAP_STATUSES) return tr("Raydium has paused this pool.")
+        if (v.status == WAITING_TRADE && BigInteger.valueOf(floor(nowSec).toLong()) < v.openTime) return tr("This Raydium pool has not opened yet.")
         return null
     }
 

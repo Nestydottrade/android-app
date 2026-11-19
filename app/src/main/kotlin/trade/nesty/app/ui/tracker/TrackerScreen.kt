@@ -1,5 +1,7 @@
 package trade.nesty.app.ui.tracker
 
+import trade.nesty.app.ui.appendTr
+import trade.nesty.app.i18n.trKey
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -62,6 +64,7 @@ import trade.nesty.app.data.PriceRow
 import trade.nesty.app.data.Settings
 import trade.nesty.app.data.WalletReport
 import trade.nesty.app.data.WalletTrade
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.ChainDot
 import trade.nesty.app.ui.Chip
 import trade.nesty.app.ui.CoinAvatar
@@ -200,37 +203,37 @@ fun TrackerScreen() {
     val followed = settings.followed
 
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Tracker", onMenu = { nav.push(Route.Menu()) })
+        TabHeader(tr("Tracker"), onMenu = { nav.push(Route.Menu()) })
         LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
             item {
                 Column(Modifier.padding(top = 4.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-                        Text("Following", style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.semantics { heading() })
-                        Text("${followed.size} of ${Settings.MAX_FOLLOWED} wallets", style = text(12, color = Ink.muted))
+                        Text(tr("Following"), style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.semantics { heading() })
+                        Text(tr("{1} of {2} wallets", followed.size, Settings.MAX_FOLLOWED), style = text(12, color = Ink.muted))
                     }
                     Row(
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Chip("All wallets", model.who == null, { model.who = null })
+                        Chip(tr("All wallets"), model.who == null, { model.who = null })
                         for (f in followed) {
                             Chip(f.name.ifBlank { Fmt.address(f.address) }, model.who.equals(f.address, ignoreCase = true), { model.who = f.address })
                         }
                         if (!adding && followed.size < Settings.MAX_FOLLOWED) {
-                            Chip("Add", false, { adding = true }, leading = { Icon(NIcons.plus, contentDescription = null, tint = Ink.green, modifier = Modifier.size(16.dp)) })
+                            Chip(tr("Add"), false, { adding = true }, leading = { Icon(NIcons.plus, contentDescription = null, tint = Ink.green, modifier = Modifier.size(16.dp)) })
                         }
                     }
                     if (adding) AddForm(onDone = { adding = false })
                     model.who?.let { w ->
                         NavRow(
                             settings.nameOf(w) ?: Fmt.address(w),
-                            "Wallet page",
+                            tr("Wallet page"),
                             onClick = { nav.push(Route.Wallet(model.chainOf(w), w)) },
                         )
                     }
                     Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp)).background(Ink.raised).padding(2.dp)) {
-                            listOf("All", "Buys", "Sells").forEachIndexed { i, label ->
+                            listOf(tr("All"), tr("Buys"), tr("Sells")).forEachIndexed { i, label ->
                                 val on = model.kind == i
                                 Box(
                                     Modifier
@@ -252,18 +255,18 @@ fun TrackerScreen() {
                                 .background(if (m > 0) Ink.violetBg else Ink.raised)
                                 .border(1.dp, if (m > 0) Ink.violet else Ink.line2, RoundedCornerShape(12.dp))
                                 .clickable(role = Role.Button) { model.min = MINS[(MINS.indexOf(m) + 1) % MINS.size] }
-                                .semantics { contentDescription = "Smallest trade shown: ${if (m > 0) "$$m" else "any size"}. Tap to change" }
+                                .semantics { contentDescription = tr("Smallest trade shown: {1}. Tap to change", if (m > 0) "$$m" else tr("any size")) }
                                 .padding(horizontal = 12.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text(if (m > 0) "$$m or more" else "Any size", style = text(14, FontWeight.Bold, if (m > 0) Ink.text else Ink.text2))
+                            Text(if (m > 0) tr("\${1} or more", m) else tr("Any size"), style = text(14, FontWeight.Bold, if (m > 0) Ink.text else Ink.text2))
                         }
                     }
                     Row(
                         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Chip("All chains", model.chain == null, { model.chain = null })
+                        Chip(tr("All chains"), model.chain == null, { model.chain = null })
                         for (c in Chain.booked) Chip(c.title, model.chain == c, { model.chain = c }, leading = { ChainDot(c, 8.dp) })
                     }
                     Divider()
@@ -271,17 +274,17 @@ fun TrackerScreen() {
             }
             when {
                 followed.isEmpty() -> item {
-                    Notice("Follow a wallet to see its trades", "Follow one from the Leaderboard, a coin's holders, or add an address here.")
+                    Notice(tr("Follow a wallet to see its trades"), tr("Follow one from the Leaderboard, a coin's holders, or add an address here."))
                 }
                 rows.isNotEmpty() -> uniqueItems(rows, { it.chain.feed + it.wallet + it.trade.tx + it.trade.token + it.trade.isBuy }) { r ->
                     TrackedRow(r, now, settings, onOpen = { nav.push(Route.Token(r.chain, r.trade.token)) }, onBuy = { QuickTrade.buy(toasts, r.chain, r.trade.token, settings.quickBuy.toDouble(), r.symbol) })
                 }
-                !model.loaded -> item { Notice("Reading their trades…", "") }
-                else -> item { Notice("No trades match", "Try a smaller minimum, another chain or all wallets.") }
+                !model.loaded -> item { Notice(tr("Reading their trades…"), "") }
+                else -> item { Notice(tr("No trades match"), tr("Try a smaller minimum, another chain or all wallets.")) }
             }
             item {
                 Text(
-                    "Trades made through smart accounts and some trading bots do not show here yet. Solana wallets come later: Nesty's book does not read Solana yet.",
+                    tr("Trades made through smart accounts and some trading bots do not show here yet. Solana wallets come later: Nesty's book does not read Solana yet."),
                     style = text(13, color = Ink.muted, lineHeight = 18.sp),
                     modifier = Modifier.padding(16.dp),
                 )
@@ -308,18 +311,18 @@ private fun AddForm(onDone: () -> Unit) {
         val a = draft.trim()
         when {
             EVM_ADDRESS.matches(a) -> {
-                if (settings.isFollowed(a)) toasts.show("Already followed", Fmt.address(a))
-                else if (settings.follow(a)) toasts.show("Following ${Fmt.address(a)}", "Their trades show here · ${settings.followed.size} of ${Settings.MAX_FOLLOWED}")
-                else toasts.show("You follow ${Settings.MAX_FOLLOWED} wallets already", "Stop following one first")
+                if (settings.isFollowed(a)) toasts.show(tr("Already followed"), Fmt.address(a))
+                else if (settings.follow(a)) toasts.show(tr("Following {1}", Fmt.address(a)), tr("Their trades show here · {1} of {2}", settings.followed.size, Settings.MAX_FOLLOWED))
+                else toasts.show(tr("You follow {1} wallets already", Settings.MAX_FOLLOWED), tr("Stop following one first"))
                 draft = ""
                 onDone()
             }
-            SOLANA_ADDRESS.matches(a) -> toasts.show("Solana wallets come later", "Nesty's book does not read Solana yet")
-            else -> toasts.show("That is not a wallet address", "Paste a 0x address")
+            SOLANA_ADDRESS.matches(a) -> toasts.show(tr("Solana wallets come later"), tr("Nesty's book does not read Solana yet"))
+            else -> toasts.show(tr("That is not a wallet address"), tr("Paste a 0x address"))
         }
     }
     Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Wallet address on any chain Nesty supports", style = text(13, color = Ink.muted))
+        Text(tr("Wallet address on any chain Nesty supports"), style = text(13, color = Ink.muted))
         Box(
             Modifier
                 .fillMaxWidth()
@@ -330,7 +333,7 @@ private fun AddForm(onDone: () -> Unit) {
                 .padding(horizontal = 14.dp),
             contentAlignment = Alignment.CenterStart,
         ) {
-            if (draft.isEmpty()) Text("0x… address", style = text(15, color = Ink.muted))
+            if (draft.isEmpty()) Text(tr("0x… address"), style = text(15, color = Ink.muted))
             BasicTextField(
                 value = draft,
                 onValueChange = { draft = it.trim().take(64) },
@@ -339,18 +342,18 @@ private fun AddForm(onDone: () -> Unit) {
                 cursorBrush = SolidColor(Ink.green),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, autoCorrectEnabled = false),
                 keyboardActions = KeyboardActions(onDone = { add() }),
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Wallet address" },
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = tr("Wallet address") },
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
                 Modifier.weight(1f).height(48.dp).clip(RoundedCornerShape(12.dp)).background(Ink.green).clickable(role = Role.Button) { add() },
                 contentAlignment = Alignment.Center,
-            ) { Text("Follow this wallet", style = text(15, FontWeight.Bold, Ink.greenInk)) }
+            ) { Text(tr("Follow this wallet"), style = text(15, FontWeight.Bold, Ink.greenInk)) }
             Box(
                 Modifier.height(48.dp).clip(RoundedCornerShape(12.dp)).background(Ink.raised).clickable(role = Role.Button) { onDone() }.padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
-            ) { Text("Cancel", style = text(15, FontWeight.Bold, Ink.text2)) }
+            ) { Text(tr("Cancel"), style = text(15, FontWeight.Bold, Ink.text2)) }
         }
     }
 }
@@ -373,8 +376,8 @@ private fun TrackedRow(r: TrackedTrade, now: Long, settings: Settings, onOpen: (
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             buildAnnotatedString {
-                                withStyle(SpanStyle(color = if (t.isBuy) Ink.green else Ink.pink, fontWeight = FontWeight.Bold)) { append(name) }
-                                append(if (t.isBuy) " bought ${r.symbol}" else " sold ${r.symbol}")
+                                val who = SpanStyle(color = if (t.isBuy) Ink.green else Ink.pink, fontWeight = FontWeight.Bold)
+                                appendTr(if (t.isBuy) trKey("{1} bought {2}") else trKey("{1} sold {2}"), 1, who, null, name, r.symbol)
                             },
                             style = text(15, FontWeight.SemiBold),
                             maxLines = 1,
@@ -386,12 +389,12 @@ private fun TrackedRow(r: TrackedTrade, now: Long, settings: Settings, onOpen: (
                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(t.dollars?.let { Fmt.usdFull(it) } ?: Fmt.DASH, style = figure(15, FontWeight.SemiBold))
                         if (r.mcThen != null && r.mcNow != null) {
-                            Text("MC ${Fmt.usd(r.mcThen)} → now ${Fmt.usd(r.mcNow)}", style = text(13, color = Ink.muted), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
+                            Text(tr("MC {1} → now {2}", Fmt.usd(r.mcThen), Fmt.usd(r.mcNow)), style = text(13, color = Ink.muted), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                         }
                         if (change != null) Text(Fmt.pctChange(change), style = text(13, FontWeight.Bold, pctColor(change)))
                     }
                     if (t.isBuy && ratio != null && ratio >= 1.5) {
-                        Text("You would pay ${Fmt.times(ratio)} what they paid", style = text(13, color = Ink.amber))
+                        Text(tr("You would pay {1} what they paid", Fmt.times(ratio)), style = text(13, color = Ink.amber))
                     }
                 }
             }
@@ -404,7 +407,7 @@ private fun TrackedRow(r: TrackedTrade, now: Long, settings: Settings, onOpen: (
                         .clip(RoundedCornerShape(12.dp))
                         .background(Ink.greenDeep)
                         .border(1.dp, Ink.greenLine, RoundedCornerShape(12.dp))
-                        .clickable(onClickLabel = "Buy $$quick of ${r.symbol}", role = Role.Button, onClick = onBuy),
+                        .clickable(onClickLabel = tr("Buy \${1} of {2}", quick, r.symbol), role = Role.Button, onClick = onBuy),
                     contentAlignment = Alignment.Center,
                 ) { Text("$$quick", style = text(15, FontWeight.Bold, Ink.green)) }
             }

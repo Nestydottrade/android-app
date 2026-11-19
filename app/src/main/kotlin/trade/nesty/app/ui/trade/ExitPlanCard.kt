@@ -58,6 +58,7 @@ import trade.nesty.app.exit.ExitMath
 import trade.nesty.app.exit.ExitPlan
 import trade.nesty.app.exit.ExitRule
 import trade.nesty.app.exit.ExitWatcher
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.LocalToasts
@@ -114,7 +115,7 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
 
     /** What selling all of it pays at a multiple. */
     fun worth(m: Double): Double? = if (priced) m * covered.costUsd / share else null
-    fun fromNow(m: Double): String? = mNow?.takeIf { it > 0 }?.let { Fmt.pctChange((m / it - 1) * 100) + " from now" }
+    fun fromNow(m: Double): String? = mNow?.takeIf { it > 0 }?.let { tr("{1} from now", Fmt.pctChange((m / it - 1) * 100)) }
 
     fun save(next: ExitDraft) {
         draft = next
@@ -129,18 +130,18 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
     Column(Modifier.fillMaxWidth().clip(cardShape).background(Ink.card).border(1.dp, if (on) Ink.greenLine else Ink.line, cardShape)) {
         Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 14.dp, top = 14.dp, bottom = 10.dp), verticalArrangement = Arrangement.spacedBy(3.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Exit plan", style = text(16, FontWeight.Bold), modifier = Modifier.weight(1f).semantics { heading() })
+                Text(tr("Exit plan"), style = text(16, FontWeight.Bold), modifier = Modifier.weight(1f).semantics { heading() })
                 if (priced) {
-                    val (bg, ink, label) = if (on) Triple(Ink.greenDeep, Ink.green, "On") else Triple(Ink.violetBg, Ink.violetSoft, "Suggested")
+                    val (bg, ink, label) = if (on) Triple(Ink.greenDeep, Ink.green, tr("On")) else Triple(Ink.violetBg, Ink.violetSoft, tr("Suggested"))
                     Box(Modifier.height(26.dp).clip(RoundedCornerShape(13.dp)).background(bg).padding(horizontal = 10.dp), contentAlignment = Alignment.Center) {
                         Text(label, style = text(12, FontWeight.Bold, ink))
                     }
                 }
             }
             val sub = when {
-                !priced -> "Nesty has no cost on record for what you hold, so it cannot measure multiples of it."
-                on -> "Sells from this phone, even with Nesty closed."
-                else -> "A starting point. Change any step, then turn it on."
+                !priced -> tr("Nesty has no cost on record for what you hold, so it cannot measure multiples of it.")
+                on -> tr("Sells from this phone, even with Nesty closed.")
+                else -> tr("A starting point. Change any step, then turn it on.")
             }
             Text(sub, style = text(13, color = Ink.muted, lineHeight = 18.sp))
             val paused = status?.paused?.takeIf { on && it != ExitWatcher.LOCKED }
@@ -154,11 +155,11 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
         val stakeBack = tpGet != null && h.position.paid > 0 && abs(tpGet - h.position.paid) <= h.position.paid * 0.05
         Step(
             mark = Mark(Ink.greenDeep, Ink.green, NIcons.stepUp),
-            title = if (d.tpPct >= 100) "Sell all at ${d.tpX}×" else "Sell ${d.tpPct}% at ${d.tpX}×",
+            title = if (d.tpPct >= 100) tr("Sell all at {1}×", d.tpX) else tr("Sell {1}% at {2}×", d.tpPct, d.tpX),
             detail = listOfNotNull(
                 mcAt(tpM)?.let { "MC ${Fmt.usd(it)}" },
                 fromNow(tpM),
-                tpGet?.let { "you get about ${Fmt.usdFull(it)}" + if (stakeBack) ", your stake back" else "" },
+                tpGet?.let { if (stakeBack) tr("you get about {1}, your stake back", Fmt.usdFull(it)) else tr("you get about {1}", Fmt.usdFull(it)) },
             ).joinToString(" · "),
             rule = ruleOf(ExitDraft.TP),
             selling = status?.selling == ExitDraft.TP,
@@ -166,8 +167,8 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
             open = editing == ExitDraft.TP,
             onEdit = { editing = if (editing == ExitDraft.TP) null else ExitDraft.TP },
         ) {
-            Options("Amount", ExitDraft.TP_PCT.map { "$it%" }, ExitDraft.TP_PCT.indexOf(d.tpPct)) { save(d.copy(tpPct = ExitDraft.TP_PCT[it])) }
-            Options("At", ExitDraft.TP_X.map { "$it×" }, ExitDraft.TP_X.indexOf(d.tpX)) { save(d.copy(tpX = ExitDraft.TP_X[it])) }
+            Options(tr("Amount"), ExitDraft.TP_PCT.map { "$it%" }, ExitDraft.TP_PCT.indexOf(d.tpPct)) { save(d.copy(tpPct = ExitDraft.TP_PCT[it])) }
+            Options(tr("At"), ExitDraft.TP_X.map { "$it×" }, ExitDraft.TP_X.indexOf(d.tpX)) { save(d.copy(tpX = ExitDraft.TP_X[it])) }
         }
 
         // Trailing stop: from the highest multiple since the plan was set (now, before it is on).
@@ -175,20 +176,20 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
         val peakM = plan?.peakBps?.takeIf { it > 0 }?.let { it / 10_000.0 }?.let { p -> mNow?.let { maxOf(p, it) } ?: p } ?: mNow
         Step(
             mark = Mark(Ink.pinkBg, Ink.pinkSoft, NIcons.stepTrail),
-            title = if (d.trailOn) "Sell all if it falls ${d.trailPct}% from its high" else "Trailing stop is off",
+            title = if (d.trailOn) tr("Sell all if it falls {1}% from its high", d.trailPct) else tr("Trailing stop is off"),
             titleColor = if (d.trailOn) Ink.text else Ink.muted,
             detail = if (d.trailOn && peakM != null) {
                 listOfNotNull(
-                    mcAt(peakM)?.let { "High so far MC ${Fmt.usd(it)}" },
+                    mcAt(peakM)?.let { tr("High so far MC {1}", Fmt.usd(it)) },
                     listOfNotNull(
-                        mcAt(peakM * (1 - t))?.let { "sells at ${Fmt.usd(it)}" },
-                        worth(peakM * (1 - t))?.let { "you get about ${Fmt.usdFull(it)}" },
+                        mcAt(peakM * (1 - t))?.let { tr("sells at {1}", Fmt.usd(it)) },
+                        worth(peakM * (1 - t))?.let { tr("you get about {1}", Fmt.usdFull(it)) },
                     ).joinToString(", ").ifBlank { null },
                 ).joinToString(" · ")
             } else if (d.trailOn) {
-                "Its high counts from when the plan is on"
+                tr("Its high counts from when the plan is on")
             } else {
-                "Turn it on to sell when $symbol falls from its best price"
+                tr("Turn it on to sell when {1} falls from its best price", symbol)
             },
             rule = ruleOf(ExitDraft.TRAIL),
             selling = status?.selling == ExitDraft.TRAIL,
@@ -196,8 +197,8 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
             open = editing == ExitDraft.TRAIL,
             onEdit = { editing = if (editing == ExitDraft.TRAIL) null else ExitDraft.TRAIL },
         ) {
-            Options("Trailing stop", listOf("Off", "On"), if (d.trailOn) 1 else 0) { save(d.copy(trailOn = it == 1)) }
-            Options("Falls from its high by", ExitDraft.TRAIL_PCT.map { "$it%" }, if (d.trailOn) ExitDraft.TRAIL_PCT.indexOf(d.trailPct) else -1) {
+            Options(tr("Trailing stop"), listOf(tr("Off"), tr("On")), if (d.trailOn) 1 else 0) { save(d.copy(trailOn = it == 1)) }
+            Options(tr("Falls from its high by"), ExitDraft.TRAIL_PCT.map { "$it%" }, if (d.trailOn) ExitDraft.TRAIL_PCT.indexOf(d.trailPct) else -1) {
                 save(d.copy(trailOn = true, trailPct = ExitDraft.TRAIL_PCT[it]))
             }
         }
@@ -206,11 +207,11 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
         val slM = 1 - d.slPct / 100.0
         Step(
             mark = Mark(Ink.pinkBg, Ink.pink, NIcons.stepDown),
-            title = "Sell all at −${d.slPct}%",
+            title = tr("Sell all at −{1}%", d.slPct),
             detail = listOfNotNull(
                 mcAt(slM)?.let { "MC ${Fmt.usd(it)}" },
                 fromNow(slM),
-                worth(slM)?.let { "you get about ${Fmt.usdFull(it)}" },
+                worth(slM)?.let { tr("you get about {1}", Fmt.usdFull(it)) },
             ).joinToString(" · "),
             rule = ruleOf(ExitDraft.SL),
             selling = status?.selling == ExitDraft.SL,
@@ -218,16 +219,16 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
             open = editing == ExitDraft.SL,
             onEdit = { editing = if (editing == ExitDraft.SL) null else ExitDraft.SL },
         ) {
-            Options("Down from your entry by", ExitDraft.SL_PCT.map { "$it%" }, ExitDraft.SL_PCT.indexOf(d.slPct)) { save(d.copy(slPct = ExitDraft.SL_PCT[it])) }
+            Options(tr("Down from your entry by"), ExitDraft.SL_PCT.map { "$it%" }, ExitDraft.SL_PCT.indexOf(d.slPct)) { save(d.copy(slPct = ExitDraft.SL_PCT[it])) }
         }
 
         if (on && !notify) {
             Divider()
-            AmberNote("Notifications are off, so you only see a sale in Nesty.", "Turn on", turnOn)
+            AmberNote(tr("Notifications are off, so you only see a sale in Nesty."), tr("Turn on"), turnOn)
         }
         if (on && limited) {
             Divider()
-            AmberNote("Battery saver can stop the watch on some phones.", "Allow background use") { Notifier.askBackgroundUse(context) }
+            AmberNote(tr("Battery saver can stop the watch on some phones."), tr("Allow background use")) { Notifier.askBackgroundUse(context) }
         }
 
         Divider()
@@ -243,9 +244,9 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
                     .clickable(role = Role.Button) {
                         if (on) {
                             exits.remove(key)
-                            toasts.show("Exit plan off", "Nothing sells by itself now.")
+                            toasts.show(tr("Exit plan off"), tr("Nothing sells by itself now."))
                         } else if (!exits.roomFor(key)) {
-                            toasts.show("No room for another exit plan", "${ExitMath.MAX_PLANS} are on already. Turn one off first.", bad = true)
+                            toasts.show(tr("No room for another exit plan"), tr("{1} are on already. Turn one off first.", ExitMath.MAX_PLANS), bad = true)
                         } else {
                             editing = null
                             exits.set(
@@ -261,13 +262,13 @@ fun ExitPlanCard(chain: Chain, token: String, symbol: String, h: Holding, coin: 
                                 ),
                             )
                             AppGraph.syncWatch()
-                            toasts.show("Exit plan on", "It sells from this phone when $symbol gets there.")
+                            toasts.show(tr("Exit plan on"), tr("It sells from this phone when {1} gets there.", symbol))
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notify) ask.launch(Manifest.permission.POST_NOTIFICATIONS)
                         }
                     },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(if (on) "Turn off exit plan" else "Turn on exit plan", style = text(16, FontWeight.Bold, if (on) Ink.text else Ink.greenInk))
+                Text(if (on) tr("Turn off exit plan") else tr("Turn on exit plan"), style = text(16, FontWeight.Bold, if (on) Ink.text else Ink.greenInk))
             }
         }
         }
@@ -292,11 +293,11 @@ private fun Step(
     // On, a step that sold, or failed, says so in place of its figures.
     val sold = rule?.firedAt
     val shown = when {
-        selling -> Mark(Ink.violetBg, Ink.violet, NIcons.tonePlan) to "Selling now…"
+        selling -> Mark(Ink.violetBg, Ink.violet, NIcons.tonePlan) to tr("Selling now…")
         sold != null -> Mark(Ink.greenOk, Ink.green, NIcons.toneOk) to
-            ("Sold" + (rule.firedBps?.let { " at ${ExitMath.times(it)}" } ?: "") + " · ${Fmt.age(now - sold)} ago")
-        rule != null && rule.failed -> Mark(Ink.pinkBg, Ink.pink, NIcons.toneBad) to "Could not sell: ${rule.error ?: "it did not go through"}. Change the step to try again."
-        rule != null && rule.tries > 0 -> mark to "Tried ${rule.tries} of ${ExitMath.TRIES}: ${rule.error ?: "it did not go through"}. It tries again."
+            (rule.firedBps?.let { tr("Sold at {1} · {2} ago", ExitMath.times(it), Fmt.age(now - sold)) } ?: tr("Sold · {1} ago", Fmt.age(now - sold)))
+        rule != null && rule.failed -> Mark(Ink.pinkBg, Ink.pink, NIcons.toneBad) to tr("Could not sell: {1}. Change the step to try again.", rule.error ?: tr("it did not go through"))
+        rule != null && rule.tries > 0 -> mark to tr("Tried {1} of {2}: {3}. It tries again.", rule.tries, ExitMath.TRIES, rule.error ?: tr("it did not go through"))
         else -> mark to detail
     }
     Column {
@@ -323,11 +324,11 @@ private fun Step(
                         .background(Ink.raised)
                         .border(1.dp, Ink.line2, RoundedCornerShape(22.dp))
                         .clickable(role = Role.Button, onClick = onEdit)
-                        .semantics { stateDescription = if (open) "Open" else "Closed" }
+                        .semantics { stateDescription = if (open) tr("Expanded") else tr("Collapsed") }
                         .padding(horizontal = 14.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(if (open) "Done" else "Edit", style = text(14, FontWeight.Bold))
+                    Text(if (open) tr("Done") else tr("Edit"), style = text(14, FontWeight.Bold))
                 }
             }
         }

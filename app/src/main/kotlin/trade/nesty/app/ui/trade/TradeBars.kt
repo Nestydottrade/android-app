@@ -41,6 +41,7 @@ import trade.nesty.app.data.Coin
 import trade.nesty.app.data.Holding
 import trade.nesty.app.data.Trading
 import trade.nesty.app.evm.EvmTrader
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Check
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.Fmt
@@ -138,14 +139,14 @@ private fun BuyBar(chain: Chain, token: String, coin: Coin, onCustom: (Double?) 
     var open by rememberSaveable { mutableStateOf(false) }
     BottomBarFrame {
         if (!open) {
-            val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: "this coin"
-            GreenButton("Buy $symbol", onClick = { open = true }, modifier = Modifier.fillMaxWidth(), solid = true, fontSize = 16)
+            val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: tr("this coin")
+            GreenButton(tr("Buy {1}", symbol), onClick = { open = true }, modifier = Modifier.fillMaxWidth(), solid = true, fontSize = 16)
             return@BottomBarFrame
         }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Buy", style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+            Text(tr("Buy"), style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
             Row(Modifier.clickable(role = Role.Button) { nav.tab(Route.Portfolio) }, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("${chain.title} balance", style = text(13, color = Ink.muted))
+                Text(tr("{1} balance", chain.title), style = text(13, color = Ink.muted))
                 Text(chainBalanceText(chain), style = text(13, FontWeight.SemiBold))
             }
         }
@@ -158,13 +159,13 @@ private fun BuyBar(chain: Chain, token: String, coin: Coin, onCustom: (Double?) 
 @Composable
 private fun BuyButtons(chain: Chain, token: String, coin: Coin, onCustom: (Double?) -> Unit) {
     val toasts = LocalToasts.current
-    val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: "this coin"
+    val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: tr("this coin")
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (usd in AppGraph.settings.quickAmounts) {
             GreenButton(
                 quickLabel(usd),
                 { if (shortOn(chain, usd.toDouble())) onCustom(usd.toDouble()) else QuickTrade.buy(toasts, chain, token, usd.toDouble(), coin.symbol, coin) },
-                Modifier.weight(1f).semantics { contentDescription = "Buy $$usd of $symbol" },
+                Modifier.weight(1f).semantics { contentDescription = tr("Buy \${1} of {2}", usd, symbol) },
                 fontSize = 16,
             )
         }
@@ -174,10 +175,10 @@ private fun BuyButtons(chain: Chain, token: String, coin: Coin, onCustom: (Doubl
                 .height(52.dp)
                 .clip(RoundedCornerShape(14.dp))
                 .background(Ink.raised)
-                .clickable(onClickLabel = "Choose an amount", role = Role.Button) { onCustom(null) },
+                .clickable(onClickLabel = tr("Choose an amount"), role = Role.Button) { onCustom(null) },
             contentAlignment = Alignment.Center,
         ) {
-            Text("Custom", style = text(14, FontWeight.Bold), maxLines = 1)
+            Text(tr("Custom"), style = text(14, FontWeight.Bold), maxLines = 1)
         }
     }
 }
@@ -191,7 +192,7 @@ private fun HoldingBar(chain: Chain, token: String, coin: Coin, holding: Holding
     val toasts = LocalToasts.current
     // Neither side picked: one-tap sells and buys show once the user picks one.
     var mode by rememberSaveable { mutableIntStateOf(NO_SIDE) }
-    val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: holding.position.symbol ?: "this coin"
+    val symbol = coin.symbol?.takeIf { it.isNotBlank() } ?: holding.position.symbol ?: tr("this coin")
     val preset = AppGraph.settings.presets[0]
     BottomBarFrame {
         SideToggle(mode) { mode = if (mode == it) NO_SIDE else it }
@@ -203,35 +204,35 @@ private fun HoldingBar(chain: Chain, token: String, coin: Coin, holding: Holding
                 // A coin whose cost is not on record has no initials to take out.
                 if (holding.known) {
                     SellButton(
-                        "Initials",
-                        initials?.let { Fmt.usdFull(it) } ?: "When up",
+                        tr("Initials"),
+                        initials?.let { Fmt.usdFull(it) } ?: tr("When up"),
                         enabled = initials != null && value != null && value > 0,
-                        does = initials?.let { "Sell ${Fmt.usdFull(it)} of your $symbol, what you paid" },
+                        does = initials?.let { tr("Sell {1} of your {2}, what you paid", Fmt.usdFull(it), symbol) },
                         modifier = Modifier.weight(1f),
                     ) {
                         // Rounded up, as the extension does: enough to have what was paid back.
                         val bps = ceil(initials!! / value!! * 10_000).toInt().coerceIn(1, 10_000)
-                        QuickTrade.sell(toasts, chain, token, bps, coin, "Taking your initials out of $symbol", "Took your initials out of $symbol")
+                        QuickTrade.sell(toasts, chain, token, bps, coin, tr("Taking your initials out of {1}", symbol), tr("Took your initials out of {1}", symbol))
                     }
                 }
-                for ((bps, label) in listOf(2_500 to "25%", 5_000 to "50%", 10_000 to "All")) {
-                    val what = if (bps == 10_000) "all your $symbol" else "$label of your $symbol"
+                for ((bps, label) in listOf(2_500 to "25%", 5_000 to "50%", 10_000 to tr("All"))) {
+                    val what = if (bps == 10_000) tr("all your {1}", symbol) else tr("{1} of your {2}", label, symbol)
                     SellButton(
                         label,
                         value?.let { Fmt.usdFull(it * bps / 10_000) } ?: Fmt.DASH,
                         enabled = true,
-                        does = "Sell $what",
+                        does = tr("Sell {1}", what),
                         modifier = Modifier.weight(1f),
                     ) {
-                        QuickTrade.sell(toasts, chain, token, bps, coin, "Selling $what", "Sold $what")
+                        QuickTrade.sell(toasts, chain, token, bps, coin, tr("Selling {1}", what), tr("Sold {1}", what))
                     }
                 }
             }
-            Text("Sells with P1: ${presetWords(chain, preset)}", style = text(12, color = Ink.muted), maxLines = 1)
+            Text(tr("Sells with P1: {1}", presetWords(chain, preset)), style = text(12, color = Ink.muted), maxLines = 1)
         } else {
             BuyButtons(chain, token, coin, onCustom)
             Text(
-                "From your ${chain.title} balance ${chainBalanceText(chain)} · P1: ${presetWords(chain, preset)}",
+                tr("From your {1} balance {2} · P1: {3}", chain.title, chainBalanceText(chain), presetWords(chain, preset)),
                 style = text(12, color = Ink.muted, lineHeight = 16.sp),
                 maxLines = 2,
             )
@@ -246,7 +247,7 @@ private const val NO_SIDE = -1
 @Composable
 private fun SideToggle(mode: Int, onPick: (Int) -> Unit) {
     Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(22.dp)).background(Ink.raised), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-        listOf("Sell", "Buy more").forEachIndexed { i, label ->
+        listOf(tr("Sell"), tr("Buy more")).forEachIndexed { i, label ->
             val on = i == mode
             Box(
                 Modifier

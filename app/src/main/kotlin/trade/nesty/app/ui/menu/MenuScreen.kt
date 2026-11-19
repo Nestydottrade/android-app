@@ -44,6 +44,7 @@ import trade.nesty.app.BuildConfigLite
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Settings
 import trade.nesty.app.data.VaultState
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.alerts.AlertSettings
 import trade.nesty.app.ui.vault.ExportForm
@@ -81,8 +82,8 @@ fun MenuScreen(atAlerts: Boolean = false) {
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            IconButton48(NIcons.close, "Close menu", Ink.text) { nav.pop() }
-            Text("Nesty", style = text(19, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+            IconButton48(NIcons.close, tr("Close menu"), Ink.text) { nav.pop() }
+            Text(tr("Nesty"), style = text(19, FontWeight.Bold), modifier = Modifier.semantics { heading() })
         }
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
@@ -92,17 +93,17 @@ fun MenuScreen(atAlerts: Boolean = false) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("One Balance", style = text(15, FontWeight.Bold))
-                            Text("Portfolio and deposit", style = text(13, color = Ink.muted))
+                            Text(tr("One Balance"), style = text(15, FontWeight.Bold))
+                            Text(tr("Portfolio and deposit"), style = text(13, color = Ink.muted))
                         }
                         Text(oneBalance(), style = figure(24, FontWeight.SemiBold))
                     }
                     if (wallet == null) {
-                        Text("No wallet yet", style = text(13, color = Ink.text2))
+                        Text(tr("No wallet yet"), style = text(13, color = Ink.text2))
                     } else {
                         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            wallet.evm?.let { Text("EVM chains: ${Fmt.address(it)}", style = text(13, color = Ink.text2)) }
-                            wallet.sol?.let { Text("Solana: ${Fmt.address(it)}", style = text(13, color = Ink.text2)) }
+                            wallet.evm?.let { Text(tr("EVM chains: {1}", Fmt.address(it)), style = text(13, color = Ink.text2)) }
+                            wallet.sol?.let { Text(tr("Solana: {1}", Fmt.address(it)), style = text(13, color = Ink.text2)) }
                         }
                     }
                 }
@@ -112,38 +113,40 @@ fun MenuScreen(atAlerts: Boolean = false) {
                 val count = session.wallets.size
                 when {
                     session.state == VaultState.NONE ->
-                        MenuLink("Set up a wallet", "Make a password, then create or import one") { nav.push(Route.Setup) }
+                        MenuLink(tr("Set up a wallet"), tr("Make a password, then create or import one")) { nav.push(Route.Setup) }
                     wallet == null ->
-                        MenuLink("Add your first wallet", "Create one or import one") { nav.push(Route.Wallets(adding = true)) }
+                        MenuLink(tr("Add your first wallet"), tr("Create one or import one")) { nav.push(Route.Wallets(adding = true)) }
                     else ->
-                        MenuLink("Trading with ${wallet.name}", "${Fmt.counted(count.toLong(), "wallet")} · switch or make a new one") { nav.push(Route.Wallets()) }
+                        MenuLink(tr("Trading with {1}", wallet.name), tr("{1} · switch or make a new one", Fmt.counted(count.toLong(), "{1} wallet", "{1} wallets"))) { nav.push(Route.Wallets()) }
                 }
             }
 
-            Section("Trading") { QuickBuySetting() }
+            Section(tr("Trading")) { QuickBuySetting() }
 
-            Section("Alerts", Modifier.bringIntoViewRequester(alerts)) { Column { AlertSettings() } }
+            Section(tr("Alerts"), Modifier.bringIntoViewRequester(alerts)) { Column { AlertSettings() } }
 
-            Section("More") {
-                MenuLink("Stats", "Launches and trades on each chain, from 1 hour to 7 days") { nav.push(Route.Stats) }
+            Section(tr("More")) {
+                MenuLink(tr("Stats"), tr("Launches and trades on each chain, from 1 hour to 7 days")) { nav.push(Route.Stats) }
                 Divider()
-                MenuLink("Updates", "What changed in Nesty, newest first") { nav.push(Route.Updates) }
+                MenuLink(tr("Updates"), tr("What changed in Nesty, newest first")) { nav.push(Route.Updates) }
             }
 
+            Section(tr("Language")) { LanguageSetting() }
+
             if (session.state == VaultState.OPEN) {
-                Section("Security") { Security(wallet) }
+                Section(tr("Security")) { Security(wallet) }
             }
 
             Card {
                 val r = update.release
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Nesty for Android ${BuildConfigLite.VERSION}", style = text(15, FontWeight.SemiBold))
+                        Text(tr("Nesty for Android {1}", BuildConfigLite.VERSION), style = text(15, FontWeight.SemiBold))
                         Text(
                             when {
-                                update is UpdateState.Ready -> "Version ${r?.version} is ready to install"
-                                r != null -> "Version ${r.version} is out"
-                                update is UpdateState.Newest -> "This is the newest version"
+                                update is UpdateState.Ready -> tr("Version {1} is ready to install", r?.version)
+                                r != null -> tr("Version {1} is out", r.version)
+                                update is UpdateState.Newest -> tr("This is the newest version")
                                 else -> " "
                             },
                             style = text(13, color = Ink.muted, lineHeight = 18.sp),
@@ -159,7 +162,7 @@ fun MenuScreen(atAlerts: Boolean = false) {
                                 .padding(horizontal = 18.dp),
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("Update", style = text(14, FontWeight.Bold, Ink.greenInk))
+                            Text(tr("Update"), style = text(14, FontWeight.Bold, Ink.greenInk))
                         }
                     }
                 }
@@ -176,9 +179,9 @@ private fun Security(wallet: WalletInfo?) {
     var exporting by remember { mutableStateOf(false) }
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Lock after", style = text(15, FontWeight.SemiBold))
+            Text(tr("Lock after"), style = text(15, FontWeight.SemiBold))
             Text(
-                if (session.fingerprintOn) "Time away from the app. Your fingerprint or password opens Nesty again." else "Time away from the app. Your password opens Nesty again.",
+                if (session.fingerprintOn) tr("Time away from the app. Your fingerprint or password opens Nesty again.") else tr("Time away from the app. Your password opens Nesty again."),
                 style = text(13, color = Ink.muted),
             )
         }
@@ -196,7 +199,7 @@ private fun Security(wallet: WalletInfo?) {
                         .semantics { selected = on },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(if (minutes >= 60) "1 hour" else "$minutes min", style = text(15, FontWeight.Bold, if (on) Ink.text else Ink.text2))
+                    Text(if (minutes >= 60) tr("1 hour") else tr("{1} min", minutes), style = text(15, FontWeight.Bold, if (on) Ink.text else Ink.text2))
                 }
             }
         }
@@ -209,7 +212,7 @@ private fun Security(wallet: WalletInfo?) {
                 .clickable(role = Role.Button) { session.lock() },
             contentAlignment = Alignment.Center,
         ) {
-            Text("Lock now", style = text(15, FontWeight.Bold))
+            Text(tr("Lock now"), style = text(15, FontWeight.Bold))
         }
     }
     if (Fingerprint.can(LocalContext.current) != Fingerprint.Can.NO) {
@@ -221,8 +224,8 @@ private fun Security(wallet: WalletInfo?) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Export a private key", style = text(15, FontWeight.SemiBold))
-                    Text("Of ${wallet.name}. Asks for your password first.", style = text(13, color = Ink.muted))
+                    Text(tr("Export a private key"), style = text(15, FontWeight.SemiBold))
+                    Text(tr("Of {1}. Asks for your password first.", wallet.name), style = text(13, color = Ink.muted))
                 }
                 Box(
                     Modifier
@@ -234,7 +237,7 @@ private fun Security(wallet: WalletInfo?) {
                         .padding(horizontal = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(if (exporting) "Hide" else "Show", style = text(14, FontWeight.Bold))
+                    Text(if (exporting) tr("Hide") else tr("Show"), style = text(14, FontWeight.Bold))
                 }
             }
             // The form opens right under its row.

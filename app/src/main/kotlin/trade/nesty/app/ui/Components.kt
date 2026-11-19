@@ -58,6 +58,8 @@ import coil3.compose.AsyncImage
 import kotlinx.coroutines.delay
 import trade.nesty.app.R
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.alerts.BellButton
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Served
@@ -172,8 +174,8 @@ fun EggButton(onClick: () -> Unit) {
         Modifier
             .size(48.dp)
             .clip(CircleShape)
-            .clickable(onClickLabel = "Open menu", role = Role.Button, onClick = onClick)
-            .semantics { contentDescription = "Open menu" },
+            .clickable(onClickLabel = tr("Open menu"), role = Role.Button, onClick = onClick)
+            .semantics { contentDescription = tr("Open menu") },
         contentAlignment = Alignment.Center,
     ) {
         Box(
@@ -214,7 +216,7 @@ fun BackHeader(title: String, sub: String? = null, onBack: () -> Unit, actions: 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        IconButton48(NIcons.arrowBack, "Back", Ink.text, onClick = onBack)
+        IconButton48(NIcons.arrowBack, tr("Back"), Ink.text, onClick = onBack)
         Column(Modifier.weight(1f).padding(start = 4.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             Text(title, style = text(20, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
             if (sub != null) Text(sub, style = text(13, color = Ink.muted), maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -288,7 +290,7 @@ fun ChainChips(chains: List<Chain>, selected: Chain?, onPick: (Chain?) -> Unit, 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (withAll) Chip("All", selected == null, { onPick(null) })
+        if (withAll) Chip(tr("All"), selected == null, { onPick(null) })
         for (c in chains) Chip(c.label, selected == c, { onPick(c) }, leading = { ChainDot(c, 10.dp) })
     }
 }
@@ -402,7 +404,7 @@ fun LiveMark(modifier: Modifier = Modifier) {
         Box(Modifier.size(16.dp).clip(CircleShape).background(Ink.greenDeep), contentAlignment = Alignment.Center) {
             Box(Modifier.size(8.dp).clip(CircleShape).background(Ink.green))
         }
-        Text("Live", style = text(13, FontWeight.Bold, Ink.greenSoft))
+        Text(tr("Live"), style = text(13, FontWeight.Bold, Ink.greenSoft))
     }
 }
 
@@ -482,11 +484,14 @@ fun ToneChip(tone: Tone, label: String, compact: Boolean = false, does: String? 
     }
 }
 
-enum class Tab(val label: String, val icon: ImageVector, val route: Route) {
-    DISCOVER("Discover", NIcons.compass, Route.Discover),
-    SIGNALS("Signals", NIcons.pulse, Route.Smart()),
-    TRACKER("Tracker", NIcons.eye, Route.Tracker),
-    PORTFOLIO("Portfolio", NIcons.pie, Route.Portfolio);
+enum class Tab(private val key: String, val icon: ImageVector, val route: Route) {
+    DISCOVER(trKey("Discover"), NIcons.compass, Route.Discover),
+    SIGNALS(trKey("Signals"), NIcons.pulse, Route.Smart()),
+    TRACKER(trKey("Tracker"), NIcons.eye, Route.Tracker),
+    PORTFOLIO(trKey("Portfolio"), NIcons.pie, Route.Portfolio);
+
+    /** Its name in the language the app shows. */
+    val label: String get() = tr(key)
 
     companion object {
         fun of(r: Route): Tab? = when (r) {

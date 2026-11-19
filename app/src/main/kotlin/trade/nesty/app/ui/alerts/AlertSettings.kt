@@ -41,6 +41,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import trade.nesty.app.alerts.Notifier
 import trade.nesty.app.data.AlertSwitch
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.text
@@ -61,11 +62,11 @@ fun AlertSettings() {
     val ask = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { look++; AppGraph.syncWatch() }
 
     val rows = listOf(
-        Triple(AlertSwitch.TRACKER, "Tracked wallets trade", "Buys and sells by the wallets you follow"),
-        Triple(AlertSwitch.SIGNALS, "New signals", "When proven wallets buy the same coin"),
-        Triple(AlertSwitch.PLANS, "Exit plan sells", "Each step that fills, with what you got"),
-        Triple(AlertSwitch.HELD, "Coins you hold", "A followed wallet sells it"),
-        Triple(AlertSwitch.CLOSED, "With Nesty closed", "Tracked wallets and signals alert you too. Uses more battery."),
+        Triple(AlertSwitch.TRACKER, tr("Tracked wallets trade"), tr("Buys and sells by the wallets you follow")),
+        Triple(AlertSwitch.SIGNALS, tr("New signals"), tr("When proven wallets buy the same coin")),
+        Triple(AlertSwitch.PLANS, tr("Exit plan sells"), tr("Each step that fills, with what you got")),
+        Triple(AlertSwitch.HELD, tr("Coins you hold"), tr("A followed wallet sells it")),
+        Triple(AlertSwitch.CLOSED, tr("With Nesty closed"), tr("Tracked wallets and signals alert you too. Uses more battery.")),
     )
     rows.forEachIndexed { i, (which, label, help) ->
         val on = settings.alert(which)
@@ -79,11 +80,11 @@ fun AlertSettings() {
     }
     if (!notify) {
         Divider()
-        AmberNote("Notifications are off for Nesty, so alerts show only in the app.", "Turn on", turnOn)
+        AmberNote(tr("Notifications are off for Nesty, so alerts show only in the app."), tr("Turn on"), turnOn)
     }
     if (limited && (AppGraph.exitStore.plans.isNotEmpty() || settings.alert(AlertSwitch.CLOSED))) {
         Divider()
-        AmberNote("Battery saver can stop the watch on some phones.", "Allow background use") { Notifier.askBackgroundUse(context) }
+        AmberNote(tr("Battery saver can stop the watch on some phones."), tr("Allow background use")) { Notifier.askBackgroundUse(context) }
     }
 }
 

@@ -1,5 +1,6 @@
 package trade.nesty.app.ui.smart
 
+import trade.nesty.app.i18n.trCount
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -47,6 +48,7 @@ import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.BoardRow
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Settings
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.ChainDot
 import trade.nesty.app.ui.Checks
@@ -91,8 +93,8 @@ private const val LIVE_MS = 60 * 60_000L
 fun SmartScreen(leaderboard: Boolean) {
     val nav = LocalNavigator.current
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Smart money", onMenu = { nav.push(Route.Menu()) })
-        LaneTabs(listOf("Signals", "Leaderboard"), if (leaderboard) 1 else 0, { nav.tab(Route.Smart(leaderboard = it == 1)) }, Modifier.padding(horizontal = 16.dp))
+        TabHeader(tr("Smart money"), onMenu = { nav.push(Route.Menu()) })
+        LaneTabs(listOf(tr("Signals"), tr("Leaderboard")), if (leaderboard) 1 else 0, { nav.tab(Route.Smart(leaderboard = it == 1)) }, Modifier.padding(horizontal = 16.dp))
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (leaderboard) LeadersTab() else SignalsTab()
         }
@@ -106,7 +108,7 @@ private fun ChainChipRow(chains: List<Chain>, selected: Chain?, withAll: Boolean
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        if (withAll) Chip("All", selected == null, { onPick(null) })
+        if (withAll) Chip(tr("All"), selected == null, { onPick(null) })
         for (c in chains) Chip(c.title, selected == c, { onPick(c) }, leading = { ChainDot(c, 8.dp) })
     }
 }
@@ -131,12 +133,12 @@ private fun SignalsTab() {
         item {
             Column(Modifier.padding(top = 12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Text(
-                    "A signal is when proven wallets buy the same coin within minutes. Proven wallets are picked by their past launchpad trades.",
+                    tr("A signal is when proven wallets buy the same coin within minutes. Proven wallets are picked by their past launchpad trades."),
                     style = text(14, color = Ink.text2, lineHeight = 20.sp),
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
                 Row(Modifier.padding(horizontal = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("At least", style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.width(64.dp))
+                    Text(tr("At least"), style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.width(64.dp))
                     for (n in listOf(2, 3, 5)) {
                         val on = model.need == n
                         Box(
@@ -150,7 +152,7 @@ private fun SignalsTab() {
                                 .semantics { selected = on },
                             contentAlignment = Alignment.Center,
                         ) {
-                            Text("$n wallets", style = text(14, FontWeight.Bold, if (on) Ink.text else Ink.text2))
+                            Text(trCount(n.toLong(), "{1} wallet", "{1} wallets", n), style = text(14, FontWeight.Bold, if (on) Ink.text else Ink.text2))
                         }
                     }
                 }
@@ -163,9 +165,9 @@ private fun SignalsTab() {
                 Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp)) {
                     Card {
                         Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 28.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("No proven wallets on ${chain.title} yet", style = text(16, FontWeight.Bold))
+                            Text(tr("No proven wallets on {1} yet", chain.title), style = text(16, FontWeight.Bold))
                             Text(
-                                "Signals start here once wallets on ${chain.title} build a record of launchpad trades.",
+                                tr("Signals start here once wallets on {1} build a record of launchpad trades.", chain.title),
                                 style = text(13, color = Ink.muted, lineHeight = 18.sp),
                             )
                         }
@@ -174,7 +176,7 @@ private fun SignalsTab() {
             }
         }
         if (live.isNotEmpty()) {
-            item { SectionTitle("Live now", null) }
+            item { SectionTitle(tr("Live now"), null) }
             uniqueItems(live, { "live:" + signalKey(it) }) { s ->
                 Box(Modifier.padding(horizontal = 16.dp, vertical = 5.dp)) {
                     LiveSignalCard(
@@ -187,7 +189,7 @@ private fun SignalsTab() {
             }
         }
         if (past.isNotEmpty()) {
-            item { SectionTitle("Earlier today", "How each one went, good or bad") }
+            item { SectionTitle(tr("Earlier today"), tr("How each one went, good or bad")) }
             uniqueItems(past, { "past:" + signalKey(it) }) { s ->
                 PastSignalRow(s, now, onWallets = { openKey = signalKey(s) }) { nav.push(Route.Token(s.chain, s.row.token)) }
             }
@@ -196,16 +198,16 @@ private fun SignalsTab() {
             item {
                 EmptyNote(
                     when {
-                        !model.loaded && model.failed -> "Could not reach Nesty. Trying again."
-                        !model.loaded -> "Loading…"
-                        else -> "No signal of ${model.need} or more wallets in the last day."
+                        !model.loaded && model.failed -> tr("Could not reach Nesty. Trying again.")
+                        !model.loaded -> tr("Loading…")
+                        else -> tr("No signal of {1} or more wallets in the last day.", model.need)
                     },
                 )
             }
         }
         item {
             Text(
-                "Signals cover ${SMART_CHAINS.joinToString(", ") { it.title }}. Solana signals are not ready yet.",
+                tr("Signals cover {1}. Solana signals are not ready yet.", SMART_CHAINS.joinToString(", ") { it.title }),
                 style = text(13, color = Ink.muted, lineHeight = 18.sp),
                 modifier = Modifier.padding(16.dp),
             )
@@ -250,33 +252,33 @@ private fun RecordCard(model: SignalsModel) {
     Card {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("Track record", style = text(16, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+                Text(tr("Track record"), style = text(16, FontWeight.Bold), modifier = Modifier.semantics { heading() })
                 if (view != null) {
                     Text(
-                        "${Fmt.counted(view.signals.n.toLong(), "signal")} · ${view.days} days · ${model.chain?.title ?: "all chains"}",
+                        tr("{1} · {2} days · {3}", Fmt.counted(view.signals.n.toLong(), "{1} signal", "{1} signals"), view.days, model.chain?.title ?: tr("all chains")),
                         style = text(12, color = Ink.muted),
                     )
                 }
             }
             if (view == null || view.signals.n == 0) {
-                Text(if (model.record == null) "Loading…" else "No signal of this size yet.", style = text(13, color = Ink.muted))
+                Text(if (model.record == null) tr("Loading…") else tr("No signal of this size yet."), style = text(13, color = Ink.muted))
                 return@Column
             }
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Legend(Ink.barSignals, "Signals")
-                Legend(Ink.barAny, "Any 3 wallets")
+                Legend(Ink.barSignals, tr("Signals"))
+                Legend(Ink.barAny, tr("Any 3 wallets"))
             }
             val s = view.signals
             val a = view.any
             val metrics = listOf(
-                Triple("Reached 2×", pct(s.x2, s.n), pct(a.x2, a.n)),
-                Triple("Fell by half", pct(s.half, s.n), pct(a.half, a.n)),
+                Triple(tr("Reached 2×"), pct(s.x2, s.n), pct(a.x2, a.n)),
+                Triple(tr("Fell by half"), pct(s.half, s.n), pct(a.half, a.n)),
             )
             val top = maxOf(30.0, metrics.maxOf { maxOf(it.second, it.third) })
             for ((label, sv, av) in metrics) {
                 Column(
                     Modifier.semantics(mergeDescendants = true) {
-                        contentDescription = "$label: signals ${pctText(sv)}, any 3 wallets ${pctText(av)}"
+                        contentDescription = tr("{1}: signals {2}, any 3 wallets {3}", label, pctText(sv), pctText(av))
                     },
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
@@ -288,20 +290,20 @@ private fun RecordCard(model: SignalsModel) {
             Divider()
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Typical signal a day later", style = text(12, color = Ink.muted))
+                    Text(tr("Typical signal a day later"), style = text(12, color = Ink.muted))
                     val m = s.median
                     Text(m?.let { Fmt.times(it) } ?: Fmt.DASH, style = figure(20, FontWeight.SemiBold, if (m != null && m < 1) Ink.pinkSoft else Ink.green))
                 }
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text("Went 5× or more", style = text(12, color = Ink.muted))
+                    Text(tr("Went 5× or more"), style = text(12, color = Ink.muted))
                     Text(Fmt.count(s.x5.toLong()), style = figure(20, FontWeight.SemiBold))
                 }
             }
             val bothWays = pct(s.x2, s.n) > pct(a.x2, a.n) && pct(s.half, s.n) > pct(a.half, a.n)
             val lower = (s.median ?: 1.0) < 1
             val sentence = listOfNotNull(
-                if (bothWays) "More big moves both ways than other coins." else null,
-                if (lower) "Most signals are lower a day later, so size each buy for a loss." else null,
+                if (bothWays) tr("More big moves both ways than other coins.") else null,
+                if (lower) tr("Most signals are lower a day later, so size each buy for a loss.") else null,
             ).joinToString(" ")
             if (sentence.isNotEmpty()) Text(sentence, style = text(13, color = Ink.text2, lineHeight = 18.sp))
         }
@@ -351,7 +353,7 @@ private fun LiveSignalCard(s: ChainSignal, model: SignalsModel, now: Long, onOpe
             .border(1.dp, Ink.line, RoundedCornerShape(16.dp)),
     ) {
         Column(
-            Modifier.fillMaxWidth().clickable(onClickLabel = "Open $symbol", role = Role.Button, onClick = onOpen).padding(horizontal = 14.dp, vertical = 12.dp),
+            Modifier.fillMaxWidth().clickable(onClickLabel = tr("Open {1}", symbol), role = Role.Button, onClick = onOpen).padding(horizontal = 14.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // The buy button sits over the end of this row; the rows under it take the whole width.
@@ -378,9 +380,9 @@ private fun LiveSignalCard(s: ChainSignal, model: SignalsModel, now: Long, onOpe
             }
             // The chip opens what each of these wallets did in the coin; the rest of the card opens the coin.
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                ToneChip(Tone.WALLETS, "${r.size} proven wallets", compact = true, does = "See what these wallets did in $symbol", onClick = onWallets)
+                ToneChip(Tone.WALLETS, tr("{1} proven wallets", r.size), compact = true, does = tr("See what these wallets did in {1}", symbol), onClick = onWallets)
                 Text(
-                    (if (within >= 1_000) "in ${Fmt.duration(within.toDouble())} · " else "") + "${Fmt.age(now - r.at)} ago",
+                    if (within >= 1_000) tr("in {1} · {2} ago", Fmt.duration(within.toDouble()), Fmt.age(now - r.at)) else tr("{1} ago", Fmt.age(now - r.at)),
                     style = text(13, color = Ink.text2),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -402,7 +404,7 @@ private fun LiveSignalCard(s: ChainSignal, model: SignalsModel, now: Long, onOpe
                 .clip(RoundedCornerShape(12.dp))
                 .background(Ink.greenDeep)
                 .border(1.dp, Ink.greenLine, RoundedCornerShape(12.dp))
-                .clickable(onClickLabel = "Buy $$quick of $symbol", role = Role.Button, onClick = onBuy),
+                .clickable(onClickLabel = tr("Buy \${1} of {2}", quick, symbol), role = Role.Button, onClick = onBuy),
             contentAlignment = Alignment.Center,
         ) {
             Text("$$quick", style = text(15, FontWeight.Bold, Ink.green))
@@ -419,17 +421,17 @@ private fun PastSignalRow(s: ChainSignal, now: Long, onWallets: () -> Unit, onOp
     val nowMc = r.usdNow?.let { it * supply }
     val x = if (r.usdThen != null && r.usdNow != null && r.usdThen > 0) r.usdNow / r.usdThen else null
     val (tone, outcome) = when {
-        x == null -> Tone.NONE to "Not priced"
-        x >= 2 -> Tone.OK to "Reached 2×"
-        x <= 0.5 -> Tone.BAD to "Fell by half"
-        else -> Tone.INFO to "Neither yet"
+        x == null -> Tone.NONE to tr("Not priced")
+        x >= 2 -> Tone.OK to tr("Reached 2×")
+        x <= 0.5 -> Tone.BAD to tr("Fell by half")
+        else -> Tone.INFO to tr("Neither yet")
     }
     Column {
         Row(
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 66.dp)
-                .clickable(onClickLabel = "Open $symbol", role = Role.Button, onClick = onOpen)
+                .clickable(onClickLabel = tr("Open {1}", symbol), role = Role.Button, onClick = onOpen)
                 .padding(horizontal = 18.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -442,7 +444,7 @@ private fun PastSignalRow(s: ChainSignal, now: Long, onWallets: () -> Unit, onOp
                 }
                 // The chip opens what each of these wallets did in the coin; the rest of the row opens the coin.
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ToneChip(Tone.WALLETS, "${r.size} wallets", compact = true, does = "See what these wallets did in $symbol", onClick = onWallets)
+                    ToneChip(Tone.WALLETS, trCount(r.size.toLong(), "{1} wallet", "{1} wallets", r.size), compact = true, does = tr("See what these wallets did in {1}", symbol), onClick = onWallets)
                     Text("MC ${Fmt.usd(then)} → ${Fmt.usd(nowMc)}", style = text(13, color = Ink.muted), maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
@@ -451,7 +453,7 @@ private fun PastSignalRow(s: ChainSignal, now: Long, onWallets: () -> Unit, onOp
                     ToneMark(tone, 16.dp)
                     Text(outcome, style = text(13, FontWeight.SemiBold))
                 }
-                if (x != null) Text("Now ${Fmt.times(x)}", style = text(12, color = Ink.muted))
+                if (x != null) Text(tr("Now {1}", Fmt.times(x)), style = text(12, color = Ink.muted))
             }
         }
         Divider(Modifier.padding(horizontal = 16.dp))
@@ -497,13 +499,13 @@ private fun LeadersTab() {
             }
         }
         item {
-            Row(
+            // The sort line goes under the title: side by side, longer languages ran them together.
+            Column(
                 Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.Bottom,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                Text("Top wallets on ${model.chain.title}", style = text(16, FontWeight.Bold), modifier = Modifier.semantics { heading() })
-                Text("By ${model.sort.label.lowercase()}, ${model.period.words}", style = text(12, color = Ink.muted))
+                Text(tr("Top wallets on {1}", model.chain.title), style = text(16, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+                Text(model.sort.by(model.period.words), style = text(12, color = Ink.muted))
             }
         }
         when {
@@ -511,17 +513,17 @@ private fun LeadersTab() {
                 val i = rows.indexOf(r)
                 LeaderRow(i + 1, r, model.sort, settings) { nav.push(Route.Wallet(model.chain, r.wallet)) }
             }
-            board != null -> item { EmptyNote("No wallet made a profit on ${model.chain.title} in the ${model.period.words}.") }
-            model.failed -> item { EmptyNote("Could not reach Nesty. Trying again.") }
-            else -> item { EmptyNote("Loading…") }
+            board != null -> item { EmptyNote(tr("No wallet made a profit on {1} in the {2}.", model.chain.title, model.period.words)) }
+            model.failed -> item { EmptyNote(tr("Could not reach Nesty. Trying again.")) }
+            else -> item { EmptyNote(tr("Loading…")) }
         }
         item {
             Box(Modifier.padding(16.dp)) {
                 Card {
                     Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Text("Only trades on launchpad curves count. Cluster wallets are left out.", style = text(13, color = Ink.text2, lineHeight = 18.sp))
+                        Text(tr("Only trades on launchpad curves count. Cluster wallets are left out."), style = text(13, color = Ink.text2, lineHeight = 18.sp))
                         Text(
-                            "Sniper buys in the first seconds. Flipper sells within minutes. Holder keeps coins for hours. A dash means nothing was sold yet.",
+                            tr("Sniper buys in the first seconds. Flipper sells within minutes. Holder keeps coins for hours. A dash means nothing was sold yet."),
                             style = text(13, color = Ink.muted, lineHeight = 18.sp),
                         )
                     }
@@ -536,11 +538,11 @@ fun toggleFollow(settings: Settings, toasts: Toasts, wallet: String) {
     val label = settings.nameOf(wallet) ?: Fmt.address(wallet)
     if (settings.isFollowed(wallet)) {
         settings.unfollow(wallet)
-        toasts.show("Stopped following $label", "Removed from your Tracker")
+        toasts.show(tr("Stopped following {1}", label), tr("Removed from your Tracker"))
     } else if (settings.follow(wallet)) {
-        toasts.show("Following $label", "Their trades show in Tracker · ${settings.followed.size} of ${Settings.MAX_FOLLOWED}")
+        toasts.show(tr("Following {1}", label), tr("Their trades show in Tracker · {1} of {2}", settings.followed.size, Settings.MAX_FOLLOWED))
     } else {
-        toasts.show("You follow ${Settings.MAX_FOLLOWED} wallets already", "Stop following one in Tracker first")
+        toasts.show(tr("You follow {1} wallets already", Settings.MAX_FOLLOWED), tr("Stop following one in Tracker first"))
     }
 }
 
@@ -559,8 +561,8 @@ fun FollowButton(wallet: String) {
             .border(1.dp, if (following) Ink.greenLine else Ink.line3, CircleShape)
             .clickable(role = Role.Switch) { toggleFollow(settings, toasts, wallet) }
             .semantics {
-                contentDescription = if (following) "Following $label, tap to stop" else "Follow $label"
-                stateDescription = if (following) "Following" else "Not following"
+                contentDescription = if (following) tr("Following {1}, tap to stop", label) else tr("Follow {1}", label)
+                stateDescription = if (following) tr("Following") else tr("Not following")
             },
         contentAlignment = Alignment.Center,
     ) {
@@ -573,8 +575,8 @@ private fun LeaderRow(rank: Int, r: BoardRow, sort: Sort, settings: Settings, on
     val name = settings.nameOf(r.wallet)
     val roi = r.roi()
     val win = r.winRate()
-    val winText = win?.let { "Win ${Math.round(it * 100)}%" } ?: "Win ${Fmt.DASH}"
-    val coinsText = if (r.coins == 1) "1 coin" else "${r.coins} coins"
+    val winText = win?.let { tr("Win {1}%", Math.round(it * 100)) } ?: tr("Win {1}", Fmt.DASH)
+    val coinsText = Fmt.counted(r.coins.toLong(), "{1} coin", "{1} coins")
     val profit = Fmt.usdSigned(r.profit)
     val roiText = roi?.let { Fmt.pctChange(it * 100) } ?: Fmt.DASH
     val (main, mainInk, second) = when (sort) {
@@ -583,7 +585,7 @@ private fun LeaderRow(rank: Int, r: BoardRow, sort: Sort, settings: Settings, on
         Sort.WIN -> Triple(win?.let { "${Math.round(it * 100)}%" } ?: Fmt.DASH, Ink.text, coinsText)
         Sort.VOLUME -> Triple(Fmt.usd(r.volume), Ink.text, profit)
     }
-    val sub = listOfNotNull(winText, coinsText, if (sort == Sort.VOLUME) null else "Vol ${Fmt.usd(r.volume)}").joinToString(" · ")
+    val sub = listOfNotNull(winText, coinsText, if (sort == Sort.VOLUME) null else tr("Vol {1}", Fmt.usd(r.volume))).joinToString(" · ")
     Column {
         Divider(Modifier.padding(horizontal = 16.dp))
         Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {

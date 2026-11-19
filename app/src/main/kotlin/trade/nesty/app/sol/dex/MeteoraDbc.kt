@@ -1,6 +1,7 @@
 package trade.nesty.app.sol.dex
 
 import trade.nesty.app.evm.Side
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.Instruction
 import trade.nesty.app.sol.Layouts
 import trade.nesty.app.sol.QuoteAsset
@@ -347,7 +348,7 @@ object MeteoraDbc : DexModule<MeteoraDbcVenue>(DexKind.METEORA_DBC, "dbcij3LWUpp
     }
 
     override fun idle(v: MeteoraDbcVenue, nowSec: Double): String? =
-        if (complete(v)) "This Meteora bonding curve is complete. Trading moves to its pool once it migrates." else null
+        if (complete(v)) tr("This Meteora bonding curve is complete. Trading moves to its pool once it migrates.") else null
 
     override fun swap(v: MeteoraDbcVenue, side: Side, user: String, amountIn: BigInteger, minOut: BigInteger): Instruction {
         val (source, destination) = userAccounts(v, side, user)

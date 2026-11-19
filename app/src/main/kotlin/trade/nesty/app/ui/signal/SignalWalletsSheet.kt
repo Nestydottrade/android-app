@@ -43,6 +43,7 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.NestyApi
 import trade.nesty.app.data.Quote
 import trade.nesty.app.data.TradersAnswer
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.LocalNavigator
 import trade.nesty.app.ui.NestySheet
@@ -113,8 +114,8 @@ fun SignalWalletsSheet(
     val now = rememberNow()
     NestySheet(SignalWallets.title(head.size, symbol, head.at, now), onClose) {
         when {
-            answer == null && failed -> SheetNote("Could not read what they did. Trying again.")
-            answer == null -> SheetNote("Reading what they did…")
+            answer == null && failed -> SheetNote(tr("Could not read what they did. Trying again."))
+            answer == null -> SheetNote(tr("Reading what they did…"))
             else -> {
                 val view = remember(head, answer) { SignalWallets.view(head, answer) }
                 Column(
@@ -127,7 +128,7 @@ fun SignalWalletsSheet(
                     for (w in view.wallets) {
                         WalletCard(w, view.quote, supply) { nav.push(Route.Wallet(chain, w.wallet)) }
                     }
-                    if (view.wallets.isEmpty()) QuietLine("The wallets of this signal are not listed.")
+                    if (view.wallets.isEmpty()) QuietLine(tr("The wallets of this signal are not listed."))
                     if (view.partial) QuietLine(SignalWallets.PARTIAL)
                 }
             }
@@ -168,7 +169,7 @@ private fun WalletCard(w: SignalWallet, quote: Quote?, supply: Double?, onOpen: 
         Column(
             Modifier
                 .fillMaxWidth()
-                .clickable(onClickLabel = "Open this wallet", role = Role.Button, onClick = onOpen)
+                .clickable(onClickLabel = tr("Open this wallet"), role = Role.Button, onClick = onOpen)
                 .clearAndSetSemantics { contentDescription = spoken }
                 .padding(start = 14.dp, end = 14.dp, top = 12.dp, bottom = 14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -193,13 +194,13 @@ private fun WalletCard(w: SignalWallet, quote: Quote?, supply: Double?, onOpen: 
                 Text(SignalWallets.NO_TRADES, style = text(13, color = Ink.muted))
             } else {
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Cell("Bought", figures.bought, Ink.green)
-                    Cell("Sold", figures.sold, Ink.pink)
+                    Cell(tr("Bought"), figures.bought, Ink.green)
+                    Cell(tr("Sold"), figures.sold, Ink.pink)
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Cell("Realized", Figure(figures.realized), signInk(figures.realizedSign))
-                    Cell("Unrealized", Figure(figures.unrealized), signInk(figures.unrealizedSign))
-                    Cell("Holds", figures.holds, Ink.text)
+                    Cell(tr("Realized"), Figure(figures.realized), signInk(figures.realizedSign))
+                    Cell(tr("Unrealized"), Figure(figures.unrealized), signInk(figures.unrealizedSign))
+                    Cell(tr("Holds"), figures.holds, Ink.text)
                 }
             }
         }

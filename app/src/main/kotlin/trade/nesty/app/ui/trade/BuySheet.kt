@@ -64,6 +64,8 @@ import trade.nesty.app.data.TradeCosts
 import trade.nesty.app.evm.Quote
 import trade.nesty.app.evm.Side
 import trade.nesty.app.evm.TradeStatus
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.move.LegQuote
 import trade.nesty.app.move.LegStatus
 import trade.nesty.app.move.Move
@@ -257,7 +259,7 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                     }
                     .onFailure {
                         moveQuote = null
-                        moveWhy = it.message ?: "The bridge did not answer."
+                        moveWhy = it.message ?: tr("The bridge did not answer.")
                     }
             }
             delay(15_000)
@@ -297,20 +299,20 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
     val moving = move != null && (move.state == MoveState.WORKING || (move.state == MoveState.BUYING && trade == null))
     val working = starting || moving || trade?.status == TradeStatus.WORKING
     val reason = when {
-        wallet == null -> "Add a wallet first"
-        own == null -> if (chain.isEvm) "This wallet has no EVM address" else "This wallet has no Solana address"
-        usd == null -> "Enter an amount"
-        price == null -> "Reading the ${chain.native} price…"
-        over -> if (ask == null && total != null && usd > total) "More than your One Balance" else "Amount is too high"
-        needsMove && f == null -> "Reading the network fee…"
-        needsMove && mq == null -> if (moveWhy != null) "Cannot move funds right now" else "Reading the move…"
-        quoted && q == null -> "No pool to buy from right now"
+        wallet == null -> tr("Add a wallet first")
+        own == null -> if (chain.isEvm) tr("This wallet has no EVM address") else tr("This wallet has no Solana address")
+        usd == null -> tr("Enter an amount")
+        price == null -> tr("Reading the {1} price…", chain.native)
+        over -> if (ask == null && total != null && usd > total) tr("More than your One Balance") else tr("Amount is too high")
+        needsMove && f == null -> tr("Reading the network fee…")
+        needsMove && mq == null -> if (moveWhy != null) tr("Cannot move funds right now") else tr("Reading the move…")
+        quoted && q == null -> tr("No pool to buy from right now")
         else -> null
     }
 
     fun failed(e: Exception) {
-        val message = e.message ?: "Could not start."
-        if (shown[0]) refused = message else toasts.show("Buy not sent", message, bad = true)
+        val message = e.message ?: tr("Could not start.")
+        if (shown[0]) refused = message else toasts.show(tr("Buy not sent"), message, bad = true)
     }
 
     fun start() {
@@ -359,7 +361,7 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
         }
     }
 
-    NestySheet("Buy $symbol", onClose) {
+    NestySheet(tr("Buy {1}", symbol), onClose) {
         Column(
             Modifier
                 .weight(1f, fill = false)
@@ -375,21 +377,21 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
             )
             if (trade != null && trade.status == TradeStatus.DONE) {
                 Bought(trade, chain, info, startPrice)
-                GreenButton("See your position", {
+                GreenButton(tr("See your position"), {
                     onClose()
                     nav.push(Route.Position(chain, token))
                 }, Modifier.fillMaxWidth(), solid = true)
-                OutlineButton("Done", onClose)
+                OutlineButton(tr("Done"), onClose)
             } else {
                 if (ask != null && !working) {
                     AskNote(ask, chain) {
                         mover.keep(ask.id)
-                        toasts.show("Kept on ${chain.title}", "${Fmt.usdFull(ask.arrivedUsd)} stays in your ${chain.title} balance.")
+                        toasts.show(tr("Kept on {1}", chain.title), tr("{1} stays in your {2} balance.", Fmt.usdFull(ask.arrivedUsd), chain.title))
                         onClose()
                     }
                 }
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Amount in dollars", style = text(13, color = Ink.muted))
+                    Text(tr("Amount in dollars"), style = text(13, color = Ink.muted))
                     AmountField(amount, enabled = !working, bad = over) { v ->
                         amount = v
                         typed = true
@@ -403,13 +405,13 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                         val bad = over || (needsMove && moveWhy != null && mq == null)
                         Text(
                             when {
-                                chainUsd == null -> "Reading your ${chain.title} balance…"
-                                ask != null -> if (over) "More than your ${chain.title} balance of ${Fmt.usdFull(chainUsd)}" else "Paid from your ${chain.title} balance of ${Fmt.usdFull(chainUsd)}"
-                                over && total != null && usd > total -> "More than your One Balance of ${Fmt.usdFull(total)}"
-                                over -> if (maxUsd != null) "Up to ${Fmt.usdFull(maxUsd)} here, with funds moved from one other chain" else "More than your ${chain.title} balance, and no other chain holds enough to move here"
+                                chainUsd == null -> tr("Reading your {1} balance…", chain.title)
+                                ask != null -> if (over) tr("More than your {1} balance of {2}", chain.title, Fmt.usdFull(chainUsd)) else tr("Paid from your {1} balance of {2}", chain.title, Fmt.usdFull(chainUsd))
+                                over && total != null && usd > total -> tr("More than your One Balance of {1}", Fmt.usdFull(total))
+                                over -> if (maxUsd != null) tr("Up to {1} here, with funds moved from one other chain", Fmt.usdFull(maxUsd)) else tr("More than your {1} balance, and no other chain holds enough to move here", chain.title)
                                 needsMove && source != null -> moveLine(chain, source.first.chain, usd ?: 0.0, shortUsd, mq, moveWhy)
-                                usd != null && usd == ownMax -> "Leaves about ${Fmt.usdFull(chainUsd - usd)} for network fees"
-                                else -> "Paid from your ${chain.title} balance of ${Fmt.usdFull(chainUsd)}"
+                                usd != null && usd == ownMax -> tr("Leaves about {1} for network fees", Fmt.usdFull(chainUsd - usd))
+                                else -> tr("Paid from your {1} balance of {2}", chain.title, Fmt.usdFull(chainUsd))
                             },
                             style = text(13, color = if (bad) Ink.pink else Ink.muted, lineHeight = 18.sp),
                         )
@@ -422,14 +424,14 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                             typed = true
                         }
                     }
-                    AmountChip("Max", on = maxUsd != null && usd == maxUsd, enabled = !working && maxUsd != null, modifier = Modifier.weight(1f)) {
+                    AmountChip(tr("Max"), on = maxUsd != null && usd == maxUsd, enabled = !working && maxUsd != null, modifier = Modifier.weight(1f)) {
                         maxUsd?.let {
                             amount = String.format(Locale.US, "%.2f", it)
                             typed = true
                         }
                     }
                 }
-                Details(symbol, usd, tokens, entryMc, figures?.impact, figures?.fees, feeShown, if (viaMove) "Network and move fees" else "Network fee", cost, quoted, q == null, why)
+                Details(symbol, usd, tokens, entryMc, figures?.impact, figures?.fees, feeShown, if (viaMove) tr("Network and move fees") else tr("Network fee"), cost, quoted, q == null, why)
                 PresetRow(chain, settings.presets, presetIndex, editing, enabled = !working, onPick = { presetIndex = it }) { editing = !editing }
                 if (editing) {
                     PresetEditor(presetIndex, preset) { settings.setPreset(presetIndex, it) }
@@ -439,11 +441,11 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                 val leg = move?.legs?.firstOrNull()
                 val status = when {
                     move != null && move.state == MoveState.WORKING -> movingWords(leg, chain)
-                    move != null && move.state == MoveState.BUYING && trade == null -> "Moved to ${chain.title}. Buying…"
-                    working -> if (swap?.hash != null) "Sent. Waiting for the chain…" else "Checking the trade, then sending it…"
-                    trade != null -> (if (swap?.hash != null) "Buy failed: " else "Buy not sent: ") + (swap?.error ?: "Stopped")
-                    move != null && move.state == MoveState.FAILED -> (if (leg?.hash != null) "Move failed: " else "Move not sent: ") + (leg?.error ?: "Stopped")
-                    refused != null -> "Buy not sent: $refused"
+                    move != null && move.state == MoveState.BUYING && trade == null -> tr("Moved to {1}. Buying…", chain.title)
+                    working -> if (swap?.hash != null) tr("Sent. Waiting for the chain…") else tr("Checking the trade, then sending it…")
+                    trade != null -> (swap?.error ?: tr("Stopped")).let { if (swap?.hash != null) tr("Buy failed: {1}", it) else tr("Buy not sent: {1}", it) }
+                    move != null && move.state == MoveState.FAILED -> (leg?.error ?: tr("Stopped")).let { if (leg?.hash != null) tr("Move failed: {1}", it) else tr("Move not sent: {1}", it) }
+                    refused != null -> tr("Buy not sent: {1}", refused)
                     else -> null
                 }
                 if (status != null) {
@@ -455,10 +457,10 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
                 }
                 BuyButton(
                     when {
-                        moving -> "Moving…"
-                        working -> "Buying…"
+                        moving -> tr("Moving…")
+                        working -> tr("Buying…")
                         reason != null -> reason
-                        else -> "Buy ${Fmt.usdFull(usd!!)} of $symbol"
+                        else -> tr("Buy {1} of {2}", Fmt.usdFull(usd!!), symbol)
                     },
                     enabled = !working && reason == null,
                     onClick = ::start,
@@ -470,24 +472,24 @@ fun BuySheet(chain: Chain, token: String, coin: Coin, checks: List<Check>, onChe
 
 /** What a short chain's buy moves first, as the AppBuy board says it. */
 private fun moveLine(to: Chain, from: Chain, usd: Double, shortUsd: Double, q: LegQuote?, why: String?): String {
-    if (q == null && why != null) return "Moving funds from ${from.title}: $why"
+    if (q == null && why != null) return tr("Moving funds from {1}: {2}", from.title, why)
     val moved = Fmt.usdFull(q?.usdIn ?: shortUsd)
     val time = if (q != null) ", ${Fmt.eta(q.timeS)}" else ""
     val ownPart = usd - (q?.usdOut ?: shortUsd)
     return if (ownPart >= 0.01) {
-        "Pays ${Fmt.usdFull(ownPart)} on ${to.title} and moves $moved from ${from.title} first$time"
+        tr("Pays {1} on {2} and moves {3} from {4} first{5}", Fmt.usdFull(ownPart), to.title, moved, from.title, time)
     } else {
-        "Moves $moved from ${from.title} to ${to.title} first$time"
+        tr("Moves {1} from {2} to {3} first{4}", moved, from.title, to.title, time)
     }
 }
 
 /** Where a buy's move stands, before the buy itself goes out. */
 private fun movingWords(leg: MoveLeg?, to: Chain): String {
-    val from = leg?.fromChain?.title ?: "the other chain"
+    val from = leg?.fromChain?.title ?: tr("the other chain")
     return when (leg?.status) {
-        LegStatus.SENT -> "Move sent. Waiting for $from…"
-        LegStatus.MOVING -> "Moving to ${to.title}, ${Fmt.eta(leg.timeS)}…"
-        else -> "Checking the move from $from, then sending it…"
+        LegStatus.SENT -> tr("Move sent. Waiting for {1}…", from)
+        LegStatus.MOVING -> tr("Moving to {1}, {2}…", to.title, Fmt.eta(leg.timeS))
+        else -> tr("Checking the move from {1}, then sending it…", from)
     }
 }
 
@@ -500,10 +502,10 @@ private fun AskNote(ask: Move, chain: Chain, onKeep: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
-            "${Fmt.usdFull(ask.arrivedUsd)} was moved to ${chain.title} for this buy. The price has changed since: check the amount, then buy.",
+            tr("{1} was moved to {2} for this buy. The price has changed since: check the amount, then buy.", Fmt.usdFull(ask.arrivedUsd), chain.title),
             style = text(13, color = Ink.text2, lineHeight = 18.sp),
         )
-        ask.buyError?.let { Text("The buy was not sent: $it", style = text(13, color = Ink.pink, lineHeight = 18.sp)) }
+        ask.buyError?.let { Text(tr("The buy was not sent: {1}", it), style = text(13, color = Ink.pink, lineHeight = 18.sp)) }
         Box(
             Modifier
                 .heightIn(min = 44.dp)
@@ -511,7 +513,7 @@ private fun AskNote(ask: Move, chain: Chain, onKeep: () -> Unit) {
                 .clickable(role = Role.Button, onClick = onKeep),
             contentAlignment = Alignment.CenterStart,
         ) {
-            Text("Keep it on ${chain.title}", style = text(14, FontWeight.Bold, Ink.green))
+            Text(tr("Keep it on {1}", chain.title), style = text(14, FontWeight.Bold, Ink.green))
         }
     }
 }
@@ -523,7 +525,7 @@ internal fun AmountField(
     enabled: Boolean,
     bad: Boolean,
     prefix: String? = "$",
-    describe: String = "Amount in dollars",
+    describe: String = tr("Amount in dollars"),
     size: Int = 44,
     clean: (String) -> String? = ::cleanAmount,
     onChange: (String) -> Unit,
@@ -584,18 +586,18 @@ private fun Details(
     Column(Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line, shape)) {
         if (quoted && none && usd != null) {
             Text(
-                why ?: "No pool trades $symbol right now.",
+                why ?: tr("No pool trades {1} right now.", symbol),
                 style = text(13, color = Ink.text2, lineHeight = 18.sp),
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             )
         }
-        DetailRow("You get about", tokens?.let { "${Fmt.amount(it)} $symbol" } ?: wait)
-        DetailRow("Your entry market cap", entryMc?.let { Fmt.usd(it) } ?: wait)
-        DetailRow("Price impact · Fees and tax", "${impact?.let { Fmt.share(it) } ?: wait} · ${fees?.let { Fmt.share(it) } ?: wait}")
-        DetailRow(feeLabel, fee?.let { "about ${Fmt.usdFull(it)}" } ?: wait)
+        DetailRow(tr("You get about"), tokens?.let { "${Fmt.amount(it)} $symbol" } ?: wait)
+        DetailRow(tr("Your entry market cap"), entryMc?.let { Fmt.usd(it) } ?: wait)
+        DetailRow(tr("Price impact · Fees and tax"), "${impact?.let { Fmt.share(it) } ?: wait} · ${fees?.let { Fmt.share(it) } ?: wait}")
+        DetailRow(feeLabel, fee?.let { tr("about {1}", Fmt.usdFull(it)) } ?: wait)
         Box(Modifier.fillMaxWidth().background(Ink.raised)) {
             DetailRow(
-                "Cost to get in",
+                tr("Cost to get in"),
                 if (cost != null && usd != null) "${Fmt.usdFull(cost)} (${Fmt.share(cost / usd)})" else wait,
                 strong = true,
             )
@@ -634,7 +636,7 @@ private fun PresetRow(chain: Chain, presets: List<Preset>, index: Int, editing: 
                     .clickable(enabled = enabled, role = Role.Button) { onPick(i) }
                     .semantics {
                         selected = on
-                        contentDescription = "Preset ${i + 1}"
+                        contentDescription = tr("Preset {1}", i + 1)
                     },
                 contentAlignment = Alignment.Center,
             ) {
@@ -650,7 +652,7 @@ private fun PresetRow(chain: Chain, presets: List<Preset>, index: Int, editing: 
                 .padding(horizontal = 10.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Text(if (editing) "Close" else "Edit", style = text(14, FontWeight.Bold, Ink.green))
+            Text(if (editing) tr("Close") else tr("Edit"), style = text(14, FontWeight.Bold, Ink.green))
         }
     }
 }
@@ -663,16 +665,17 @@ private fun PresetEditor(index: Int, preset: Preset, onChange: (Preset) -> Unit)
         Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line, shape).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("Slippage", style = text(13, color = Ink.muted))
+        Text(tr("Slippage"), style = text(13, color = Ink.muted))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (s in listOf(5, 10, 15, 25)) Chip("$s%", preset.slippage == s, { onChange(preset.copy(slippage = s)) })
         }
-        Text("Speed", style = text(13, color = Ink.muted))
+        Text(tr("Speed"), style = text(13, color = Ink.muted))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (s in listOf("Normal", "Fast", "Turbo")) Chip(s, preset.speed == s, { onChange(preset.copy(speed = s)) })
+            // Kept in English, as the presets store them; shown in the app's language.
+            for (s in listOf(trKey("Normal"), trKey("Fast"), trKey("Turbo"))) Chip(tr(s), preset.speed == s, { onChange(preset.copy(speed = s)) })
         }
         Text(
-            if (index == 0) "Saved as P1. One-tap buys and sells use P1." else "Saved as P${index + 1}.",
+            if (index == 0) tr("Saved as P1. One-tap buys and sells use P1.") else tr("Saved as P{1}.", index + 1),
             style = text(12, color = Ink.muted),
         )
     }
@@ -686,9 +689,9 @@ private fun ChecksLine(checks: List<Check>, onClick: () -> Unit) {
     val shown = bad.ifEmpty { warn }
     if (shown.isEmpty()) return
     val head = when {
-        bad.size == 1 -> "1 red flag"
-        bad.isNotEmpty() -> "${bad.size} red flags"
-        else -> "${warn.size} to watch"
+        bad.size == 1 -> tr("1 red flag")
+        bad.isNotEmpty() -> tr("{1} red flags", bad.size)
+        else -> tr("{1} to watch", warn.size)
     }
     Row(
         Modifier
@@ -696,7 +699,7 @@ private fun ChecksLine(checks: List<Check>, onClick: () -> Unit) {
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(14.dp))
             .background(Ink.raised)
-            .clickable(onClickLabel = "See the checks", role = Role.Button, onClick = onClick)
+            .clickable(onClickLabel = tr("See the checks"), role = Role.Button, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
@@ -759,11 +762,11 @@ private fun Bought(trade: EngineTrade, chain: Chain, info: CoinInfo, price: Doub
     ) {
         Icon(NIcons.doneCircle, contentDescription = null, tint = Ink.green, modifier = Modifier.size(44.dp))
         Text(
-            got?.let { "Bought ${Fmt.amount(it)} ${info.label}" } ?: "Bought ${info.label}",
+            got?.let { tr("Bought {1} {2}", Fmt.amount(it), info.label) } ?: tr("Bought {1}", info.label),
             style = text(20, FontWeight.Bold, lineHeight = 26.sp),
             textAlign = TextAlign.Center,
         )
-        val sub = listOfNotNull(paid?.let { "Paid ${Fmt.usdFull(it)}" }, mc?.let { "entry market cap ${Fmt.usd(it)}" }).joinToString(" · ")
+        val sub = listOfNotNull(paid?.let { tr("Paid {1}", Fmt.usdFull(it)) }, mc?.let { tr("entry market cap {1}", Fmt.usd(it)) }).joinToString(" · ")
         if (sub.isNotEmpty()) Text(sub, style = text(14, color = Ink.text2), textAlign = TextAlign.Center)
     }
 }

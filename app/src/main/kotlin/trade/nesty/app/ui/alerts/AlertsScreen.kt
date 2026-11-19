@@ -52,6 +52,7 @@ import trade.nesty.app.alerts.AlertTone
 import trade.nesty.app.alerts.Alerts
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Chip
 import trade.nesty.app.ui.Divider
@@ -92,9 +93,9 @@ fun Navigator.open(link: AlertLink) {
 }
 
 private fun labelOf(link: AlertLink): String? = when (link.to) {
-    AlertLink.POSITION -> "Your position"
-    AlertLink.TOKEN -> "Open coin"
-    AlertLink.PORTFOLIO -> "Portfolio"
+    AlertLink.POSITION -> tr("Your position")
+    AlertLink.TOKEN -> tr("Open coin")
+    AlertLink.PORTFOLIO -> tr("Portfolio")
     else -> null
 }
 
@@ -115,12 +116,12 @@ private fun lookOf(tone: AlertTone): Look = when (tone) {
 fun BellButton() {
     val nav = LocalNavigator.current
     val unread = AppGraph.alertStore.unread
-    val label = if (unread > 0) "Notifications, $unread new" else "Notifications"
+    val label = if (unread > 0) tr("Notifications, {1} new", unread) else tr("Notifications")
     Box(
         Modifier
             .size(48.dp)
             .clip(CircleShape)
-            .clickable(onClickLabel = "Open notifications", role = Role.Button) { nav.push(Route.Alerts) }
+            .clickable(onClickLabel = tr("Open notifications"), role = Role.Button) { nav.push(Route.Alerts) }
             .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
@@ -165,26 +166,26 @@ fun AlertsScreen() {
         val was = settings.isMuted(who)
         settings.mute(who, !was)
         toasts.show(
-            if (was) "$name unmuted" else "$name muted",
-            if (was) "Their trades alert you again" else "Their trades still show in Tracker, with no alerts",
-            action = "Undo",
+            if (was) tr("{1} unmuted", name) else tr("{1} muted", name),
+            if (was) tr("Their trades alert you again") else tr("Their trades still show in Tracker, with no alerts"),
+            action = tr("Undo"),
         ) { settings.mute(who, was) }
     }
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Notifications", onBack = { nav.pop() }) {
+        BackHeader(tr("Notifications"), onBack = { nav.pop() }) {
             Box(
                 Modifier
                     .heightIn(min = 44.dp)
                     .clip(RoundedCornerShape(22.dp))
                     .clickable(enabled = unread > 0, role = Role.Button) {
                         val ids = store.markAllRead()
-                        toasts.show("All marked read", "${ids.size} moved to Seen", action = "Undo") { store.markUnread(ids) }
+                        toasts.show(tr("All marked read"), tr("{1} moved to Seen", ids.size), action = tr("Undo")) { store.markUnread(ids) }
                     }
                     .padding(horizontal = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Mark all read", style = text(14, FontWeight.Bold, if (unread > 0) Ink.green else Ink.muted))
+                Text(tr("Mark all read"), style = text(14, FontWeight.Bold, if (unread > 0) Ink.green else Ink.muted))
             }
         }
         Divider()
@@ -198,7 +199,7 @@ fun AlertsScreen() {
             for (f in Alerts.Filter.entries) Chip(f.label, filter == f, { filter = f })
         }
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = androidx.compose.foundation.layout.PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 24.dp)) {
-            item(key = "new") { Heading("New") }
+            item(key = "new") { Heading(tr("New")) }
             uniqueItems(fresh, { it.id }) { a ->
                 Box(Modifier.padding(bottom = 8.dp)) {
                     AlertCard(a, now, onOpen = { open(a) }, onMute = { mute(a) }, muted = settings.isMuted(a.who))
@@ -206,7 +207,7 @@ fun AlertsScreen() {
             }
             if (fresh.isEmpty()) item(key = "none") { NothingNew() }
             if (seen.isNotEmpty()) {
-                item(key = "seen") { Box(Modifier.padding(top = 8.dp)) { Heading("Seen") } }
+                item(key = "seen") { Box(Modifier.padding(top = 8.dp)) { Heading(tr("Seen")) } }
                 uniqueItems(seen, { it.id }) { a ->
                     AlertRow(a, now, onOpen = { open(a) }, onMute = { mute(a) }, muted = settings.isMuted(a.who))
                 }
@@ -241,7 +242,7 @@ private fun NothingNew() {
             .padding(horizontal = 16.dp, vertical = 18.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text("Nothing new. You are up to date.", style = text(14, color = Ink.muted), textAlign = TextAlign.Center)
+        Text(tr("Nothing new. You are up to date."), style = text(14, color = Ink.muted), textAlign = TextAlign.Center)
     }
 }
 
@@ -261,7 +262,7 @@ private fun Words(a: Alert, now: Long, fresh: Boolean, muted: Boolean) {
         Text(Fmt.age(now - a.at), style = text(12, color = Ink.muted), modifier = Modifier.padding(top = 2.dp))
     }
     val name = a.who?.let { AppGraph.settings.nameOf(it) ?: Fmt.address(it) }
-    val body = if (muted && name != null) "${a.body} Alerts from $name are muted.".trim() else a.body
+    val body = if (muted && name != null) tr("{1} Alerts from {2} are muted.", a.body, name).trim() else a.body
     if (body.isNotBlank()) Text(body, style = text(13, color = if (fresh) Ink.text2 else Ink.muted, lineHeight = 19.sp))
 }
 
@@ -297,7 +298,7 @@ private fun Buttons(a: Alert, fresh: Boolean, muted: Boolean, onOpen: () -> Unit
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(if (muted) "Unmute $name" else "Mute $name", style = text(14, FontWeight.Bold, Ink.text2))
+                Text(if (muted) tr("Unmute {1}", name) else tr("Mute {1}", name), style = text(14, FontWeight.Bold, Ink.text2))
             }
         }
     }
@@ -357,8 +358,8 @@ private fun ChooseRow(onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("Choose what alerts you", style = text(15, FontWeight.SemiBold))
-            Text("Tracker, signals, your coins and exit plans", style = text(13, color = Ink.muted))
+            Text(tr("Choose what alerts you"), style = text(15, FontWeight.SemiBold))
+            Text(tr("Tracker, signals, your coins and exit plans"), style = text(13, color = Ink.muted))
         }
         Icon(NIcons.chevronRight, contentDescription = null, tint = Ink.muted, modifier = Modifier.size(20.dp))
     }

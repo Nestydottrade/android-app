@@ -17,25 +17,30 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.text
 
 /** A wallet tag as a chip: the book's tags, and Tracked for a wallet the user follows. */
-enum class WalletTag(val label: String, val bg: Color, val line: Color, val ink: Color) {
-    CREATOR("Creator", Color.Transparent, Ink.violet.copy(alpha = 0.6f), Ink.violetSoft),
-    TEAM("Team", Color.Transparent, Ink.teal.copy(alpha = 0.55f), Ink.teal),
-    SNIPER("Sniper", Color.Transparent, Color(0x995AA9F5), Ink.sniper),
-    BUNDLER("Bundler", Color.Transparent, Ink.amber.copy(alpha = 0.55f), Ink.amber),
-    CLUSTER("Cluster", Ink.pink, Ink.pink, Ink.pinkInk),
-    DEV("Dev", Color.Transparent, Ink.violet.copy(alpha = 0.6f), Ink.violetSoft),
-    FLIPPER("Flipper", Color.Transparent, Ink.line3, Ink.text2),
-    HOLDER("Holder", Color.Transparent, Ink.greenLine, Ink.greenSoft),
-    TRACKED("Tracked", Ink.greenDeep, Ink.greenLine, Ink.green),
+enum class WalletTag(private val key: String, val bg: Color, val line: Color, val ink: Color) {
+    CREATOR(trKey("Creator"), Color.Transparent, Ink.violet.copy(alpha = 0.6f), Ink.violetSoft),
+    TEAM(trKey("Team"), Color.Transparent, Ink.teal.copy(alpha = 0.55f), Ink.teal),
+    SNIPER(trKey("Sniper"), Color.Transparent, Color(0x995AA9F5), Ink.sniper),
+    BUNDLER(trKey("Bundler"), Color.Transparent, Ink.amber.copy(alpha = 0.55f), Ink.amber),
+    CLUSTER(trKey("Cluster"), Ink.pink, Ink.pink, Ink.pinkInk),
+    DEV(trKey("Dev"), Color.Transparent, Ink.violet.copy(alpha = 0.6f), Ink.violetSoft),
+    FLIPPER(trKey("Flipper"), Color.Transparent, Ink.line3, Ink.text2),
+    HOLDER(trKey("Holder"), Color.Transparent, Ink.greenLine, Ink.greenSoft),
+    TRACKED(trKey("Tracked"), Ink.greenDeep, Ink.greenLine, Ink.green),
 
     // The Key wallets list's own parts, never read from a tag.
-    INSIDER("Insider", Color.Transparent, Ink.pink.copy(alpha = 0.55f), Ink.pink),
-    TOP("Top 10", Color.Transparent, Ink.line3, Ink.text2),
-    BIG("Big buy", Color.Transparent, Ink.greenLine, Ink.greenSoft);
+    INSIDER(trKey("Insider"), Color.Transparent, Ink.pink.copy(alpha = 0.55f), Ink.pink),
+    TOP(trKey("Top 10"), Color.Transparent, Ink.line3, Ink.text2),
+    BIG(trKey("Big buy"), Color.Transparent, Ink.greenLine, Ink.greenSoft);
+
+    /** Its name in the language the app shows. */
+    val label: String get() = tr(key)
 
     companion object {
         fun of(tag: String?): WalletTag? = when (tag?.lowercase()) {

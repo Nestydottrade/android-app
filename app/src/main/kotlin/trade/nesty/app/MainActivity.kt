@@ -8,6 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import trade.nesty.app.alerts.Notifier
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.i18n.I18n
 import trade.nesty.app.ui.AppRoot
 import trade.nesty.app.ui.theme.NestyTheme
 
@@ -19,6 +20,8 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
         )
         super.onCreate(savedInstanceState)
+        // Android starts the screen again when the phone's languages change.
+        I18n.phoneChanged()
         // A tapped notification: its screen opens once the wallets are open (not on a restore).
         if (savedInstanceState == null) openLink(intent)
         setContent {

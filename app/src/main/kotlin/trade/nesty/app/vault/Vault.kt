@@ -1,5 +1,6 @@
 package trade.nesty.app.vault
 
+import trade.nesty.app.i18n.tr
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import trade.nesty.app.evm.EcSignature
@@ -425,7 +426,7 @@ class Vault(
                 throw VaultException(VaultError.DUPLICATE)
             }
             val id = Hex.encode(ByteArray(8).also(random::nextBytes))
-            val info = WalletInfo(id, cleanName(name).ifEmpty { "Wallet ${public.wallets.size + 1}" }, kind, evm, sol, now(), backedUp)
+            val info = WalletInfo(id, cleanName(name).ifEmpty { tr("Wallet {1}", public.wallets.size + 1) }, kind, evm, sol, now(), backedUp)
             val secrets = rec.secrets + (id to VaultCrypto.seal(k, secret, aad(rec.kdf, "secret|$id"), random))
             // The first wallet trades; a later one waits until it is picked.
             savePublic(k, public.copy(wallets = public.wallets + info, active = public.active ?: id), secrets)

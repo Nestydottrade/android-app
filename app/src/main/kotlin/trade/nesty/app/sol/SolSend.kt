@@ -1,6 +1,7 @@
 package trade.nesty.app.sol
 
 import trade.nesty.app.evm.formatUnits
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.keys.Base58
 import java.math.BigInteger
 
@@ -35,11 +36,11 @@ object SolSend {
     /** Why a coin cannot be sent at all, from its mint; null when it can (transfers.ts sendBlock). */
     fun coinBlock(meta: SolTokenMeta): String? {
         val ext = meta.extensions
-        val name = meta.symbol.ifBlank { "this coin" }
+        val name = meta.symbol.ifBlank { tr("this coin") }
         return when {
-            Layouts.EXT_NON_TRANSFERABLE in ext -> "${meta.symbol.ifBlank { "This coin" }} cannot be transferred."
-            Layouts.EXT_TRANSFER_HOOK in ext -> "Nesty cannot send $name: it runs a program of its own on every transfer."
-            Layouts.EXT_TRANSFER_FEE_CONFIG in ext -> "Nesty cannot send $name: it takes a fee on every transfer."
+            Layouts.EXT_NON_TRANSFERABLE in ext -> tr("{1} cannot be transferred.", meta.symbol.ifBlank { tr("This coin") })
+            Layouts.EXT_TRANSFER_HOOK in ext -> tr("Nesty cannot send {1}: it runs a program of its own on every transfer.", name)
+            Layouts.EXT_TRANSFER_FEE_CONFIG in ext -> tr("Nesty cannot send {1}: it takes a fee on every transfer.", name)
             else -> null
         }
     }
@@ -52,14 +53,17 @@ object SolSend {
     fun coinSendBlock(lamports: BigInteger, rent: BigInteger, fee: BigInteger, minBalance: BigInteger): String? {
         val left = lamports - fee - rent
         if (left.signum() >= 0 && (left.signum() == 0 || left >= minBalance)) return null
-        val what = if (rent.signum() > 0) "the fee and the receiver's account for this coin take" else "the fee takes"
-        return "Not enough SOL: $what ${sol(fee + rent)} SOL, and a wallet must keep at least ${sol(minBalance)} SOL."
+        return if (rent.signum() > 0) {
+            tr("Not enough SOL: the fee and the receiver's account for this coin take {1} SOL, and a wallet must keep at least {2} SOL.", sol(fee + rent), sol(minBalance))
+        } else {
+            tr("Not enough SOL: the fee takes {1} SOL, and a wallet must keep at least {2} SOL.", sol(fee + rent), sol(minBalance))
+        }
     }
 
     /** Kinds funds are lost at: Nesty refuses to send to them. */
     val LOSING = setOf(SolRecipientKind.PROGRAM, SolRecipientKind.MINT, SolRecipientKind.TOKEN_ACCOUNT)
 
-    const val NOT_A_WALLET = "This address is not a wallet: funds sent there are lost."
+    val NOT_A_WALLET: String get() = tr("This address is not a wallet: funds sent there are lost.")
 
     private fun sol(lamports: BigInteger) = formatUnits(lamports, 9)
 
@@ -73,20 +77,20 @@ object SolSend {
      */
     fun sendBlock(lamports: BigInteger, value: BigInteger, fee: BigInteger, minBalance: BigInteger): String? {
         val left = lamports - value - fee
-        if (left.signum() < 0) return "Amount plus fee is more than the balance."
-        if (left.signum() > 0 && left < minBalance) return "Send everything, or leave at least ${sol(minBalance)} SOL: Solana closes a wallet below that."
+        if (left.signum() < 0) return tr("Amount plus fee is more than the balance.")
+        if (left.signum() > 0 && left < minBalance) return tr("Send everything, or leave at least {1} SOL: Solana closes a wallet below that.", sol(minBalance))
         // Emptying it: what the fee leaves must still be allowed, for the transfer to take.
-        if (left.signum() == 0 && value < minBalance) return "Too little to empty this wallet: that takes at least ${sol(minBalance + fee)} SOL."
+        if (left.signum() == 0 && value < minBalance) return tr("Too little to empty this wallet: that takes at least {1} SOL.", sol(minBalance + fee))
         return null
     }
 
     /** Why a plain SOL transfer of `value` to `to` (its account `acc`) cannot be made, or null. */
     fun newAddressBlock(acc: SolAccount?, value: BigInteger, minBalance: BigInteger): String? =
-        if (acc == null && value < minBalance) "A new address needs at least ${sol(minBalance)} SOL to exist." else null
+        if (acc == null && value < minBalance) tr("A new address needs at least {1} SOL to exist.", sol(minBalance)) else null
 
     /** Why a bridge may not pay `minOut` lamports to an address (its account `acc`), or null: a new wallet must be paid its rent. */
     fun payoutBlock(acc: SolAccount?, minOut: BigInteger, minBalance: BigInteger): String? =
-        if (acc != null || minOut >= minBalance) null else "A new Solana wallet needs at least ${sol(minBalance)} SOL to exist: bridge a little more."
+        if (acc != null || minOut >= minBalance) null else tr("A new Solana wallet needs at least {1} SOL to exist: bridge a little more.", sol(minBalance))
 
     /** What an address is on chain, from its account (null when it holds nothing). */
     fun recipientKind(to: String, acc: SolAccount?): SolRecipientKind {

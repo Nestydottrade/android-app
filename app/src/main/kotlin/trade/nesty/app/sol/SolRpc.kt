@@ -34,6 +34,7 @@ import java.io.IOException
 import java.math.BigInteger
 import java.util.Base64
 import java.util.concurrent.atomic.AtomicLong
+import trade.nesty.app.i18n.tr
 
 class SolAccount(val owner: String, val lamports: BigInteger, val data: ByteArray, val executable: Boolean = false)
 
@@ -95,7 +96,7 @@ object SolRpcs {
             val eo = err.jsonObject
             throw SolRpcError(
                 eo["code"]?.jsonPrimitive?.intOrNull ?: -1,
-                eo["message"]?.jsonPrimitive?.contentOrNull ?: "RPC error",
+                eo["message"]?.jsonPrimitive?.contentOrNull ?: tr("RPC error"),
                 eo["data"],
             )
         }
@@ -166,7 +167,7 @@ internal suspend fun postJson(http: OkHttpClient, url: String, body: String, tim
             if (!r.isSuccessful) throw SolRpcs.sizeRefusal(t) ?: SolRpcError(if (r.code == 429) 429 else -32005, "HTTP ${r.code}")
             t
         }
-    } ?: throw IOException("No answer in ${timeoutMs / 1000.0} s")
+    } ?: throw IOException(tr("No answer in {1} s", timeoutMs / 1000.0))
     return SolRpcs.answer(Json.parseToJsonElement(text))
 }
 
@@ -210,7 +211,7 @@ class SolBroadcast(
         }
         background.launch {
             jobs.joinAll()
-            winner.completeExceptionally(errors.firstOrNull { it != null } ?: IOException("No RPC accepted it"))
+            winner.completeExceptionally(errors.firstOrNull { it != null } ?: IOException(tr("No RPC accepted it")))
         }
         return winner.await()
     }
@@ -348,7 +349,7 @@ class SolRpc(private val reads: SolCall, private val sender: SolSender? = null, 
     /** Sends to the public RPCs (never through Nesty's server). */
     /** A private send never falls back to the public RPCs: without a block engine it fails. */
     suspend fun broadcast(raw: ByteArray, privately: Boolean = false): String =
-        if (privately) (privateSender ?: throw IOException("No private route")).send(raw) else (sender ?: throw IOException("No sender")).send(raw)
+        if (privately) (privateSender ?: throw IOException(tr("No private route"))).send(raw) else (sender ?: throw IOException(tr("No sender"))).send(raw)
 
     companion object {
         fun parseAccount(e: JsonElement): SolAccount? {

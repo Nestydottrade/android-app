@@ -16,6 +16,7 @@ import trade.nesty.app.evm.StepStatus
 import trade.nesty.app.evm.TradeStatus
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
+import trade.nesty.app.i18n.tr
 
 /**
  * The watcher's market on the phone: holdings and sell quotes read from each chain through the
@@ -40,8 +41,8 @@ class EngineExitMarket(
     }
 
     override suspend fun sellValue(plan: ExitPlan, amount: BigInteger): SellValue {
-        val chain = plan.chain ?: return SellValue.None("This chain is not traded here.")
-        if (!trading.canTrade(chain)) return SellValue.None("This version of Nesty cannot trade on ${chain.title}.")
+        val chain = plan.chain ?: return SellValue.None(tr("This chain is not traded here."))
+        if (!trading.canTrade(chain)) return SellValue.None(tr("This version of Nesty cannot trade on {1}.", chain.title))
         val info = info(plan, chain)
         // A failed read throws: the watcher says the check failed and tries again.
         val usd = trading.sellValueUsd(chain, plan.token, amount, info)
@@ -53,13 +54,13 @@ class EngineExitMarket(
         } catch (e: Exception) {
             null
         }
-        return SellValue.None(why ?: "No route to sell right now.")
+        return SellValue.None(why ?: tr("No route to sell right now."))
     }
 
     override suspend fun sell(plan: ExitPlan, bps: Int): SellEnd {
-        val chain = plan.chain ?: return SellEnd(false, error = "This chain is not traded here.")
+        val chain = plan.chain ?: return SellEnd(false, error = tr("This chain is not traded here."))
         val info = info(plan, chain)
-        val title = if (bps >= 10_000) "Exit plan sold your ${plan.label}" else "Exit plan sold ${bps / 100}% of your ${plan.label}"
+        val title = if (bps >= 10_000) tr("Exit plan sold your {1}", plan.label) else tr("Exit plan sold {1}% of your {2}", bps / 100, plan.label)
         val flow = try {
             trading.sellForWatch(plan.walletId, plan.wallet, chain, plan.token, bps, settings.presets.first(), info, title, presetIndex = 0)
         } catch (e: TradeRefused) {
@@ -67,11 +68,11 @@ class EngineExitMarket(
         }
         // The engine ends every trade (landed, failed or dropped); the cap only guards against a hang.
         val end = withTimeoutOrNull(SELL_CAP_MS) { flow.first { it.status != TradeStatus.WORKING } }
-            ?: return SellEnd(false, error = "No answer from the chain yet. Check your activity before selling again.", retry = false)
+            ?: return SellEnd(false, error = tr("No answer from the chain yet. Check your activity before selling again."), retry = false)
         if (end.status == TradeStatus.DONE) return SellEnd(true, usd = trading.proceedsUsd(end, chain, trading.nativeUsd(chain)))
         // Sent and not seen to fail: it may still land, so it is not sent again.
         val unsure = end.swap.hash != null && end.swap.status != StepStatus.FAILED
-        return SellEnd(false, error = end.swap.error ?: "The sell did not go through.", retry = !unsure)
+        return SellEnd(false, error = end.swap.error ?: tr("The sell did not go through."), retry = !unsure)
     }
 
     override fun fills(plan: ExitPlan): List<Fill> {

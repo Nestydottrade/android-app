@@ -18,15 +18,20 @@ import trade.nesty.app.data.NestyApi
 import trade.nesty.app.data.Served
 import trade.nesty.app.data.Settings
 import trade.nesty.app.data.Share
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.Checks
 import trade.nesty.app.ui.Flag
 import trade.nesty.app.ui.venueName
 
-enum class Lane(val label: String) {
-    NEW("New"),
-    NEAR("Final stretch"),
-    GRAD("Graduated"),
-    TREND("Trending"),
+enum class Lane(private val key: String) {
+    NEW(trKey("New")),
+    NEAR(trKey("Final stretch")),
+    GRAD(trKey("Graduated")),
+    TREND(trKey("Trending"));
+
+    /** Its name in the language the app shows. */
+    val label: String get() = tr(key)
 }
 
 /** A coin as a Discover list shows it. */

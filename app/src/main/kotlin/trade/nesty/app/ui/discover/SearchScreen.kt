@@ -48,6 +48,7 @@ import kotlinx.coroutines.delay
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.ListToken
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.CoinAvatar
 import trade.nesty.app.ui.rememberCoinImage
 import trade.nesty.app.ui.Divider
@@ -107,7 +108,7 @@ fun SearchScreen() {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            IconButton48(NIcons.arrowBack, "Back", Ink.text) { nav.pop() }
+            IconButton48(NIcons.arrowBack, tr("Back"), Ink.text) { nav.pop() }
             Row(
                 Modifier
                     .weight(1f)
@@ -120,7 +121,7 @@ fun SearchScreen() {
             ) {
                 Icon(NIcons.search, contentDescription = null, tint = Ink.muted, modifier = Modifier.size(18.dp))
                 Box(Modifier.weight(1f)) {
-                    if (q.isEmpty()) Text("Name, symbol or address", style = text(15, color = Ink.muted))
+                    if (q.isEmpty()) Text(tr("Name, symbol or address"), style = text(15, color = Ink.muted))
                     BasicTextField(
                         value = field,
                         onValueChange = { field = if (it.text.length > 120) it.copy(text = it.text.take(120)) else it },
@@ -129,13 +130,13 @@ fun SearchScreen() {
                         cursorBrush = SolidColor(Ink.green),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search, autoCorrectEnabled = false),
                         keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
-                        modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = "Search coins or paste an address" },
+                        modifier = Modifier.fillMaxWidth().focusRequester(focus).semantics { contentDescription = tr("Search coins or paste an address") },
                     )
                 }
                 if (q.isNotEmpty()) {
                     Icon(
                         NIcons.close,
-                        contentDescription = "Clear",
+                        contentDescription = tr("Clear"),
                         tint = Ink.muted,
                         modifier = Modifier.size(18.dp).clickable(role = Role.Button) { field = TextFieldValue("") },
                     )
@@ -144,10 +145,10 @@ fun SearchScreen() {
         }
         Divider()
         when (val f = found) {
-            Found.Idle -> EmptyNote("Search every chain by name or symbol, or paste a coin's address.")
-            Found.Looking -> EmptyNote("Looking…")
-            Found.Failed -> EmptyNote("Could not reach Nesty. Try again.")
-            is Found.Some -> if (f.list.isEmpty()) EmptyNote("No coin found.") else LazyColumn(Modifier.fillMaxSize()) {
+            Found.Idle -> EmptyNote(tr("Search every chain by name or symbol, or paste a coin's address."))
+            Found.Looking -> EmptyNote(tr("Looking…"))
+            Found.Failed -> EmptyNote(tr("Could not reach Nesty. Try again."))
+            is Found.Some -> if (f.list.isEmpty()) EmptyNote(tr("No coin found.")) else LazyColumn(Modifier.fillMaxSize()) {
                 uniqueItems(f.list, { it.feed + ":" + it.address.lowercase() }) { t ->
                     val chain = Chain.of(t.feed) ?: return@uniqueItems
                     SearchRow(t, chain) {
@@ -158,7 +159,7 @@ fun SearchScreen() {
                 if (f.partial) {
                     item {
                         Text(
-                            "Some coins may be missing. Try again in a moment.",
+                            tr("Some coins may be missing. Try again in a moment."),
                             style = text(12, color = Ink.muted),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
@@ -178,7 +179,7 @@ private fun SearchRow(t: ListToken, chain: Chain, onClick: () -> Unit) {
             Modifier
                 .fillMaxWidth()
                 .heightIn(min = 68.dp)
-                .clickable(onClickLabel = "Open $symbol", role = Role.Button, onClick = onClick)
+                .clickable(onClickLabel = tr("Open {1}", symbol), role = Role.Button, onClick = onClick)
                 .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),

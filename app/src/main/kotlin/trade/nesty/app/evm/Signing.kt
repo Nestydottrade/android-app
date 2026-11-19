@@ -10,6 +10,7 @@ import org.bouncycastle.crypto.signers.HMacDSAKCalculator
 import org.bouncycastle.math.ec.ECAlgorithms
 import org.bouncycastle.math.ec.ECPoint
 import org.bouncycastle.math.ec.FixedPointCombMultiplier
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.keys.keccak256
 import java.io.ByteArrayOutputStream
 import java.math.BigInteger

@@ -1,6 +1,7 @@
 package trade.nesty.app.sol.dex
 
 import trade.nesty.app.evm.Side
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.Instruction
 import trade.nesty.app.sol.QuoteAsset
 import trade.nesty.app.sol.Reader
@@ -221,7 +222,7 @@ object LaunchLab : DexModule<LaunchLabVenue>(DexKind.LAUNCHLAB, "LanMV9sAd7wArD4
     }
 
     override fun idle(v: LaunchLabVenue, nowSec: Double): String? =
-        if (v.status == FUNDING) null else "This LaunchLab curve is complete. Trading moves to Raydium once it migrates."
+        if (v.status == FUNDING) null else tr("This LaunchLab curve is complete. Trading moves to Raydium once it migrates.")
 
     override fun swap(v: LaunchLabVenue, side: Side, user: String, amountIn: BigInteger, minOut: BigInteger): Instruction {
         val coinAta = SolAddr.associatedTokenAddress(user, v.mint, v.tokenProgram)

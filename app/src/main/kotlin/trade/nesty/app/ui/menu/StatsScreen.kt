@@ -41,6 +41,8 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.ChainStats
 import trade.nesty.app.data.NestyApi
 import trade.nesty.app.data.StatsReport
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.ChainDot
@@ -54,11 +56,15 @@ import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.figure
 import trade.nesty.app.ui.theme.text
 
-enum class StatsWindow(val window: String, val label: String, val words: String, val ago: String) {
-    H1("1h", "1H", "the last hour", "1h ago"),
-    H6("6h", "6H", "the last 6 hours", "6h ago"),
-    H24("24h", "24H", "the last 24 hours", "24h ago"),
-    D7("7d", "7D", "the last 7 days", "7d ago"),
+enum class StatsWindow(val window: String, val label: String, private val wordsKey: String, private val agoKey: String) {
+    H1("1h", "1H", trKey("the last hour"), trKey("1h ago")),
+    H6("6h", "6H", trKey("the last 6 hours"), trKey("6h ago")),
+    H24("24h", "24H", trKey("the last 24 hours"), trKey("24h ago")),
+    D7("7d", "7D", trKey("the last 7 days"), trKey("7d ago"));
+
+    /** The window in words and how long ago it began, in the language the app shows. */
+    val words: String get() = tr(wordsKey)
+    val ago: String get() = tr(agoKey)
 }
 
 class StatsModel(private val api: NestyApi) {
@@ -92,9 +98,9 @@ fun sumBars(chains: List<ChainStats>): List<Double> {
 
 private fun stepWords(ms: Long): String = when {
     ms <= 0 -> ""
-    ms < 3_600_000 -> "each bar ${ms / 60_000} min"
-    ms == 3_600_000L -> "each bar 1 hour"
-    else -> "each bar ${ms / 3_600_000} hours"
+    ms < 3_600_000 -> tr("each bar {1} min", ms / 60_000)
+    ms == 3_600_000L -> tr("each bar 1 hour")
+    else -> tr("each bar {1} hours", ms / 3_600_000)
 }
 
 private fun pctOf(part: Double, whole: Double) = if (whole > 0) Math.round(part / whole * 100) else 0
@@ -107,8 +113,8 @@ fun StatsScreen() {
     val r = model.report()
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Stats", onBack = { nav.pop() }) {
-            Text("Launchpad coins", style = text(13, color = Ink.muted), modifier = Modifier.padding(end = 12.dp))
+        BackHeader(tr("Stats"), onBack = { nav.pop() }) {
+            Text(tr("Launchpad coins"), style = text(13, color = Ink.muted), modifier = Modifier.padding(end = 12.dp))
         }
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 24.dp),
@@ -130,7 +136,7 @@ fun StatsScreen() {
                 }
             }
             if (r == null) {
-                EmptyNote(if (model.failed) "Could not reach Nesty. Trying again." else "Loading…")
+                EmptyNote(if (model.failed) tr("Could not reach Nesty. Trying again.") else tr("Loading…"))
                 return@Column
             }
             val cs = r.chains
@@ -142,10 +148,10 @@ fun StatsScreen() {
             val launched = cs.sumOf { it.launched }.toDouble()
             val devSold = cs.sumOf { it.devSold }.toDouble()
             val tiles = listOf(
-                Triple("Trades", Fmt.count(trades.toLong()), "${pctOf(buys, trades)}% were buys"),
-                Triple("Volume", Fmt.usd(volume), "${pctOf(bought, volume)}% bought"),
-                Triple("Traders", Fmt.count(traders.toLong()), if (traders > 0) String.format(java.util.Locale.US, "%.1f trades each", trades / traders) else Fmt.DASH),
-                Triple("New coins", Fmt.count(launched.toLong()), "Dev sold on ${pctOf(devSold, launched)}%"),
+                Triple(tr("Trades"), Fmt.count(trades.toLong()), tr("{1}% were buys", pctOf(buys, trades))),
+                Triple(tr("Volume"), Fmt.usd(volume), tr("{1}% bought", pctOf(bought, volume))),
+                Triple(tr("Traders"), Fmt.count(traders.toLong()), if (traders > 0) tr("{1} trades each", String.format(java.util.Locale.US, "%.1f", trades / traders)) else Fmt.DASH),
+                Triple(tr("New coins"), Fmt.count(launched.toLong()), tr("Dev sold on {1}%", pctOf(devSold, launched))),
             )
             for (pair in tiles.chunked(2)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -164,7 +170,7 @@ fun StatsScreen() {
             Card {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
-                        Text("Trades over ${model.window.words}", style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+                        Text(tr("Trades over {1}", model.window.words), style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
                         Text(stepWords(r.step), style = text(13, color = Ink.muted))
                     }
                     val top = bars.maxOrNull()?.takeIf { it > 0 } ?: 1.0
@@ -172,7 +178,7 @@ fun StatsScreen() {
                         Modifier
                             .fillMaxWidth()
                             .height(96.dp)
-                            .semantics { contentDescription = "Trades over ${model.window.words}, ${bars.size} bars, ${Fmt.count(trades.toLong())} in all" },
+                            .semantics { contentDescription = tr("Trades over {1}, {2} bars, {3} in all", model.window.words, bars.size, Fmt.count(trades.toLong())) },
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalAlignment = Alignment.Bottom,
                     ) {
@@ -190,12 +196,12 @@ fun StatsScreen() {
                     }
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text(model.window.ago, style = text(12, color = Ink.muted))
-                        Text("now", style = text(12, color = Ink.muted))
+                        Text(tr("now"), style = text(12, color = Ink.muted))
                     }
                 }
             }
             Card {
-                Text("By chain", style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 6.dp).semantics { heading() })
+                Text(tr("By chain"), style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 6.dp).semantics { heading() })
                 for ((i, c) in cs.sortedByDescending { it.volume }.withIndex()) {
                     val chain = Chain.of(c.chain.toString()) ?: continue
                     if (i > 0) Divider()
@@ -208,19 +214,23 @@ fun StatsScreen() {
                         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(chain.title, style = text(15, FontWeight.Bold))
                             Text(
-                                "${Fmt.count(c.launched)} launched" + if (c.devSold > 0 && c.launched > 0) " · dev sold on ${pctOf(c.devSold.toDouble(), c.launched.toDouble())}%" else "",
+                                if (c.devSold > 0 && c.launched > 0) {
+                                    tr("{1} launched · dev sold on {2}%", Fmt.count(c.launched), pctOf(c.devSold.toDouble(), c.launched.toDouble()))
+                                } else {
+                                    tr("{1} launched", Fmt.count(c.launched))
+                                },
                                 style = text(12, color = Ink.muted),
                             )
                         }
                         Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                             Text(Fmt.usd(c.volume), style = figure(17, FontWeight.SemiBold))
-                            Text(Fmt.counted(c.trades, "trade"), style = text(12, color = Ink.muted))
+                            Text(Fmt.counted(c.trades, "{1} trade", "{1} trades"), style = text(12, color = Ink.muted))
                         }
                     }
                 }
             }
             Text(
-                "Counted from trades on launchpad curves. Solana is not counted yet. A wallet that trades on two chains counts once on each.",
+                tr("Counted from trades on launchpad curves. Solana is not counted yet. A wallet that trades on two chains counts once on each."),
                 style = text(13, color = Ink.muted, lineHeight = 18.sp),
                 modifier = Modifier.padding(horizontal = 4.dp),
             )

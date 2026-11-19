@@ -1,6 +1,7 @@
 package trade.nesty.app.sol.dex
 
 import trade.nesty.app.evm.Side
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.Instruction
 import trade.nesty.app.sol.Layouts
 import trade.nesty.app.sol.QuoteAsset
@@ -530,7 +531,7 @@ object Orca : DexModule<OrcaVenue>(DexKind.ORCA, "whirLbMiicVdio4qvUfM5KAg6Ct8Vw
     }
 
     override fun idle(v: OrcaVenue, nowSec: Double): String? =
-        if (v.clock.unixTime < v.tradeFrom) "This Orca pool has not opened to trading yet." else null
+        if (v.clock.unixTime < v.tradeFrom) tr("This Orca pool has not opened to trading yet.") else null
 
     override fun swap(v: OrcaVenue, side: Side, user: String, amountIn: BigInteger, minOut: BigInteger): Instruction {
         val aToB = aIn(v, side)

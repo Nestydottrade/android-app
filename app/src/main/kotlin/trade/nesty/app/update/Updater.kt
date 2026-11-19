@@ -14,6 +14,7 @@ import kotlinx.coroutines.withContext
 import trade.nesty.app.data.AppRelease
 import java.io.File
 import kotlin.coroutines.coroutineContext
+import trade.nesty.app.i18n.tr
 
 /** Where the updater keeps its few facts: the phone's preferences, or memory in tests. */
 interface UpdateDisk {
@@ -259,7 +260,7 @@ class Updater(
         val why = ApkCheck.refusal(facts, phone.pkg, r.code, phone.installed())
         if (why != null) {
             file.delete()
-            return@withContext UpdateState.Failed(r, "$why Nesty deleted it.")
+            return@withContext UpdateState.Failed(r, tr("{1} Nesty deleted it.", why))
         }
         UpdateState.Ready(r, file, signerRead = facts?.signers?.isNotEmpty() == true)
     }
@@ -284,7 +285,7 @@ class Updater(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            _state.value = UpdateState.Failed(s.release, "Android could not start the install. Try again.")
+            _state.value = UpdateState.Failed(s.release, tr("Android could not start the install. Try again."))
         }
     }
 
@@ -297,16 +298,16 @@ class Updater(
             InstallEnd.ABORTED -> handed?.takeIf { file.isFile && it.release == r } ?: UpdateState.Out(r)
             InstallEnd.CONFLICT -> {
                 file.delete()
-                UpdateState.Failed(r, "Android refused it: it is signed differently from the Nesty on this phone. Nesty deleted it.")
+                UpdateState.Failed(r, tr("Android refused it: it is signed differently from the Nesty on this phone. Nesty deleted it."))
             }
             InstallEnd.INVALID -> {
                 file.delete()
-                UpdateState.Failed(r, "Android found the file broken. Nesty deleted it.")
+                UpdateState.Failed(r, tr("Android found the file broken. Nesty deleted it."))
             }
-            InstallEnd.STORAGE -> UpdateState.Failed(r, "There is not enough room on this phone. Free some space and try again.")
-            InstallEnd.INCOMPATIBLE -> UpdateState.Failed(r, "Android says this phone cannot run this version.")
-            InstallEnd.BLOCKED -> UpdateState.Failed(r, "Android blocked the install.")
-            InstallEnd.OTHER -> UpdateState.Failed(r, "Android did not install it. Try again.")
+            InstallEnd.STORAGE -> UpdateState.Failed(r, tr("There is not enough room on this phone. Free some space and try again."))
+            InstallEnd.INCOMPATIBLE -> UpdateState.Failed(r, tr("Android says this phone cannot run this version."))
+            InstallEnd.BLOCKED -> UpdateState.Failed(r, tr("Android blocked the install."))
+            InstallEnd.OTHER -> UpdateState.Failed(r, tr("Android did not install it. Try again."))
         }
     }
 
@@ -330,8 +331,8 @@ class Updater(
         private const val UPDATED_TO = "updatedTo"
         private const val NOTIFIED = "notified"
 
-        const val STOPPED = "The download stopped. Check your connection and try again."
-        const val MISMATCH = "The file did not match the published fingerprint, so Nesty deleted it."
-        const val STUCK = "The update stopped. Try again."
+        val STOPPED: String get() = tr("The download stopped. Check your connection and try again.")
+        val MISMATCH: String get() = tr("The file did not match the published fingerprint, so Nesty deleted it.")
+        val STUCK: String get() = tr("The update stopped. Try again.")
     }
 }

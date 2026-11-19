@@ -9,6 +9,7 @@ import java.math.BigInteger
 import java.security.MessageDigest
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import trade.nesty.app.i18n.tr
 
 private fun hmacSha512(key: ByteArray, data: ByteArray): ByteArray {
     val mac = Mac.getInstance("HmacSHA512")
@@ -165,6 +166,7 @@ object Hd {
     /** The EVM private key of account `index`. The caller wipes it. */
     fun evmKey(seed: ByteArray, index: Int = 0): ByteArray {
         require(index >= 0) { "Bad index" }
+        // BIP-32's own constant: never translated, or the same phrase would make other wallets.
         var i = hmacSha512("Bitcoin seed".toByteArray(Charsets.US_ASCII), seed)
         var key = i.copyOfRange(0, 32)
         var chain = i.copyOfRange(32, 64)

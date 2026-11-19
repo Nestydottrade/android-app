@@ -26,6 +26,7 @@ import trade.nesty.app.evm.act
 import trade.nesty.app.evm.hexBytes
 import trade.nesty.app.evm.sameAddress
 import trade.nesty.app.evm.sanitizeLabel
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.AccountMeta
 import trade.nesty.app.sol.Instruction
 import trade.nesty.app.sol.SolAddr
@@ -119,7 +120,7 @@ object Relay {
 
     class RelayError(message: String) : Exception(message)
 
-    private fun format(): Nothing = throw RelayError("Unexpected quote format")
+    private fun format(): Nothing = throw RelayError(tr("Unexpected quote format"))
 
     private fun JsonElement?.obj(): JsonObject = this as? JsonObject ?: format()
 
@@ -251,36 +252,36 @@ object Relay {
         val lead = if (approval && q.steps.size == 2) q.steps[0] else null
         val step = q.steps.lastOrNull()
         if (step == null || q.steps.size != (if (lead != null) 2 else 1) || q.steps.any { it.items.size != 1 }) {
-            throw RelayError("Quote has unexpected steps")
+            throw RelayError(tr("Quote has unexpected steps"))
         }
-        if (lead != null && (lead.id != "approve" || lead.kind != "transaction")) throw RelayError("Quote has unexpected steps")
+        if (lead != null && (lead.id != "approve" || lead.kind != "transaction")) throw RelayError(tr("Quote has unexpected steps"))
         val item = step.items[0]
-        if (step.kind != "transaction") throw RelayError("Quote step is not a transaction")
+        if (step.kind != "transaction") throw RelayError(tr("Quote step is not a transaction"))
 
         val toSolana = isSolana(p.toChainId)
         val r = q.recipient
         // Base58 is case-sensitive: a Solana recipient must match exactly.
         val sameRecipient = if (toSolana) r == p.recipient else EVM_ADDRESS.matches(r) && EVM_ADDRESS.matches(p.recipient) && sameAddress(r, p.recipient)
-        if (!sameRecipient) throw RelayError("Quote recipient differs from your wallet")
-        if (q.outChainId != p.toChainId.toDouble()) throw RelayError("Quote pays out on a different chain")
-        if (q.outAddress.lowercase() != (if (toSolana) SOLANA_NATIVE.lowercase() else NATIVE)) throw RelayError("Quote pays out a token, not the native coin")
+        if (!sameRecipient) throw RelayError(tr("Quote recipient differs from your wallet"))
+        if (q.outChainId != p.toChainId.toDouble()) throw RelayError(tr("Quote pays out on a different chain"))
+        if (q.outAddress.lowercase() != (if (toSolana) SOLANA_NATIVE.lowercase() else NATIVE)) throw RelayError(tr("Quote pays out a token, not the native coin"))
 
         val amountOut = q.amountOut
         val minOut = q.minimumOut
-        if (p.exactOut && amountOut < p.amount) throw RelayError("Quote pays out less than asked")
+        if (p.exactOut && amountOut < p.amount) throw RelayError(tr("Quote pays out less than asked"))
         // One unit of slack for rounding: Relay floors the minimum.
         val reference = if (p.exactOut) p.amount else amountOut
         val floor = reference * BigInteger.valueOf((10_000 - SLIPPAGE_BPS).toLong()) / BigInteger.valueOf(10_000)
-        if (minOut.signum() == 0 || minOut + BigInteger.ONE < floor) throw RelayError("Quote allows more slippage than requested")
+        if (minOut.signum() == 0 || minOut + BigInteger.ONE < floor) throw RelayError(tr("Quote allows more slippage than requested"))
 
         // The request is followed by Relay's id for it, which is not the deposit's id.
         val endpoint = item.endpoint
         val fromPath = endpoint?.let { STATUS_PATH.find(it)?.groupValues?.get(1) }
-        if (endpoint != null && fromPath == null) throw RelayError("Unexpected status path")
+        if (endpoint != null && fromPath == null) throw RelayError(tr("Unexpected status path"))
         val requestId = fromPath ?: step.requestId
-        if (requestId == null || !BYTES32.matches(requestId)) throw RelayError("Quote has no request id")
+        if (requestId == null || !BYTES32.matches(requestId)) throw RelayError(tr("Quote has no request id"))
         for (s in listOfNotNull(lead, step)) {
-            if (s.requestId != null && !s.requestId.equals(requestId, ignoreCase = true)) throw RelayError("Quote names two requests")
+            if (s.requestId != null && !s.requestId.equals(requestId, ignoreCase = true)) throw RelayError(tr("Quote names two requests"))
         }
 
         // Relay lists sub-fees next to their totals: add the two top-level ones, origin gas + relayer.
@@ -311,20 +312,20 @@ object Relay {
     fun checkQuote(q: Quote, p: Ask): EvmQuote {
         val c = checkTerms(q, p)
         val d = c.item.data
-        if (d !is TxData.Evm || d.chainId != p.fromChainId.toDouble()) throw RelayError("Quote is for a different chain")
-        if (!EVM_ADDRESS.matches(d.to) || !sameAddress(d.to, DEPOSITORY)) throw RelayError("Quote targets an unknown contract")
-        val value = d.value.toBigIntegerOrNull() ?: throw RelayError("Quote value differs from the amount")
+        if (d !is TxData.Evm || d.chainId != p.fromChainId.toDouble()) throw RelayError(tr("Quote is for a different chain"))
+        if (!EVM_ADDRESS.matches(d.to) || !sameAddress(d.to, DEPOSITORY)) throw RelayError(tr("Quote targets an unknown contract"))
+        val value = d.value.toBigIntegerOrNull() ?: throw RelayError(tr("Quote value differs from the amount"))
         val amountIn = if (p.exactOut) {
-            if (value.signum() <= 0 || (q.amountIn != null && q.amountIn != value)) throw RelayError("Quote value differs from the amount")
-            if (value > p.cap!!) throw RelayError("Quote asks for more than you confirmed")
+            if (value.signum() <= 0 || (q.amountIn != null && q.amountIn != value)) throw RelayError(tr("Quote value differs from the amount"))
+            if (value > p.cap!!) throw RelayError(tr("Quote asks for more than you confirmed"))
             value
         } else {
-            if (value != p.amount) throw RelayError("Quote value differs from the amount")
+            if (value != p.amount) throw RelayError(tr("Quote value differs from the amount"))
             p.amount
         }
         val data = runCatching { d.data.hexBytes() }.getOrNull()
-        val args = data?.let { runCatching { depositNative.decodeCall(it) }.getOrNull() } ?: throw RelayError("Quote calldata is not a native deposit")
-        if (!sameAddress(args[0] as String, p.user)) throw RelayError("Deposit is not credited to your wallet")
+        val args = data?.let { runCatching { depositNative.decodeCall(it) }.getOrNull() } ?: throw RelayError(tr("Quote calldata is not a native deposit"))
+        if (!sameAddress(args[0] as String, p.user)) throw RelayError(tr("Deposit is not credited to your wallet"))
         return EvmQuote(c.terms.copy(amountIn = amountIn), TxDraft(DEPOSITORY, data, value))
     }
 
@@ -334,28 +335,28 @@ object Relay {
      * wallet. The deposit is built again around the quoted id and must match the quote's to the byte.
      */
     fun checkTokenQuote(q: Quote, p: Ask): TokenQuote {
-        val token = p.token ?: throw RelayError("Quote deposits another token")
+        val token = p.token ?: throw RelayError(tr("Quote deposits another token"))
         val c = checkTerms(q, p, approval = true)
         c.approve?.let { item ->
             val a = item.data
-            if (a !is TxData.Evm || a.chainId != p.fromChainId.toDouble()) throw RelayError("Quote is for a different chain")
-            if (!EVM_ADDRESS.matches(a.to) || !sameAddress(a.to, token)) throw RelayError("Quote approves another token")
-            val args = runCatching { erc20Approve.decodeCall(a.data.hexBytes()) }.getOrNull() ?: throw RelayError("Quote approval is not an approve")
+            if (a !is TxData.Evm || a.chainId != p.fromChainId.toDouble()) throw RelayError(tr("Quote is for a different chain"))
+            if (!EVM_ADDRESS.matches(a.to) || !sameAddress(a.to, token)) throw RelayError(tr("Quote approves another token"))
+            val args = runCatching { erc20Approve.decodeCall(a.data.hexBytes()) }.getOrNull() ?: throw RelayError(tr("Quote approval is not an approve"))
             if (!sameAddress(args[0] as String, DEPOSITORY) || args[1] as BigInteger != p.amount || a.value.toBigIntegerOrNull() != BigInteger.ZERO) {
-                throw RelayError("Quote approval is not for the deposit")
+                throw RelayError(tr("Quote approval is not for the deposit"))
             }
         }
         val d = c.item.data
-        if (d !is TxData.Evm || d.chainId != p.fromChainId.toDouble()) throw RelayError("Quote is for a different chain")
-        if (!EVM_ADDRESS.matches(d.to) || !sameAddress(d.to, DEPOSITORY)) throw RelayError("Quote targets an unknown contract")
-        if (d.value.toBigIntegerOrNull() != BigInteger.ZERO) throw RelayError("Quote sends native value with a token deposit")
+        if (d !is TxData.Evm || d.chainId != p.fromChainId.toDouble()) throw RelayError(tr("Quote is for a different chain"))
+        if (!EVM_ADDRESS.matches(d.to) || !sameAddress(d.to, DEPOSITORY)) throw RelayError(tr("Quote targets an unknown contract"))
+        if (d.value.toBigIntegerOrNull() != BigInteger.ZERO) throw RelayError(tr("Quote sends native value with a token deposit"))
         val quoted = runCatching { d.data.hexBytes() }.getOrNull()
-        val args = quoted?.let { runCatching { depositErc20.decodeCall(it) }.getOrNull() } ?: throw RelayError("Quote calldata is not a token deposit")
-        if (!sameAddress(args[0] as String, p.user)) throw RelayError("Deposit is not credited to your wallet")
-        if (!sameAddress(args[1] as String, token)) throw RelayError("Quote deposits another token")
-        if (args[2] as BigInteger != p.amount) throw RelayError("Quote value differs from the amount")
+        val args = quoted?.let { runCatching { depositErc20.decodeCall(it) }.getOrNull() } ?: throw RelayError(tr("Quote calldata is not a token deposit"))
+        if (!sameAddress(args[0] as String, p.user)) throw RelayError(tr("Deposit is not credited to your wallet"))
+        if (!sameAddress(args[1] as String, token)) throw RelayError(tr("Quote deposits another token"))
+        if (args[2] as BigInteger != p.amount) throw RelayError(tr("Quote value differs from the amount"))
         val data = depositErc20.encode(p.user, token, p.amount, args[3])
-        if (!data.contentEquals(quoted)) throw RelayError("Quote calldata is not a token deposit")
+        if (!data.contentEquals(quoted)) throw RelayError(tr("Quote calldata is not a token deposit"))
         return TokenQuote(c.terms, token, TxDraft(DEPOSITORY, data, BigInteger.ZERO))
     }
 
@@ -374,26 +375,26 @@ object Relay {
      */
     fun checkSolanaQuote(q: Quote, p: Ask): SolQuote {
         val c = checkTerms(q, p)
-        val d = c.item.data as? TxData.Sol ?: throw RelayError("Quote is for a different chain")
+        val d = c.item.data as? TxData.Sol ?: throw RelayError(tr("Quote is for a different chain"))
         val deposits = d.instructions.filter { it.programId != SolAddr.COMPUTE_BUDGET_PROGRAM }
         val ix = deposits.firstOrNull()
-        if (deposits.size != 1 || ix == null) throw RelayError("Quote is not a single deposit")
-        if (ix.programId != RelaySol.PROGRAM) throw RelayError("Quote targets an unknown program")
+        if (deposits.size != 1 || ix == null) throw RelayError(tr("Quote is not a single deposit"))
+        if (ix.programId != RelaySol.PROGRAM) throw RelayError(tr("Quote targets an unknown program"))
         val data = hexOrNull(ix.data)
         if (data == null || data.size != 48 || !RelaySol.DEPOSIT_NATIVE.indices.all { data[it] == RelaySol.DEPOSIT_NATIVE[it] }) {
-            throw RelayError("Quote instruction is not a native deposit")
+            throw RelayError(tr("Quote instruction is not a native deposit"))
         }
         val depositId = data.copyOfRange(16, 48)
         val amount = if (p.exactOut) {
             val asked = le(data, 8, 8)
-            if (asked.signum() <= 0 || (q.amountIn != null && q.amountIn != asked)) throw RelayError("Quote value differs from the amount")
-            if (asked > p.cap!!) throw RelayError("Quote asks for more than you confirmed")
+            if (asked.signum() <= 0 || (q.amountIn != null && q.amountIn != asked)) throw RelayError(tr("Quote value differs from the amount"))
+            if (asked > p.cap!!) throw RelayError(tr("Quote asks for more than you confirmed"))
             asked
         } else p.amount
         val want = RelaySol.depositNative(p.user, amount, depositId)
-        if (!data.contentEquals(want.data)) throw RelayError("Quote value differs from the amount")
-        if (ix.keys.getOrNull(2)?.pubkey != p.user) throw RelayError("Deposit is not credited to your wallet")
-        if (ix.keys != want.keys) throw RelayError("Quote deposit has unexpected accounts")
+        if (!data.contentEquals(want.data)) throw RelayError(tr("Quote value differs from the amount"))
+        if (ix.keys.getOrNull(2)?.pubkey != p.user) throw RelayError(tr("Deposit is not credited to your wallet"))
+        if (ix.keys != want.keys) throw RelayError(tr("Quote deposit has unexpected accounts"))
         return SolQuote(c.terms.copy(amountIn = amount), depositId)
     }
 
@@ -402,12 +403,12 @@ object Relay {
     /** Only depositNative crediting the sending wallet. */
     val rule = ContractRule("Bridge") { tx, ctx ->
         val args = runCatching { depositNative.decodeCall(tx.data) }.getOrNull()
-            ?: return@ContractRule listOf(act("Bridge call", "Only native deposits are allowed"))
+            ?: return@ContractRule listOf(act(tr("Bridge call"), tr("Only native deposits are allowed")))
         val depositor = args[0] as String
-        val label = "Bridge deposit for ${depositor.take(6)}…"
+        val label = tr("Bridge deposit for {1}…", depositor.take(6))
         when {
-            !Validator.isOwn(ctx, depositor) || !sameAddress(depositor, ctx.from) -> listOf(act(label, "Deposit is not credited to the sending wallet"))
-            tx.value.signum() == 0 -> listOf(act(label, "Empty deposit"))
+            !Validator.isOwn(ctx, depositor) || !sameAddress(depositor, ctx.from) -> listOf(act(label, tr("Deposit is not credited to the sending wallet")))
+            tx.value.signum() == 0 -> listOf(act(label, tr("Empty deposit")))
             else -> listOf(act(label))
         }
     }
@@ -419,14 +420,14 @@ object Relay {
      */
     fun tokenRule(token: String) = ContractRule("Bridge", approvalSpender = true) { tx, ctx ->
         val args = runCatching { depositErc20.decodeCall(tx.data) }.getOrNull()
-            ?: return@ContractRule listOf(act("Bridge call", "Only token deposits are allowed"))
+            ?: return@ContractRule listOf(act(tr("Bridge call"), tr("Only token deposits are allowed")))
         val depositor = args[0] as String
-        val label = "Bridge deposit for ${depositor.take(6)}…"
+        val label = tr("Bridge deposit for {1}…", depositor.take(6))
         when {
-            !Validator.isOwn(ctx, depositor) || !sameAddress(depositor, ctx.from) -> listOf(act(label, "Deposit is not credited to the sending wallet"))
-            !sameAddress(args[1] as String, token) -> listOf(act(label, "Deposit is in another token"))
-            (args[2] as BigInteger).signum() == 0 -> listOf(act(label, "Empty deposit"))
-            tx.value.signum() != 0 -> listOf(act(label, "A token deposit must not carry native value"))
+            !Validator.isOwn(ctx, depositor) || !sameAddress(depositor, ctx.from) -> listOf(act(label, tr("Deposit is not credited to the sending wallet")))
+            !sameAddress(args[1] as String, token) -> listOf(act(label, tr("Deposit is in another token")))
+            (args[2] as BigInteger).signum() == 0 -> listOf(act(label, tr("Empty deposit")))
+            tx.value.signum() != 0 -> listOf(act(label, tr("A token deposit must not carry native value")))
             else -> listOf(act(label))
         }
     }
@@ -452,7 +453,7 @@ object Relay {
     /** The service's own wording is outside text: cleaned, shortened and labelled as the bridge's. */
     fun serviceError(code: Int, raw: JsonElement?): RelayError {
         val said = ((raw as? JsonObject)?.get("message") as? JsonPrimitive)?.takeIf { it.isString }?.content?.let { sanitizeLabel(it, 120) }.orEmpty()
-        return RelayError(if (said.isNotEmpty()) "Bridge service: $said" else "Bridge service error $code")
+        return RelayError(if (said.isNotEmpty()) tr("Bridge service: {1}", said) else tr("Bridge service error {1}", code))
     }
 
     /** The body of a quote request, in the extension's order. */
@@ -546,8 +547,8 @@ class HttpRelay(http: OkHttpClient, private val base: String = Relay.API) : Rela
         val raw = try {
             call("/quote", Relay.quoteBody(p))
         } catch (e: IOException) {
-            throw Relay.RelayError("Bridge service unreachable")
-        } ?: throw Relay.RelayError("Unexpected quote format")
+            throw Relay.RelayError(tr("Bridge service unreachable"))
+        } ?: throw Relay.RelayError(tr("Unexpected quote format"))
         return Relay.parse(raw)
     }
 
@@ -558,7 +559,7 @@ class HttpRelay(http: OkHttpClient, private val base: String = Relay.API) : Rela
     override suspend fun quoteFromSolana(p: Relay.Ask) = Relay.checkSolanaQuote(quoteOf(p), p)
 
     override suspend fun status(statusPath: String, toChainId: Long): Relay.Status {
-        if (!Relay.isStatusPath(statusPath)) throw Relay.RelayError("Unexpected status path")
+        if (!Relay.isStatusPath(statusPath)) throw Relay.RelayError(tr("Unexpected status path"))
         return Relay.readStatus(call(statusPath, null), toChainId)
     }
 }

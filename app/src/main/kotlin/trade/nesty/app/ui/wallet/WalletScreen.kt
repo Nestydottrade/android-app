@@ -56,6 +56,7 @@ import trade.nesty.app.data.ApiException
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.NestyApi
 import trade.nesty.app.data.WalletReport
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.ChainDot
@@ -136,21 +137,21 @@ fun WalletScreen(chain: Chain, address: String) {
     val now = rememberNow()
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Wallet", onBack = { nav.pop() })
+        BackHeader(tr("Wallet"), onBack = { nav.pop() })
         LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
             item { Who(chain, address, report) }
             if (!chain.book) {
-                item { EmptyNote("Wallet pages are not ready for Solana yet.") }
+                item { EmptyNote(tr("Wallet pages are not ready for Solana yet.")) }
                 return@LazyColumn
             }
             item { PeriodRow(model) }
             when {
                 report != null -> {
                     item { PnlCard(report) }
-                    item { LaneTabs(listOf("Recent PnL", "Activity"), tab, { tab = it }, Modifier.padding(horizontal = 16.dp)) }
+                    item { LaneTabs(listOf(tr("Recent PnL"), tr("Activity")), tab, { tab = it }, Modifier.padding(horizontal = 16.dp)) }
                     if (tab == 0) {
                         val coins = report.coins.sortedByDescending { it.last }.take(100)
-                        if (coins.isEmpty()) item { EmptyNote("No coin traded in the ${model.period.words}.") }
+                        if (coins.isEmpty()) item { EmptyNote(tr("No coin traded in the {1}.", model.period.words)) }
                         uniqueItems(coins, { "c:" + it.token }) { c ->
                             val facts = report.book[c.token]
                             val holding = report.holdings.firstOrNull { it.token == c.token }
@@ -171,25 +172,25 @@ fun WalletScreen(chain: Chain, address: String) {
                                     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         Text(symbol, style = text(15, FontWeight.Bold), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f, fill = false))
                                         Text(
-                                            if (holding != null) "Holding · ${Fmt.age(now - holding.opened)}" else Fmt.age(now - c.last),
+                                            if (holding != null) tr("Holding · {1}", Fmt.age(now - holding.opened)) else Fmt.age(now - c.last),
                                             style = text(12, color = Ink.muted),
                                             maxLines = 1,
                                         )
                                     }
                                     Text(
-                                        if (c.sells == 0) "Paid ${Fmt.usdFull(c.spent)}" else "Paid ${Fmt.usdFull(c.spent)} → got ${Fmt.usdFull(c.got)}",
+                                        if (c.sells == 0) tr("Paid {1}", Fmt.usdFull(c.spent)) else tr("Paid {1} → got {2}", Fmt.usdFull(c.spent), Fmt.usdFull(c.got)),
                                         style = text(13, color = Ink.muted),
                                         maxLines = 1,
                                     )
                                 }
                                 Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     if (open) {
-                                        Text("Open", style = figure(16, FontWeight.SemiBold, Ink.text2))
-                                        Text("not sold yet", style = text(12, color = Ink.muted))
+                                        Text(tr("Open"), style = figure(16, FontWeight.SemiBold, Ink.text2))
+                                        Text(tr("not sold yet"), style = text(12, color = Ink.muted))
                                     } else {
                                         Text(Fmt.usdSigned(c.profit), style = figure(16, FontWeight.SemiBold, signColor(c.profit)))
                                         Text(
-                                            listOfNotNull(pct?.let { Fmt.pctChange(it) }, c.holdMs?.let { "held ${Fmt.age(it.toLong())}" }).joinToString(" · "),
+                                            listOfNotNull(pct?.let { Fmt.pctChange(it) }, c.holdMs?.let { tr("held {1}", Fmt.age(it.toLong())) }).joinToString(" · "),
                                             style = text(12, color = Ink.muted),
                                             maxLines = 1,
                                         )
@@ -200,7 +201,7 @@ fun WalletScreen(chain: Chain, address: String) {
                         }
                     } else {
                         val trades = report.trades.sortedByDescending { it.at }.take(200)
-                        if (trades.isEmpty()) item { EmptyNote("No trade in the ${model.period.words}.") }
+                        if (trades.isEmpty()) item { EmptyNote(tr("No trade in the {1}.", model.period.words)) }
                         uniqueItems(trades, { "t:" + it.tx + it.token + it.isBuy }) { t ->
                             val symbol = report.book[t.token]?.symbol?.takeIf { it.isNotBlank() } ?: Fmt.address(t.token)
                             Row(
@@ -212,7 +213,7 @@ fun WalletScreen(chain: Chain, address: String) {
                                 verticalAlignment = Alignment.CenterVertically,
                                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                             ) {
-                                Text(if (t.isBuy) "Buy" else "Sell", style = text(14, FontWeight.Bold, if (t.isBuy) Ink.green else Ink.pink), modifier = Modifier.width(40.dp))
+                                Text(if (t.isBuy) tr("Buy") else tr("Sell"), style = text(14, FontWeight.Bold, if (t.isBuy) Ink.green else Ink.pink), modifier = Modifier.width(40.dp))
                                 Text(
                                     "$symbol ${t.dollars?.let { Fmt.usdFull(it) } ?: ""}".trim(),
                                     style = text(14, FontWeight.SemiBold),
@@ -229,9 +230,9 @@ fun WalletScreen(chain: Chain, address: String) {
                         }
                     }
                 }
-                model.period in model.empty -> item { EmptyNote("Nesty's book has no launchpad trade of this wallet in the ${model.period.words}.") }
-                model.failed -> item { EmptyNote("Could not reach Nesty. Trying again.") }
-                else -> item { EmptyNote("Loading…") }
+                model.period in model.empty -> item { EmptyNote(tr("Nesty's book has no launchpad trade of this wallet in the {1}.", model.period.words)) }
+                model.failed -> item { EmptyNote(tr("Could not reach Nesty. Trying again.")) }
+                else -> item { EmptyNote(tr("Loading…")) }
             }
             item { Box(Modifier.height(24.dp)) }
         }
@@ -270,10 +271,10 @@ private fun Who(chain: Chain, address: String, report: WalletReport?) {
                     .size(44.dp)
                     .clip(CircleShape)
                     .clickable(role = Role.Button) {
-                        copyText(context, "Address", address)
-                        toasts.show("Address copied", Fmt.address(address))
+                        copyText(context, tr("Address"), address)
+                        toasts.show(tr("Address copied"), Fmt.address(address))
                     }
-                    .semantics { contentDescription = "Copy address" },
+                    .semantics { contentDescription = tr("Copy address") },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(NIcons.copy, contentDescription = null, tint = Ink.text2, modifier = Modifier.size(20.dp))
@@ -282,7 +283,7 @@ private fun Who(chain: Chain, address: String, report: WalletReport?) {
         report?.totals?.holdMs?.let { hold ->
             val fast = hold < 15 * 60_000
             Text(
-                "Usually holds a coin about ${Fmt.duration(hold)}." + if (fast) " To follow trades like these you need to act fast." else "",
+                tr("Usually holds a coin about {1}.", Fmt.duration(hold)) + if (fast) tr(" To follow trades like these you need to act fast.") else "",
                 style = text(13, color = Ink.text2, lineHeight = 18.sp),
             )
         }
@@ -294,13 +295,13 @@ private fun Who(chain: Chain, address: String, report: WalletReport?) {
                 .background(if (following) Ink.greenDeep else Ink.green)
                 .border(1.dp, if (following) Ink.greenLine else Ink.green, RoundedCornerShape(14.dp))
                 .clickable(role = Role.Switch) { toggleFollow(settings, toasts, address) }
-                .semantics { stateDescription = if (following) "Following" else "Not following" },
+                .semantics { stateDescription = if (following) tr("Following") else tr("Not following") },
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         ) {
             val ink = if (following) Ink.green else Ink.greenInk
             Icon(if (following) NIcons.check else NIcons.plus, contentDescription = null, tint = ink, modifier = Modifier.size(18.dp))
-            Text(if (following) "Following" else "Follow", style = text(16, FontWeight.Bold, ink))
+            Text(if (following) tr("Following") else tr("Follow"), style = text(16, FontWeight.Bold, ink))
         }
         if (following) NameEditor(address)
     }
@@ -315,10 +316,10 @@ private fun NameEditor(address: String) {
     val save = {
         val n = draft.trim()
         settings.rename(address, n)
-        toasts.show(if (n.isNotEmpty()) "Saved as $n" else "Name removed", if (n.isNotEmpty()) "Shows in Tracker and on coin pages" else "The address shows instead")
+        toasts.show(if (n.isNotEmpty()) tr("Saved as {1}", n) else tr("Name removed"), if (n.isNotEmpty()) tr("Shows in Tracker and on coin pages") else tr("The address shows instead"))
     }
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text("Name in your Tracker and on coin pages", style = text(13, color = Ink.muted))
+        Text(tr("Name in your Tracker and on coin pages"), style = text(13, color = Ink.muted))
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Box(
                 Modifier
@@ -330,7 +331,7 @@ private fun NameEditor(address: String) {
                     .padding(horizontal = 14.dp),
                 contentAlignment = Alignment.CenterStart,
             ) {
-                if (draft.isEmpty()) Text("For example, Fast sniper", style = text(15, color = Ink.muted))
+                if (draft.isEmpty()) Text(tr("For example, Fast sniper"), style = text(15, color = Ink.muted))
                 BasicTextField(
                     value = draft,
                     onValueChange = { draft = it.take(16) },
@@ -339,7 +340,7 @@ private fun NameEditor(address: String) {
                     cursorBrush = SolidColor(Ink.green),
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done, autoCorrectEnabled = false),
                     keyboardActions = KeyboardActions(onDone = { save() }),
-                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Name in your Tracker and on coin pages" },
+                    modifier = Modifier.fillMaxWidth().semantics { contentDescription = tr("Name in your Tracker and on coin pages") },
                 )
             }
             Box(
@@ -352,7 +353,7 @@ private fun NameEditor(address: String) {
                     .padding(horizontal = 18.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Save", style = text(15, FontWeight.Bold, Ink.green))
+                Text(tr("Save"), style = text(15, FontWeight.Bold, Ink.green))
             }
         }
     }
@@ -395,7 +396,7 @@ private fun PnlCard(r: WalletReport) {
             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween) {
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Realized profit", style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.semantics { heading() })
+                        Text(tr("Realized profit"), style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.semantics { heading() })
                         Text(Fmt.usdSigned(t.profit), style = figure(34, FontWeight.SemiBold, signColor(t.profit)))
                     }
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -405,16 +406,16 @@ private fun PnlCard(r: WalletReport) {
                 }
                 Column(
                     Modifier.semantics(mergeDescendants = true) {
-                        contentDescription = if (win != null) "Win rate ${Math.round(win * 100)}%: $won coins won, $lost lost" else "Nothing sold yet"
+                        contentDescription = if (win != null) tr("Win rate {1}%: {2} coins won, {3} lost", Math.round(win * 100), won, lost) else tr("Nothing sold yet")
                     },
                     verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Row {
-                            Text("Win rate ${win?.let { "${Math.round(it * 100)}%" } ?: Fmt.DASH}", style = text(14, FontWeight.Bold))
-                            Text(" of " + Fmt.counted(t.sold.toLong(), "coin"), style = text(14, color = Ink.muted))
+                            Text(tr("Win rate {1}", win?.let { "${Math.round(it * 100)}%" } ?: Fmt.DASH), style = text(14, FontWeight.Bold))
+                            Text(tr(" of {1}", Fmt.counted(t.sold.toLong(), "{1} coin", "{1} coins")), style = text(14, color = Ink.muted))
                         }
-                        Text("$won won · $lost lost", style = text(13, color = Ink.muted))
+                        Text(tr("{1} won · {2} lost", won, lost), style = text(13, color = Ink.muted))
                     }
                     Row(Modifier.fillMaxWidth().height(10.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                         val w = (win ?: 0.0).toFloat()
@@ -424,15 +425,15 @@ private fun PnlCard(r: WalletReport) {
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Unrealized", style = text(12, color = Ink.muted))
+                        Text(tr("Unrealized"), style = text(12, color = Ink.muted))
                         Text(if (r.holdings.isEmpty()) Fmt.DASH else Fmt.usdSigned(open), style = figure(17, FontWeight.SemiBold))
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Total", style = text(12, color = Ink.muted))
+                        Text(tr("Total"), style = text(12, color = Ink.muted))
                         Text(Fmt.usdSigned(t.profit + open), style = figure(17, FontWeight.SemiBold))
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                        Text("Worst trade", style = text(12, color = Ink.muted))
+                        Text(tr("Worst trade"), style = text(12, color = Ink.muted))
                         Text(worst?.let { Fmt.usdSigned(it) } ?: Fmt.DASH, style = figure(17, FontWeight.SemiBold, if (worst != null && worst < 0) Ink.pinkSoft else Ink.text))
                     }
                 }

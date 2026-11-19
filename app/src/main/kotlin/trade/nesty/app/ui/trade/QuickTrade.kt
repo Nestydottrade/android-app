@@ -14,14 +14,15 @@ import trade.nesty.app.data.Coin
 import trade.nesty.app.data.CoinInfo
 import trade.nesty.app.data.Preset
 import trade.nesty.app.data.Trading
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.Toasts
 
 /** A preset's settings in words: "15% slippage, Fast, MEV protect". */
 fun presetWords(chain: Chain, preset: Preset): String = listOfNotNull(
-    "${preset.slippage}% slippage",
-    preset.speed,
-    "MEV protect".takeIf { AppGraph.trading.mevProtect(chain) },
+    tr("{1}% slippage", preset.slippage),
+    tr(preset.speed),
+    tr("MEV protect").takeIf { AppGraph.trading.mevProtect(chain) },
 ).joinToString(", ")
 
 /**
@@ -38,7 +39,7 @@ object QuickTrade {
     /** A trade that cannot start. A wallet without this chain's side gets the way to add it. */
     private fun refuse(toasts: Toasts, title: String, why: String) {
         if (why == Trading.NO_SOL || why == Trading.NO_EVM) {
-            toasts.show(title, why, bad = true, action = "Add") { AppGraph.pendingLink = AlertLink(AlertLink.WALLETS) }
+            toasts.show(title, why, bad = true, action = tr("Add")) { AppGraph.pendingLink = AlertLink(AlertLink.WALLETS) }
         } else {
             toasts.show(title, why, bad = true)
         }
@@ -47,19 +48,19 @@ object QuickTrade {
     fun buy(toasts: Toasts, chain: Chain, token: String, usd: Double, symbol: String?, coin: Coin? = null) {
         val trading = AppGraph.trading
         trading.cannotTrade(chain)?.let {
-            refuse(toasts, "Buy not sent", it)
+            refuse(toasts, tr("Buy not sent"), it)
             return
         }
         val key = "buy:${chain.feed}:${token.lowercase()}"
         if (!starting.add(key)) return
         val preset = AppGraph.settings.presets[0]
-        val label = symbol?.takeIf { it.isNotBlank() } ?: coin?.symbol?.takeIf { it.isNotBlank() } ?: "this coin"
-        toasts.show("Buying ${Fmt.usdFull(usd)} of $label", "P1: ${presetWords(chain, preset)}")
+        val label = symbol?.takeIf { it.isNotBlank() } ?: coin?.symbol?.takeIf { it.isNotBlank() } ?: tr("this coin")
+        toasts.show(tr("Buying {1} of {2}", Fmt.usdFull(usd), label), "P1: ${presetWords(chain, preset)}")
         scope.launch {
             try {
                 val read = coin ?: readCoin(chain, token)
                 if (trading.needsUpdate(chain, read)) {
-                    toasts.show("Buy not sent", NEEDS_UPDATE, bad = true, action = "Update") { AppGraph.pendingLink = AlertLink(AlertLink.UPDATE) }
+                    toasts.show(tr("Buy not sent"), NEEDS_UPDATE, bad = true, action = tr("Update")) { AppGraph.pendingLink = AlertLink(AlertLink.UPDATE) }
                     return@launch
                 }
                 val info = read?.let { CoinInfo.of(it) } ?: CoinInfo(symbol = symbol)
@@ -67,7 +68,7 @@ object QuickTrade {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                toasts.show("Buy not sent", e.message ?: "Could not start.", bad = true)
+                toasts.show(tr("Buy not sent"), e.message ?: tr("Could not start."), bad = true)
             } finally {
                 starting.remove(key)
             }
@@ -78,7 +79,7 @@ object QuickTrade {
     fun sell(toasts: Toasts, chain: Chain, token: String, bps: Int, coin: Coin?, doing: String, done: String) {
         val trading = AppGraph.trading
         trading.cannotTrade(chain)?.let {
-            refuse(toasts, "Sell not sent", it)
+            refuse(toasts, tr("Sell not sent"), it)
             return
         }
         val key = "sell:${chain.feed}:${token.lowercase()}"
@@ -92,7 +93,7 @@ object QuickTrade {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                toasts.show("Sell not sent", e.message ?: "Could not start.", bad = true)
+                toasts.show(tr("Sell not sent"), e.message ?: tr("Could not start."), bad = true)
             } finally {
                 starting.remove(key)
             }
@@ -109,7 +110,7 @@ object QuickTrade {
     }
 
     /** What a one-tap buy says of a coin this build cannot trade. */
-    const val NEEDS_UPDATE = "This version of Nesty cannot trade this coin yet."
+    val NEEDS_UPDATE: String get() = tr("This version of Nesty cannot trade this coin yet.")
 
     /** What the server knows of a coin, for a trade. */
     private suspend fun coinInfo(chain: Chain, token: String, symbol: String?): CoinInfo =

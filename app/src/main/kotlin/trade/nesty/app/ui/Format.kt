@@ -5,6 +5,9 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.log10
 import kotlin.math.roundToLong
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trCount
+import trade.nesty.app.i18n.trKey
 
 /** Figures as the boards write them. No clock times anywhere: ages are relative. */
 object Fmt {
@@ -129,26 +132,27 @@ object Fmt {
     fun duration(ms: Double): String {
         val s = (ms / 1000).roundToLong().coerceAtLeast(0)
         return when {
-            s < 60 -> plural(s, "second")
-            s < 3_600 -> plural(s / 60, "minute")
-            s < 86_400 -> plural(s / 3_600, "hour")
-            else -> plural(s / 86_400, "day")
+            s < 60 -> trCount(s, "{1} second", "{1} seconds", s)
+            s < 3_600 -> trCount(s / 60, "{1} minute", "{1} minutes", s / 60)
+            s < 86_400 -> trCount(s / 3_600, "{1} hour", "{1} hours", s / 3_600)
+            else -> trCount(s / 86_400, "{1} day", "{1} days", s / 86_400)
         }
     }
 
-    private fun plural(n: Long, word: String) = "$n $word" + if (n == 1L) "" else "s"
-
     /** How long a move takes, from the bridge's estimate: a few seconds, about 20 s, about 2 minutes. */
     fun eta(seconds: Double?): String = when {
-        seconds == null || seconds.isNaN() || seconds <= 10 -> "a few seconds"
-        seconds < 60 -> "about ${seconds.roundToLong()} s"
-        else -> "about " + duration(seconds * 1000)
+        seconds == null || seconds.isNaN() || seconds <= 10 -> tr("a few seconds")
+        seconds < 60 -> tr("about {1} s", seconds.roundToLong())
+        else -> tr("about {1}", duration(seconds * 1000))
     }
 
     fun count(n: Long): String = if (n >= 10_000) compact(n.toDouble()) else String.format(Locale.US, "%,d", n)
 
-    /** 1 holder, 2 holders, 12.4K trades. */
-    fun counted(n: Long, one: String): String = count(n) + " " + one + if (n == 1L) "" else "s"
+    /** 1 holder, 2 holders, 12.4K trades: [one] and [other] put the count at `{1}`. */
+    fun counted(n: Long, one: String, other: String): String = trCount(n, one, other, count(n))
+
+    /** "BNB Chain and Base": a list joined as the app's language joins one. */
+    fun joinAnd(items: List<String>): String = items.joinToString(tr(" and "))
 
     /** 0x9a…1f07 on EVM chains, 9xQe…Fh7k on Solana. */
     fun address(a: String): String =
@@ -162,11 +166,12 @@ object Fmt {
         if (parts.size != 3) return iso
         val month = parts[1].toIntOrNull()?.let { MONTHS.getOrNull(it - 1) } ?: return iso
         val d = parts[2].toIntOrNull() ?: return iso
-        return "$d $month"
+        return tr(month, d)
     }
 
+    /** Each month with its day at `{1}`, as each language writes a date. */
     private val MONTHS = listOf(
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December",
+        trKey("{1} January"), trKey("{1} February"), trKey("{1} March"), trKey("{1} April"), trKey("{1} May"), trKey("{1} June"),
+        trKey("{1} July"), trKey("{1} August"), trKey("{1} September"), trKey("{1} October"), trKey("{1} November"), trKey("{1} December"),
     )
 }

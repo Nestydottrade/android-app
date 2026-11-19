@@ -4,6 +4,7 @@ import trade.nesty.app.evm.BlockedAction
 import trade.nesty.app.evm.Side
 import trade.nesty.app.evm.act
 import trade.nesty.app.evm.shortAddress
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.SolAddr.ATA_PROGRAM
 import trade.nesty.app.sol.SolAddr.COMPUTE_BUDGET_PROGRAM
 import trade.nesty.app.sol.SolAddr.SYSTEM_PROGRAM
@@ -84,15 +85,15 @@ object SolValidator {
         val d = ix.data
         val tag = d.getOrNull(0)?.toInt()
         if (ix.keys.isNotEmpty()) {
-            actions += act("Compute budget", "Unexpected accounts")
+            actions += act(tr("Compute budget"), tr("Unexpected accounts"))
         } else if (tag == Spl.CU_SET_LIMIT && d.size == 5 && b.limit == null) {
             val limit = le(d, 1, 4)
             b.limit = limit
-            actions += act("Compute limit $limit", if (limit > BigInteger.valueOf(Spl.MAX_COMPUTE_UNITS.toLong())) "Above the maximum" else null)
+            actions += act(tr("Compute limit {1}", limit), if (limit > BigInteger.valueOf(Spl.MAX_COMPUTE_UNITS.toLong())) tr("Above the maximum") else null)
         } else if (tag == Spl.CU_SET_PRICE && d.size == 9 && b.price == null) {
             b.price = le(d, 1, 8)
         } else {
-            actions += act("Compute budget", "Unknown or repeated instruction")
+            actions += act(tr("Compute budget"), tr("Unknown or repeated instruction"))
         }
     }
 
@@ -100,12 +101,12 @@ object SolValidator {
         val price = b.price ?: return
         val limit = b.limit ?: BigInteger.valueOf(200_000)
         val fee = (price * limit + BigInteger.valueOf(999_999)) / BigInteger.valueOf(1_000_000)
-        actions += act("Priority fee ${sol(fee)}", if (fee > maxLamports) "Above your max network fee" else null)
+        actions += act(tr("Priority fee {1}", sol(fee)), if (fee > maxLamports) tr("Above your max network fee") else null)
     }
 
     private fun checkSigners(instructions: List<Instruction>, wallet: String, actions: MutableList<BlockedAction>) {
         for (k in instructions.flatMap { it.keys }) {
-            if (k.isSigner && k.pubkey != wallet) actions += act("Signer ${shortAddress(k.pubkey)}", "Only your wallet may sign")
+            if (k.isSigner && k.pubkey != wallet) actions += act("Signer ${shortAddress(k.pubkey)}", tr("Only your wallet may sign"))
         }
     }
 
@@ -143,17 +144,17 @@ object SolValidator {
         if (tip != null) {
             use.tips++
             val reason = when {
-                use.tips > 1 -> "Only one tip"
-                tip > ctx.maxTipLamports -> "Above your MEV protection tip"
-                tip < Jito.MIN_TIP -> "Below the block engine's minimum"
+                use.tips > 1 -> tr("Only one tip")
+                tip > ctx.maxTipLamports -> tr("Above your MEV protection tip")
+                tip < Jito.MIN_TIP -> tr("Below the block engine's minimum")
                 else -> null
             }
-            actions += act("MEV protection tip ${sol(tip)}", reason)
+            actions += act(tr("MEV protection tip {1}", sol(tip)), reason)
             return
         }
         val wrap = if (solPay && use.wrapped.signum() == 0) wrapAmount(ix, ctx.wallet) else null
         if (wrap == null) {
-            actions += act("System program", "Only one transfer to your own wrapped SOL")
+            actions += act(tr("System program"), tr("Only one transfer to your own wrapped SOL"))
         } else {
             use.wrapped = wrap
             actions += act("Wrap ${sol(wrap)}")
@@ -178,9 +179,9 @@ object SolValidator {
     }
 
     private fun wsolAction(step: WsolStep?) = when (step) {
-        WsolStep.SYNC -> act("Sync wrapped SOL")
-        WsolStep.CLOSE -> act("Unwrap SOL")
-        null -> act("Token program", "Only your own wrapped SOL account")
+        WsolStep.SYNC -> act(tr("Sync wrapped SOL"))
+        WsolStep.CLOSE -> act(tr("Unwrap SOL"))
+        null -> act(tr("Token program"), tr("Only your own wrapped SOL account"))
     }
 
     /** The validator for a route's trades: every instruction must be one Nesty builds for it. */
@@ -205,16 +206,16 @@ object SolValidator {
         var amountIn = BigInteger.ZERO
         var minOut = BigInteger.ZERO
 
-        if (coin.mint != ctx.mint || !Pump.routeOk(route)) actions += act("Route", "Does not lead to this token")
+        if (coin.mint != ctx.mint || !Pump.routeOk(route)) actions += act("Route", tr("Does not lead to this token"))
 
         checkSigners(instructions, wallet, actions)
 
         // The accounts a trade may open: the wallet's own in the coin and the pay currency, and a
         // listed buyback wallet's in the pay currency (the trade pays into it).
         val opens = listOf(
-            Opening(wallet, coin.mint, coin.tokenProgram, "Open token account"),
-            Opening(wallet, pay.mint, pay.program, if (solPay) "Open wrapped SOL account" else "Open ${unit.symbol} account"),
-        ) + Pump.BUYBACK_FEE_RECIPIENTS.map { Opening(it, pay.mint, pay.program, "Open pump.fun's buyback ${unit.symbol} account") }
+            Opening(wallet, coin.mint, coin.tokenProgram, tr("Open token account")),
+            Opening(wallet, pay.mint, pay.program, if (solPay) tr("Open wrapped SOL account") else tr("Open {1} account", unit.symbol)),
+        ) + Pump.BUYBACK_FEE_RECIPIENTS.map { Opening(it, pay.mint, pay.program, tr("Open pump.fun's buyback {1} account", unit.symbol)) }
 
         for (ix in instructions) {
             val d = ix.data
@@ -223,15 +224,15 @@ object SolValidator {
                 SYSTEM_PROGRAM -> readSystem(ix, ctx, solPay, system, actions)
                 ATA_PROGRAM -> {
                     val open = opening(ix, wallet, opens)
-                    actions += if (open != null) act(open.label) else act("Token account", "Not an account this trade needs")
+                    actions += if (open != null) act(open.label) else act(tr("Token account"), tr("Not an account this trade needs"))
                 }
                 // Only around SOL trades: wrapping into, and unwrapping, the wallet's own WSOL.
                 TOKEN_PROGRAM -> actions += wsolAction(if (solPay) wsolStep(ix, wallet) else null)
                 Pump.PUMP_PROGRAM, Pump.PUMP_AMM_PROGRAM -> {
                     trades++
-                    val label = if (variant == TradeVariant.MULTI_HOP) "a ${route.hops.size}-hop pump.fun route" else Pump.venueLabel(coin)
+                    val label = if (variant == TradeVariant.MULTI_HOP) tr("a {1}-hop pump.fun route", route.hops.size) else Pump.venueLabel(coin)
                     if (ix.programId != Pump.tradeProgram(variant)) {
-                        actions += act("Trade on $label", "Not the trade this token takes")
+                        actions += act(tr("Trade on {1}", label), tr("Not the trade this token takes"))
                         continue
                     }
                     val rec = Pump.readRecipients(route, ix.keys)
@@ -239,38 +240,38 @@ object SolValidator {
                         (rec.fee == null || rec.fee in Pump.feeRecipients(coin)) &&
                         ix.keys == Pump.tradeAccounts(route, ctx.side, wallet, rec)
                     if (!keysOk) {
-                        actions += act("Trade on $label", "Accounts are not this token and wallet")
+                        actions += act(tr("Trade on {1}", label), tr("Accounts are not this token and wallet"))
                         continue
                     }
                     val td = Pump.tradeData(variant, ctx.side)
                     val flag = td.flag
                     if (!startsWith(d, td.disc) || d.size != (if (flag == null) 24 else 25)) {
-                        actions += act("Trade on $label", "Unknown instruction")
+                        actions += act(tr("Trade on {1}", label), tr("Unknown instruction"))
                         continue
                     }
                     amountIn = le(d, 8, 8)
                     minOut = le(d, 16, 8)
                     if (ctx.side == Side.SELL) {
-                        actions += act("Sell on $label", if (minOut.signum() == 0) "No minimum received" else null)
+                        actions += act(tr("Sell on {1}", label), if (minOut.signum() == 0) tr("No minimum received") else null)
                         continue
                     }
                     spend = amountIn
                     val reason = when {
-                        flag != null && (d[24].toInt() and 0xff) != flag -> if (flag == 0) "Partial fills are not allowed" else "Volume tracking must stay on"
-                        minOut.signum() == 0 -> "No minimum received"
-                        spend > ctx.maxSpend -> "Above your per-transaction limit"
+                        flag != null && (d[24].toInt() and 0xff) != flag -> if (flag == 0) tr("Partial fills are not allowed") else tr("Volume tracking must stay on")
+                        minOut.signum() == 0 -> tr("No minimum received")
+                        spend > ctx.maxSpend -> tr("Above your per-transaction limit")
                         else -> null
                     }
-                    actions += act("Buy on $label for ${amount(spend)}", reason)
+                    actions += act(tr("Buy on {1} for {2}", label, amount(spend)), reason)
                 }
-                else -> actions += act("Program ${shortAddress(ix.programId)}", "Program is not on the allowlist")
+                else -> actions += act("Program ${shortAddress(ix.programId)}", tr("Program is not on the allowlist"))
             }
         }
 
-        if (trades != 1) actions += act("Trade", "Exactly one trade per transaction")
+        if (trades != 1) actions += act("Trade", tr("Exactly one trade per transaction"))
         // SOL into a pool is wrapped first, exactly what the buy spends; nothing else wraps.
         val wraps = solPay && ctx.side == Side.BUY && route.hops.firstOrNull() is PoolVenue
-        if (system.wrapped != (if (wraps) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(system.wrapped)}", "Does not wrap what the trade spends")
+        if (system.wrapped != (if (wraps) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(system.wrapped)}", tr("Does not wrap what the trade spends"))
         checkPriority(budget, ctx.maxPriorityLamports, actions)
         return SolValidationResult(actions.all { it.ok }, actions, spend, amountIn, minOut)
     }
@@ -296,12 +297,12 @@ object SolValidator {
         var amountIn = BigInteger.ZERO
         var minOut = BigInteger.ZERO
 
-        if (v.mint != ctx.mint) actions += act("Pool", "Does not trade this token")
+        if (v.mint != ctx.mint) actions += act("Pool", tr("Does not trade this token"))
         checkSigners(instructions, wallet, actions)
 
         val opens = listOf(
-            Opening(wallet, v.mint, v.tokenProgram, "Open token account"),
-            Opening(wallet, v.quote.mint, v.quote.program, if (solPay) "Open wrapped SOL account" else "Open ${unit.symbol} account"),
+            Opening(wallet, v.mint, v.tokenProgram, tr("Open token account")),
+            Opening(wallet, v.quote.mint, v.quote.program, if (solPay) tr("Open wrapped SOL account") else tr("Open {1} account", unit.symbol)),
         )
 
         for (ix in instructions) {
@@ -310,43 +311,43 @@ object SolValidator {
                 SYSTEM_PROGRAM -> readSystem(ix, ctx, solPay, system, actions)
                 ATA_PROGRAM -> {
                     val open = opening(ix, wallet, opens)
-                    actions += if (open != null) act(open.label) else act("Token account", "Not an account this trade needs")
+                    actions += if (open != null) act(open.label) else act(tr("Token account"), tr("Not an account this trade needs"))
                 }
                 TOKEN_PROGRAM -> actions += wsolAction(if (solPay) wsolStep(ix, wallet) else null)
                 m.program -> {
                     swaps++
                     val a = m.amounts(ix.data)
                     if (a == null) {
-                        actions += act("Trade on $label", "Unknown instruction")
+                        actions += act(tr("Trade on {1}", label), tr("Unknown instruction"))
                         continue
                     }
                     // Rebuilt from the pool and the wallet: any other account or byte is refused.
                     val want = m.swap(v, ctx.side, wallet, a.amountIn, a.minOut)
                     if (ix.keys != want.keys || !ix.data.contentEquals(want.data)) {
-                        actions += act("Trade on $label", "Accounts are not this pool and wallet")
+                        actions += act(tr("Trade on {1}", label), tr("Accounts are not this pool and wallet"))
                         continue
                     }
                     amountIn = a.amountIn
                     minOut = a.minOut
                     if (ctx.side == Side.SELL) {
-                        actions += act("Sell on $label", if (a.minOut.signum() == 0) "No minimum received" else null)
+                        actions += act(tr("Sell on {1}", label), if (a.minOut.signum() == 0) tr("No minimum received") else null)
                         continue
                     }
                     spend = a.amountIn
                     val reason = when {
-                        a.minOut.signum() == 0 -> "No minimum received"
-                        spend > ctx.maxSpend -> "Above your per-transaction limit"
+                        a.minOut.signum() == 0 -> tr("No minimum received")
+                        spend > ctx.maxSpend -> tr("Above your per-transaction limit")
                         else -> null
                     }
-                    actions += act("Buy on $label for ${amount(spend)}", reason)
+                    actions += act(tr("Buy on {1} for {2}", label, amount(spend)), reason)
                 }
-                else -> actions += act("Program ${shortAddress(ix.programId)}", "Program is not on the allowlist")
+                else -> actions += act("Program ${shortAddress(ix.programId)}", tr("Program is not on the allowlist"))
             }
         }
 
-        if (swaps != 1) actions += act("Trade", "Exactly one trade per transaction")
+        if (swaps != 1) actions += act("Trade", tr("Exactly one trade per transaction"))
         // Pools trade wrapped SOL: a buy wraps exactly what it spends; nothing else wraps.
-        if (system.wrapped != (if (solPay && ctx.side == Side.BUY) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(system.wrapped)}", "Does not wrap what the trade spends")
+        if (system.wrapped != (if (solPay && ctx.side == Side.BUY) spend else BigInteger.ZERO)) actions += act("Wrap ${sol(system.wrapped)}", tr("Does not wrap what the trade spends"))
         checkPriority(budget, ctx.maxPriorityLamports, actions)
         return SolValidationResult(actions.all { it.ok }, actions, spend, amountIn, minOut)
     }
@@ -362,7 +363,7 @@ object SolValidator {
         var moves = 0
         val asset = ctx.asset
         checkSigners(instructions, ctx.wallet, actions)
-        if (ctx.to == ctx.wallet) actions += act("Recipient", "This is the wallet you are sending from")
+        if (ctx.to == ctx.wallet) actions += act("Recipient", tr("This is the wallet you are sending from"))
         val sent = if (asset != null) units(ctx.amount, asset.decimals, asset.symbol) else sol(ctx.amount)
         for (ix in instructions) {
             val d = ix.data
@@ -373,12 +374,12 @@ object SolValidator {
                     val ok = asset == null && d.size == 12 && le(d, 0, 4) == BigInteger.valueOf(Spl.SYSTEM_TRANSFER.toLong()) &&
                         le(d, 4, 8) == ctx.amount &&
                         ix.keys == listOf(AccountMeta(ctx.wallet, isSigner = true, isWritable = true), AccountMeta(ctx.to, isSigner = false, isWritable = true))
-                    actions += if (ok) act("Send $sent to ${shortAddress(ctx.to)}") else act("System program", "Not the transfer you asked for")
+                    actions += if (ok) act(tr("Send {1} to {2}", sent, shortAddress(ctx.to))) else act(tr("System program"), tr("Not the transfer you asked for"))
                 }
                 ATA_PROGRAM -> {
                     val ok = asset != null && d.size == 1 && d[0].toInt() == Spl.ATA_CREATE_IDEMPOTENT &&
                         ix.keys == ataCreateKeys(ctx.wallet, ctx.to, asset.mint, asset.program)
-                    actions += if (ok) act("Open the recipient's ${asset!!.symbol} account") else act("Token account", "Not the recipient's account for this token")
+                    actions += if (ok) act(tr("Open the recipient's {1} account", asset!!.symbol)) else act(tr("Token account"), tr("Not the recipient's account for this token"))
                 }
                 TOKEN_PROGRAM, SolAddr.TOKEN_2022_PROGRAM -> {
                     moves++
@@ -390,12 +391,12 @@ object SolValidator {
                             AccountMeta(SolAddr.associatedTokenAddress(ctx.to, asset.mint, asset.program), isSigner = false, isWritable = true),
                             AccountMeta(ctx.wallet, isSigner = true, isWritable = false),
                         )
-                    actions += if (ok) act("Send $sent to ${shortAddress(ctx.to)}") else act("Token program", "Not the transfer you asked for")
+                    actions += if (ok) act(tr("Send {1} to {2}", sent, shortAddress(ctx.to))) else act(tr("Token program"), tr("Not the transfer you asked for"))
                 }
-                else -> actions += act("Program ${shortAddress(ix.programId)}", "Program is not on the allowlist")
+                else -> actions += act("Program ${shortAddress(ix.programId)}", tr("Program is not on the allowlist"))
             }
         }
-        if (moves != 1) actions += act("Transfer", "Exactly one transfer per transaction")
+        if (moves != 1) actions += act("Transfer", tr("Exactly one transfer per transaction"))
         checkPriority(budget, ctx.maxPriorityLamports, actions)
         return SolValidationResult(actions.all { it.ok }, actions, ctx.amount, ctx.amount, BigInteger.ZERO)
     }
@@ -415,18 +416,18 @@ object SolValidator {
                 SolAddr.COMPUTE_BUDGET_PROGRAM -> readBudget(ix, budget, actions)
                 RelaySol.PROGRAM -> {
                     deposits++
-                    val label = "Bridge deposit of ${sol(ctx.amount)}"
+                    val label = tr("Bridge deposit of {1}", sol(ctx.amount))
                     actions += when {
-                        ix.keys.getOrNull(2)?.pubkey != ctx.wallet -> act(label, "Deposit is not credited to the sending wallet")
-                        ix.keys != want.keys || !ix.data.contentEquals(want.data) -> act(label, "Not the deposit you asked for")
-                        ctx.amount.signum() == 0 -> act(label, "Empty deposit")
-                        else -> act(label, if (ctx.amount > ctx.maxSpend) "Above your per-transaction limit" else null)
+                        ix.keys.getOrNull(2)?.pubkey != ctx.wallet -> act(label, tr("Deposit is not credited to the sending wallet"))
+                        ix.keys != want.keys || !ix.data.contentEquals(want.data) -> act(label, tr("Not the deposit you asked for"))
+                        ctx.amount.signum() == 0 -> act(label, tr("Empty deposit"))
+                        else -> act(label, if (ctx.amount > ctx.maxSpend) tr("Above your per-transaction limit") else null)
                     }
                 }
-                else -> actions += act("Program ${shortAddress(ix.programId)}", "Program is not on the allowlist")
+                else -> actions += act("Program ${shortAddress(ix.programId)}", tr("Program is not on the allowlist"))
             }
         }
-        if (deposits != 1) actions += act("Bridge deposit", "Exactly one deposit per transaction")
+        if (deposits != 1) actions += act(tr("Bridge deposit"), tr("Exactly one deposit per transaction"))
         checkPriority(budget, ctx.maxPriorityLamports, actions)
         return SolValidationResult(actions.all { it.ok }, actions, ctx.amount, ctx.amount, BigInteger.ZERO)
     }

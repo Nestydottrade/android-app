@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.keys.keccak256
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
@@ -157,7 +158,7 @@ class EvmTrader(
     fun venueCtx(chain: EvmChain, hints: List<String> = emptyList()) =
         VenueCtx(chain, reader(chain), now, hints, legCaches.getOrPut(chain.id) { LegCache() })
 
-    private fun chainOf(id: Long) = EvmChains.byId(id) ?: throw TradeException("not_found", "Trading is not available on this chain.")
+    private fun chainOf(id: Long) = EvmChains.byId(id) ?: throw TradeException("not_found", tr("Trading is not available on this chain."))
 
     // ── quotes ──────────────────────────────────────────────────────────────────────
 
@@ -239,7 +240,7 @@ class EvmTrader(
     /** Starts a buy and returns its live state. Throws when it cannot start. */
     suspend fun buy(req: BuyRequest, wallet: EvmSigner, own: List<String>): StateFlow<Trade> {
         val chain = chainOf(req.chainId)
-        if (req.amount.signum() <= 0) throw TradeException("insufficient_funds", "Amount too small.")
+        if (req.amount.signum() <= 0) throw TradeException("insufficient_funds", tr("Amount too small."))
         val ctx = venueCtx(chain, req.poolHints)
         // The sheet quotes every few seconds; a fresh quote skips a round trip.
         val route = routing.cached(ctx, req.token, Side.BUY, req.amount, MAX_QUOTE_AGE_MS)
@@ -265,7 +266,7 @@ class EvmTrader(
     private suspend fun buyOne(t: Ticket, i: Int, p: BuyJob) {
         try {
             val out = p.route.out
-            if (out.signum() == 0) return t.fail(i, "No quote")
+            if (out.signum() == 0) return t.fail(i, tr("No quote"))
             val funding = p.route.venue.funding(p.ctx, p.route.pool)
             if (funding != null) {
                 val via = viaRouter(p.chain, p.ctx, funding) ?: return t.fail(i, UPDATE_APP)
@@ -295,7 +296,7 @@ class EvmTrader(
     private suspend fun routerBuy(t: Ticket, i: Int, p: BuyJob, funding: Funding, via: Via) {
         val gate = balanceGate(p.chain, p.ctx, p.prefs, p.wallet.address, p.amount)
         val assetOut = via.legVenue.quote(p.ctx, funding.leg, Side.BUY, listOf(p.amount)).firstOrNull()
-        if (assetOut == null || assetOut.signum() == 0) return t.fail(i, "No ${funding.symbol} quote")
+        if (assetOut == null || assetOut.signum() == 0) return t.fail(i, tr("No {1} quote", funding.symbol))
         val minOut = TradeMath.minOutAfter(p.route.out, 0, p.prefs.slippageBps)
         t.set(i) { it.copy(minOut = minOut) }
         val r = fundedRoute(p.ctx, p.wallet.address, p.route, funding, via)
@@ -327,7 +328,7 @@ class EvmTrader(
                 val check: (BigInteger) -> String? = { gasLimit ->
                     val need = amount + gasLimit * fees.maxFeePerGas
                     if (balance < need) {
-                        "Insufficient balance: needs ${TradeMath.formatToken(need, 18)} ${chain.nativeSymbol} with gas, has ${TradeMath.formatToken(balance, 18)}"
+                        tr("Insufficient balance: needs {1} {2} with gas, has {3}", TradeMath.formatToken(need, 18), chain.nativeSymbol, TradeMath.formatToken(balance, 18))
                     } else {
                         null
                     }
@@ -336,7 +337,7 @@ class EvmTrader(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val reason = "Balance check failed: ${shortErr(e)}"
+                val reason = tr("Balance check failed: {1}", shortErr(e))
                 val check: (BigInteger) -> String? = { reason }
                 check
             }
@@ -384,7 +385,7 @@ class EvmTrader(
         val ctx = venueCtx(chain, req.poolHints)
         val balance = readBig(ctx.reader, req.token, Erc20.balanceOf, wallet.address)
         val amount = balance * big(req.bps.coerceIn(0, 10_000)) / big(10_000)
-        if (amount.signum() == 0) throw TradeException("insufficient_funds", "No tokens to sell.")
+        if (amount.signum() == 0) throw TradeException("insufficient_funds", tr("No tokens to sell."))
         val route = routing.cached(ctx, req.token, Side.SELL, amount, MAX_QUOTE_AGE_MS)
             ?: routing.best(ctx, req.token, Side.SELL, listOf(amount)).firstOrNull()
             ?: throw TradeException("no_route", routing.whyNone(ctx, req.token) ?: NO_ROUTE)
@@ -431,7 +432,7 @@ class EvmTrader(
                 val a = async { readBig(p.ctx.reader, token, Erc20.allowance, p.wallet.address, path.approval.spender) }
                 o.await() to a.await()
             }
-            if (out == null || out.signum() == 0) return t.fail(i, "No quote")
+            if (out == null || out.signum() == 0) return t.fail(i, tr("No quote"))
 
             // 1) The ERC-20 approval, when the allowance does not cover this sell.
             var pendingApproval = false
@@ -441,7 +442,7 @@ class EvmTrader(
                 val idx = t.add(TradeStep(StepKind.APPROVE))
                 val vctx = vctx(p.chain, p.wallet.address, p.own, p.ctx, p.route, token = token, maxApproval = target, maxValue = BigInteger.ZERO)
                 if (!execute(t, idx, Exec(p.chain, p.prefs, p.wallet, tx, vctx, GasKind.APPROVE, simulate = true))) {
-                    return t.fail(i, "Approval failed")
+                    return t.fail(i, tr("Approval failed"))
                 }
                 pendingApproval = true
             }
@@ -488,7 +489,7 @@ class EvmTrader(
     private suspend fun routerSell(t: Ticket, i: Int, p: SellJob, funding: Funding, via: Via, out: BigInteger, pendingApproval: Boolean) {
         val token = p.route.pool.token
         val assetOut = funding.quoteAsset(p.ctx, Side.SELL, listOf(p.amount)).firstOrNull()
-        if (assetOut == null || assetOut.signum() == 0) return t.fail(i, "No quote")
+        if (assetOut == null || assetOut.signum() == 0) return t.fail(i, tr("No quote"))
         val vctx = vctx(p.chain, p.wallet.address, p.own, p.ctx, p.route, token = token, fundingAsset = funding.asset, maxPermit = p.amount, maxValue = BigInteger.ZERO)
         val permit = Permit2.buildTransfer(token, p.amount, now() / 1000)
         val check = NestyRouter.checkTransferPermit(permit, via.router, vctx)
@@ -498,7 +499,7 @@ class EvmTrader(
         t.set(i) { it.copy(minOut = minOut) }
         val r = fundedRoute(p.ctx, p.wallet.address, p.route, funding, via)
         val assetMin = TradeMath.minOutAfter(assetOut, 0, p.prefs.slippageBps)
-        val calls = NestyRouter.sellCalls(r, assetMin, minOut) ?: return t.fail(i, "No way back from ${funding.symbol}")
+        val calls = NestyRouter.sellCalls(r, assetMin, minOut) ?: return t.fail(i, tr("No way back from {1}", funding.symbol))
         val tx = TxDraft(
             via.router,
             NestyRouter.encodeExecute(
@@ -626,7 +627,7 @@ class EvmTrader(
             }
         }
         if (refusal != null) return Submit.Skipped(refusal)
-        if (sim != null && sim.isFailure) return Submit.Failed("Simulation failed: ${shortErr(sim.exceptionOrNull()!!)}")
+        if (sim != null && sim.isFailure) return Submit.Failed(tr("Simulation failed: {1}", shortErr(sim.exceptionOrNull()!!)))
         try {
             val fees = fees(p.chain, reader, p.prefs.gas)
             if (sim == null && p.chain.feeModel == FeeModel.ARBITRUM) {
@@ -635,7 +636,7 @@ class EvmTrader(
                 val balance = reader.balance(p.wallet.address)
                 val affordable = if (balance > p.tx.value) (balance - p.tx.value) / fees.maxFeePerGas else BigInteger.ZERO
                 if (affordable < TradeMath.MIN_UNSIMULATED_GAS) {
-                    return Submit.Skipped("Insufficient balance for gas: has ${TradeMath.formatToken(balance, 18)} ${p.chain.nativeSymbol}")
+                    return Submit.Skipped(tr("Insufficient balance for gas: has {1} {2}", TradeMath.formatToken(balance, 18), p.chain.nativeSymbol))
                 }
                 if (affordable < gas) gas = affordable
             }
@@ -704,7 +705,7 @@ class EvmTrader(
         val chain = chainOf(chainId)
         val p = Exec(chain, prefs, wallet, tx, vctx, kind, simulate, gate?.let { CompletableDeferred(it) }, reader)
         return when (val s = submit(p, {}, onSigned)) {
-            is Submit.Blocked -> Plain.Refused(s.actions.firstOrNull { !it.ok }?.reason ?: "Blocked", s.actions)
+            is Submit.Blocked -> Plain.Refused(s.actions.firstOrNull { !it.ok }?.reason ?: tr("Blocked"), s.actions)
             is Submit.Skipped -> Plain.Refused(s.reason)
             is Submit.Failed -> Plain.Refused(s.error)
             is Submit.Out -> Plain.Out(s.hash, s.nonce)
@@ -768,7 +769,7 @@ class EvmTrader(
                 t.set(i) {
                     it.copy(
                         status = if (receipt.success) StepStatus.CONFIRMED else StepStatus.FAILED,
-                        error = if (receipt.success) null else "Reverted on-chain",
+                        error = if (receipt.success) null else tr("Reverted on-chain"),
                         feeWei = receipt.feeWei,
                         amountOut = out ?: it.amountOut,
                         waitingNonce = null,
@@ -779,7 +780,7 @@ class EvmTrader(
             }
             if (!late && now() - started >= RECEIPT_TIMEOUT_MS) {
                 late = true
-                t.set(i) { it.copy(error = "Not confirmed yet.") }
+                t.set(i) { it.copy(error = tr("Not confirmed yet.")) }
                 t.sent[i]?.let { nonces.reset(chain, it.from) }
             }
             if (now() - gapCheckedAt >= GAP_CHECK_MS) {
@@ -884,7 +885,7 @@ class EvmTrader(
         fun block(i: Int, actions: List<BlockedAction>) {
             synchronized(lock) {
                 blocked = actions
-                steps[i] = steps[i].copy(status = StepStatus.BLOCKED, error = actions.firstOrNull { !it.ok }?.reason ?: "Blocked")
+                steps[i] = steps[i].copy(status = StepStatus.BLOCKED, error = actions.firstOrNull { !it.ok }?.reason ?: tr("Blocked"))
             }
             publish()
         }
@@ -928,8 +929,8 @@ class EvmTrader(
         private const val TAKE_TTL_MS = 30_000L
         private const val TAKES_KEPT = 500
 
-        const val NO_ROUTE = "No pool can trade this coin right now."
-        const val UPDATE_APP = "Update the app to trade here"
+        val NO_ROUTE: String get() = tr("No pool can trade this coin right now.")
+        val UPDATE_APP: String get() = tr("Update the app to trade here")
     }
 }
 
@@ -974,12 +975,12 @@ fun validationContext(
 
 /** A read that must answer: a failed call is an error, not a zero. */
 suspend fun readBig(reader: ChainReader, to: String, fn: AbiFunction, vararg args: Any?): BigInteger =
-    reader.read1(to, fn, *args) as? BigInteger ?: throw RpcError(-32000, "Could not read ${fn.name}")
+    reader.read1(to, fn, *args) as? BigInteger ?: throw RpcError(-32000, tr("Could not read {1}", fn.name))
 
 class Permit2State(val amount: BigInteger, val expiration: Long, val nonce: Long)
 
 suspend fun readPermit2(reader: ChainReader, owner: String, token: String, spender: String): Permit2State {
-    val r = reader.read(Permit2.ADDRESS, Permit2.allowance, owner, token, spender) ?: throw RpcError(-32000, "Could not read the Permit2 allowance")
+    val r = reader.read(Permit2.ADDRESS, Permit2.allowance, owner, token, spender) ?: throw RpcError(-32000, tr("Could not read the Permit2 allowance"))
     return Permit2State(r[0] as BigInteger, (r[1] as BigInteger).toLong(), (r[2] as BigInteger).toLong())
 }
 
@@ -989,7 +990,7 @@ suspend fun readPermit2(reader: ChainReader, owner: String, token: String, spend
  */
 fun shortErr(e: Throwable): String {
     val msg = e.message ?: e.javaClass.simpleName
-    if (Regex("insufficient funds", RegexOption.IGNORE_CASE).containsMatchIn(msg)) return "Insufficient balance for gas"
+    if (Regex("insufficient funds", RegexOption.IGNORE_CASE).containsMatchIn(msg)) return tr("Insufficient balance for gas")
     val line = msg
         .replace(Regex("0x[0-9a-fA-F]{40}(?![0-9a-fA-F])"), "0x…")
         .replace(Regex("0x([0-9a-fA-F]{6})[0-9a-fA-F]{12,}([0-9a-fA-F]{6})"), "0x$1…$2")

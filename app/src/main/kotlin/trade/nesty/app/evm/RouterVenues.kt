@@ -1,6 +1,7 @@
 package trade.nesty.app.evm
 
 import java.math.BigInteger
+import trade.nesty.app.i18n.tr
 
 /** A constant-product pool behind a v2-style router. */
 data class V2RouterPool(
@@ -139,8 +140,8 @@ class V2RouterVenue(
     private fun validate(tx: TxDraft, ctx: ValidationContext): List<BlockedAction> {
         val fns = if (aerodrome) listOf(aeroBuy, aeroSell, aeroAmounts) else listOf(uniBuy, uniSell, uniAmounts)
         val (fn, args) = fns.firstNotNullOfOrNull { f -> runCatching { f.decodeCall(tx.data) }.getOrNull()?.let { f to it } }
-            ?: return listOf(act("$label call", "Unknown function"))
-        if (fn === uniAmounts || fn === aeroAmounts) return listOf(act("getAmountsOut", "Not a swap"))
+            ?: return listOf(act("$label call", tr("Unknown function")))
+        if (fn === uniAmounts || fn === aeroAmounts) return listOf(act("getAmountsOut", tr("Not a swap")))
         val buy = fn === uniBuy || fn === aeroBuy
         val minOut = (if (buy) args[0] else args[1]) as BigInteger
         val path = (if (buy) args[1] else args[2]) as List<*>
@@ -155,21 +156,21 @@ class V2RouterVenue(
         val l = "$label ${if (buy) "buy" else "sell"} → ${to.take(6)}…"
         val weth = ctx.chain.wrappedNative
         fun fail(reason: String) = listOf(act(l, reason))
-        if (hops.isEmpty() || hops.size > 2) return fail("Only direct swaps or one stablecoin hop are allowed")
-        for (i in 1 until hops.size) if (!sameAddress(hops[i - 1].second, hops[i].first)) return fail("Route hops are not connected")
+        if (hops.isEmpty() || hops.size > 2) return fail(tr("Only direct swaps or one stablecoin hop are allowed"))
+        for (i in 1 until hops.size) if (!sameAddress(hops[i - 1].second, hops[i].first)) return fail(tr("Route hops are not connected"))
         val from = hops.first().first
         val dest = hops.last().second
         val middle = hops.drop(1).map { it.first }
         // Native on one end, the traded token on the other, at most one stablecoin between.
         val (nativeEnd, tokenEnd) = if (buy) from to dest else dest to from
-        if (!sameAddress(nativeEnd, weth)) return fail("Unexpected direction")
-        if (ctx.token == null || !sameAddress(tokenEnd, ctx.token)) return fail("Path does not trade the selected token")
-        if (middle.any { !Validator.isStable(ctx.chain, it) }) return fail("Only a stablecoin may sit between native and the token")
-        if (aerodrome && path.any { !sameAddress((it as List<*>)[3] as String, factory) }) return fail("Unknown pool factory")
-        if (!Validator.isOwn(ctx, to)) return fail("Recipient is not one of your wallets")
-        if (minOut.signum() == 0) return fail("No minimum output (no slippage protection)")
-        if (deadline < big(ctx.nowS) || deadline > big(ctx.nowS + ROUTER_MAX_DEADLINE_S)) return fail("Deadline outside the allowed window")
-        if (!buy && tx.value.signum() != 0) return fail("Sell must not carry native value")
+        if (!sameAddress(nativeEnd, weth)) return fail(tr("Unexpected direction"))
+        if (ctx.token == null || !sameAddress(tokenEnd, ctx.token)) return fail(tr("Path does not trade the selected token"))
+        if (middle.any { !Validator.isStable(ctx.chain, it) }) return fail(tr("Only a stablecoin may sit between native and the token"))
+        if (aerodrome && path.any { !sameAddress((it as List<*>)[3] as String, factory) }) return fail(tr("Unknown pool factory"))
+        if (!Validator.isOwn(ctx, to)) return fail(tr("Recipient is not one of your wallets"))
+        if (minOut.signum() == 0) return fail(tr("No minimum output (no slippage protection)"))
+        if (deadline < big(ctx.nowS) || deadline > big(ctx.nowS + ROUTER_MAX_DEADLINE_S)) return fail(tr("Deadline outside the allowed window"))
+        if (!buy && tx.value.signum() != 0) return fail(tr("Sell must not carry native value"))
         return listOf(act(l))
     }
 }
@@ -296,11 +297,11 @@ class V3RouterVenue(
     /** Native on one end, the traded token on the other, at most one stablecoin between. */
     private fun checkPath(path: List<V3Hop>, ctx: ValidationContext): String? {
         val weth = ctx.chain.wrappedNative
-        if (path.isEmpty() || path.size > 2) return "Only direct swaps or one stablecoin hop are allowed"
+        if (path.isEmpty() || path.size > 2) return tr("Only direct swaps or one stablecoin hop are allowed")
         val ends = listOf(path.first().tokenIn, path.last().tokenOut)
-        if (ends.none { sameAddress(it, weth) }) return "Unexpected asset"
-        if (ctx.token == null || ends.none { sameAddress(it, ctx.token) }) return "Path does not trade the selected token"
-        if (path.drop(1).any { !Validator.isStable(ctx.chain, it.tokenIn) }) return "Only a stablecoin may sit between native and the token"
+        if (ends.none { sameAddress(it, weth) }) return tr("Unexpected asset")
+        if (ctx.token == null || ends.none { sameAddress(it, ctx.token) }) return tr("Path does not trade the selected token")
+        if (path.drop(1).any { !Validator.isStable(ctx.chain, it.tokenIn) }) return tr("Only a stablecoin may sit between native and the token")
         return null
     }
 
@@ -311,18 +312,18 @@ class V3RouterVenue(
     private fun validate(tx: TxDraft, ctx: ValidationContext): List<BlockedAction> {
         val out = mutableListOf<BlockedAction>()
         val (outerFn, outer) = inner.firstNotNullOfOrNull { f -> runCatching { f.decodeCall(tx.data) }.getOrNull()?.let { f to it } }
-            ?: return listOf(act("$label call", "Unknown function"))
-        if (outerFn !== multicall) return listOf(act("$label ${outerFn.name}", "Only multicall(deadline, …) is allowed"))
+            ?: return listOf(act("$label call", tr("Unknown function")))
+        if (outerFn !== multicall) return listOf(act("$label ${outerFn.name}", tr("Only multicall(deadline, …) is allowed")))
         val deadline = outer[0] as BigInteger
         val calls = outer[1] as List<*>
         if (deadline < big(ctx.nowS) || deadline > big(ctx.nowS + ROUTER_MAX_DEADLINE_S)) {
-            out += act("Deadline", "Deadline outside the allowed window")
+            out += act("Deadline", tr("Deadline outside the allowed window"))
         }
         var paysUser = false
         for (data in calls) {
             val (fn, args) = inner.firstNotNullOfOrNull { f -> runCatching { f.decodeCall(data as ByteArray) }.getOrNull()?.let { f to it } }
                 ?: run {
-                    out += act("Inner call", "Unknown function")
+                    out += act(tr("Inner call"), tr("Unknown function"))
                     null
                 } ?: continue
             when {
@@ -339,7 +340,7 @@ class V3RouterVenue(
                         try {
                             path = UniversalRouter.decodeV3Path(s[0] as ByteArray)
                         } catch (e: Exception) {
-                            out += act("$label swap", "Malformed path")
+                            out += act("$label swap", tr("Malformed path"))
                             continue
                         }
                         recipient = s[1] as String
@@ -351,26 +352,26 @@ class V3RouterVenue(
                     val bad = checkPath(path, ctx)
                     out += when {
                         bad != null -> act(label, bad)
-                        !toRouter && !Validator.isOwn(ctx, recipient) -> act(label, "Recipient is not one of your wallets")
-                        minOut.signum() == 0 -> act(label, "No minimum output (no slippage protection)")
+                        !toRouter && !Validator.isOwn(ctx, recipient) -> act(label, tr("Recipient is not one of your wallets"))
+                        minOut.signum() == 0 -> act(label, tr("No minimum output (no slippage protection)"))
                         else -> act(label)
                     }
                     if (!toRouter && Validator.isOwn(ctx, recipient)) paysUser = true
                 }
                 fn === unwrapWETH9 -> {
                     val recipient = args[1] as String
-                    val label = "Unwrap to ${recipient.take(6)}…"
+                    val label = tr("Unwrap to {1}…", recipient.take(6))
                     if (Validator.isOwn(ctx, recipient)) {
                         out += act(label)
                         paysUser = true
                     } else {
-                        out += act(label, "Recipient is not one of your wallets")
+                        out += act(label, tr("Recipient is not one of your wallets"))
                     }
                 }
-                else -> out += act(fn.name, "Not allowed inside multicall")
+                else -> out += act(fn.name, tr("Not allowed inside multicall"))
             }
         }
-        if (!paysUser) out += act("Output", "No step sends the output to your wallet")
+        if (!paysUser) out += act("Output", tr("No step sends the output to your wallet"))
         return out
     }
 }

@@ -32,6 +32,7 @@ import kotlinx.coroutines.delay
 import trade.nesty.app.alerts.AlertTone
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.VaultState
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.move.MoveKind
 import trade.nesty.app.move.MoveState
 import trade.nesty.app.ui.alerts.AlertsScreen
@@ -72,7 +73,7 @@ class RootModels {
     val tracker = TrackerModel(AppGraph.api, AppGraph.settings)
 }
 
-val LocalRoot = staticCompositionLocalOf<RootModels> { error("No root") }
+val LocalRoot = staticCompositionLocalOf<RootModels> { error(tr("No root")) }
 
 /** Runs [block] while the screen is drawn and the app is in front; stops it otherwise. */
 @Composable
@@ -114,7 +115,7 @@ fun AppRoot() {
             if (n.id in trading.quiet) return@collect
             val here = (nav.top.route as? Route.Position)?.let { it.chain == n.chain && it.address.equals(n.token, ignoreCase = true) } == true
             if (n.ok && !here) {
-                toasts.show(n.title, n.detail, action = "View") { nav.push(Route.Position(n.chain, n.token)) }
+                toasts.show(n.title, n.detail, action = tr("View")) { nav.push(Route.Position(n.chain, n.token)) }
             } else {
                 toasts.show(n.title, n.detail, bad = !n.ok)
             }
@@ -128,7 +129,7 @@ fun AppRoot() {
             if (n.moveId in mover.quiet) return@collect
             val m = mover.get(n.moveId)
             if (m?.kind == MoveKind.BUY && m.state == MoveState.ASK) {
-                toasts.show(n.title, n.detail, action = "View") { nav.tab(Route.Portfolio) }
+                toasts.show(n.title, n.detail, action = tr("View")) { nav.tab(Route.Portfolio) }
             } else {
                 toasts.show(n.title, n.detail, bad = !n.ok)
             }
@@ -142,7 +143,7 @@ fun AppRoot() {
             val to = l?.let { routeOf(it) }
             val bad = a.tone == AlertTone.BAD
             if (l != null && to != null && nav.top.route != to) {
-                toasts.show(a.title, a.body, bad = bad, action = "View") {
+                toasts.show(a.title, a.body, bad = bad, action = tr("View")) {
                     AppGraph.alertStore.markRead(a.id)
                     nav.open(l)
                 }

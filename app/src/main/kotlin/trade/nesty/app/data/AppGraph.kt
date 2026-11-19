@@ -25,6 +25,8 @@ import trade.nesty.app.exit.ExitPlan
 import trade.nesty.app.exit.ExitStore
 import trade.nesty.app.exit.ExitWatcher
 import trade.nesty.app.exit.PrefsExitDisk
+import trade.nesty.app.i18n.I18n
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.move.HttpRelay
 import trade.nesty.app.move.MoveStore
 import trade.nesty.app.move.Mover
@@ -138,6 +140,8 @@ object AppGraph {
         alertStore = AlertStore(PrefsAlertDisk(app))
         alerts = Alerts(alertStore, settings) { a -> Notifier.post(app, a) }
         Notifier.channels(app)
+        // The channels' names show in Android's settings: they follow the app's language.
+        I18n.onChange { Notifier.channels(app) }
         val watch = AlertWatch(
             api = api,
             settings = settings,
@@ -192,10 +196,10 @@ object AppGraph {
     fun watchSummary(): Pair<String, String> {
         val n = exitStore.plans.size
         return when {
-            n == 0 -> "Watching for alerts" to "Tracked wallets and signals, with Nesty closed"
-            !session.canSignForWatch() -> "Exit plans paused" to "Unlock Nesty so they can sell"
-            n == 1 -> "Watching 1 exit plan" to "It sells even with Nesty closed"
-            else -> "Watching $n exit plans" to "They sell even with Nesty closed"
+            n == 0 -> tr("Watching for alerts") to tr("Tracked wallets and signals, with Nesty closed")
+            !session.canSignForWatch() -> tr("Exit plans paused") to tr("Unlock Nesty so they can sell")
+            n == 1 -> tr("Watching 1 exit plan") to tr("It sells even with Nesty closed")
+            else -> tr("Watching {1} exit plans", n) to tr("They sell even with Nesty closed")
         }
     }
 

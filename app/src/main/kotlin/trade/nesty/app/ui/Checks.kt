@@ -6,6 +6,7 @@ import trade.nesty.app.data.Coin
 import trade.nesty.app.data.Holder
 import trade.nesty.app.data.Share
 import trade.nesty.app.data.Tax
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.theme.Ink
 
 /** How a figure reads: the round mark beside it. */
@@ -30,10 +31,10 @@ enum class Tone(val bg: Color, val ink: Color, val value: Color) {
     /** For a screen reader, after the label. */
     val word: String
         get() = when (this) {
-            BAD -> "red flag"
-            WARN -> "worth watching"
-            OK -> "fine"
-            NONE -> "not read yet"
+            BAD -> tr("red flag")
+            WARN -> tr("worth watching")
+            OK -> tr("fine")
+            NONE -> tr("not read yet")
             else -> ""
         }
 }
@@ -58,7 +59,7 @@ object Checks {
         val s = t.sell ?: 0.0
         if (b == 0.0 && s == 0.0) return "0%"
         if (b == s) return Fmt.taxPct(b)
-        return "${Fmt.taxPct(b)} buy · ${Fmt.taxPct(s)} sell"
+        return tr("{1} buy · {2} sell", Fmt.taxPct(b), Fmt.taxPct(s))
     }
 
     private fun taxTone(t: Tax): Tone = if (maxOf(t.buy ?: 0.0, t.sell ?: 0.0) >= Warn.TAX) Tone.WARN else Tone.OK
@@ -77,27 +78,27 @@ object Checks {
             it.top10 != null || it.bundlers != null || it.creator != null || it.snipers != null || it.team != null
         }
         if (solana) {
-            out += Check(Tone.NONE, "Holder shares", "", "Not counted on Solana")
+            out += Check(Tone.NONE, tr("Holder shares"), "", tr("Not counted on Solana"))
         } else if (share != null) {
-            share.bundlers?.let { out += Check(shareTone(it, Warn.SHARE), "Bundlers hold", "Bought in the launch block", Fmt.share(it)) }
-            share.top10?.let { out += Check(shareTone(it, Warn.TOP10), "Top 10 hold", "Pools and burns left out", Fmt.share(it)) }
-            share.creator?.let { out += Check(shareTone(it, Warn.SHARE), "Creator holds", "The wallet that launched it", Fmt.share(it)) }
-            share.snipers?.let { out += Check(shareTone(it, Warn.SHARE), "Snipers hold", "Bought in the first seconds", Fmt.share(it)) }
+            share.bundlers?.let { out += Check(shareTone(it, Warn.SHARE), tr("Bundlers hold"), tr("Bought in the launch block"), Fmt.share(it)) }
+            share.top10?.let { out += Check(shareTone(it, Warn.TOP10), tr("Top 10 hold"), tr("Pools and burns left out"), Fmt.share(it)) }
+            share.creator?.let { out += Check(shareTone(it, Warn.SHARE), tr("Creator holds"), tr("The wallet that launched it"), Fmt.share(it)) }
+            share.snipers?.let { out += Check(shareTone(it, Warn.SHARE), tr("Snipers hold"), tr("Bought in the first seconds"), Fmt.share(it)) }
             share.team?.takeIf { it.count > 0 }?.let {
-                out += Check(shareTone(it.share, Warn.SHARE), "Team holds", "Listed by the creator at launch", Fmt.share(it.share))
+                out += Check(shareTone(it.share, Warn.SHARE), tr("Team holds"), tr("Listed by the creator at launch"), Fmt.share(it.share))
             }
         }
-        coin.tax?.let { t -> taxText(t)?.let { out += Check(taxTone(t), "Tax", "", it) } }
+        coin.tax?.let { t -> taxText(t)?.let { out += Check(taxTone(t), tr("Tax"), "", it) } }
         if (holders != null) {
             val c = clusterShare(holders)
             out += when {
-                c >= Warn.SHARE -> Check(Tone.BAD, "Cluster", "Wallets one operator runs", Fmt.share(c))
-                c > 0 -> Check(Tone.WARN, "Cluster", "Wallets one operator runs", Fmt.share(c))
-                else -> Check(Tone.OK, "Cluster", "", "None holding")
+                c >= Warn.SHARE -> Check(Tone.BAD, tr("Cluster"), tr("Wallets one operator runs"), Fmt.share(c))
+                c > 0 -> Check(Tone.WARN, tr("Cluster"), tr("Wallets one operator runs"), Fmt.share(c))
+                else -> Check(Tone.OK, tr("Cluster"), "", tr("None holding"))
             }
         }
         if (!solana && share == null && holders == null) {
-            out += Check(Tone.NONE, "Holder shares", "", if (followed) "Not read yet" else "Not counted for this coin")
+            out += Check(Tone.NONE, tr("Holder shares"), "", if (followed) tr("Not read yet") else tr("Not counted for this coin"))
         }
         return out.sortedBy { order(it.tone) }
     }
@@ -116,27 +117,27 @@ object Checks {
      * a tax, then the top 10, then where it trades.
      */
     fun flag(signalSize: Int?, share: Share?, tax: Tax?, venue: String?): Flag? {
-        if (signalSize != null && signalSize > 0) return Flag(Tone.WALLETS, "$signalSize proven wallets bought")
+        if (signalSize != null && signalSize > 0) return Flag(Tone.WALLETS, tr("{1} proven wallets bought", signalSize))
         if (share != null) {
             val warns = listOfNotNull(
-                share.bundlers?.takeIf { it >= Warn.SHARE }?.let { it to "Bundlers hold" },
-                share.snipers?.takeIf { it >= Warn.SHARE }?.let { it to "Snipers hold" },
-                share.creator?.takeIf { it >= Warn.SHARE }?.let { it to "Creator holds" },
-                share.team?.takeIf { it.count > 0 && it.share >= Warn.SHARE }?.let { it.share to "Team holds" },
-                share.top10?.takeIf { it >= Warn.TOP10 }?.let { it to "Top 10 hold" },
+                share.bundlers?.takeIf { it >= Warn.SHARE }?.let { it to tr("Bundlers hold") },
+                share.snipers?.takeIf { it >= Warn.SHARE }?.let { it to tr("Snipers hold") },
+                share.creator?.takeIf { it >= Warn.SHARE }?.let { it to tr("Creator holds") },
+                share.team?.takeIf { it.count > 0 && it.share >= Warn.SHARE }?.let { it.share to tr("Team holds") },
+                share.top10?.takeIf { it >= Warn.TOP10 }?.let { it to tr("Top 10 hold") },
             )
             warns.maxByOrNull { it.first }?.let { return Flag(Tone.WARN, "${it.second} ${Fmt.share(it.first)}") }
         }
         if (tax != null) {
             val most = maxOf(tax.buy ?: 0.0, tax.sell ?: 0.0)
-            if (most >= Warn.TAX) return Flag(Tone.WARN, "Tax ${Fmt.taxPct(most)}")
+            if (most >= Warn.TAX) return Flag(Tone.WARN, tr("Tax {1}", Fmt.taxPct(most)))
         }
-        share?.top10?.takeIf { it >= 0.0005 }?.let { return Flag(Tone.INFO, "Top 10 hold ${Fmt.share(it)}") }
+        share?.top10?.takeIf { it >= 0.0005 }?.let { return Flag(Tone.INFO, tr("Top 10 hold {1}", Fmt.share(it))) }
         if (tax != null) {
             val most = maxOf(tax.buy ?: 0.0, tax.sell ?: 0.0)
-            if (most > 0) return Flag(Tone.INFO, "Tax ${Fmt.taxPct(most)}")
+            if (most > 0) return Flag(Tone.INFO, tr("Tax {1}", Fmt.taxPct(most)))
         }
-        venue?.takeIf { it.isNotBlank() }?.let { return Flag(Tone.INFO, "On $it") }
+        venue?.takeIf { it.isNotBlank() }?.let { return Flag(Tone.INFO, tr("On {1}", it)) }
         return null
     }
 }

@@ -1,6 +1,7 @@
 package trade.nesty.app.sol.dex
 
 import trade.nesty.app.evm.Side
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.Instruction
 import trade.nesty.app.sol.Layouts
 import trade.nesty.app.sol.QuoteAsset
@@ -320,8 +321,8 @@ object MeteoraDamm : DexModule<MeteoraDammVenue>(DexKind.METEORA_DAMM, "cpamdpZC
     }
 
     override fun idle(v: MeteoraDammVenue, nowSec: Double): String? {
-        if (v.status != 0) return "Meteora has disabled swaps on this pool."
-        if (pointOf(v) < v.activationPoint) return "This Meteora pool has not opened yet."
+        if (v.status != 0) return tr("Meteora has disabled swaps on this pool.")
+        if (pointOf(v) < v.activationPoint) return tr("This Meteora pool has not opened yet.")
         return null
     }
 

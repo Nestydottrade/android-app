@@ -8,6 +8,7 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.evm.ChainReader
 import trade.nesty.app.evm.Erc20
 import trade.nesty.app.evm.sanitizeLabel
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.keys.Evm
 import trade.nesty.app.sol.SolAddr
 
@@ -36,8 +37,8 @@ sealed interface Typed {
 object Recipient {
     private val EVM = Regex("^0x[0-9a-fA-F]{40}$")
 
-    const val NOT_AN_ADDRESS = "This is not an EVM or Solana address"
-    const val BAD_CHECKSUM = "This EVM address has a typo in it: check every character"
+    val NOT_AN_ADDRESS: String get() = tr("This is not an EVM or Solana address")
+    val BAD_CHECKSUM: String get() = tr("This EVM address has a typo in it: check every character")
 
     /**
      * What was typed, read as the extension reads a typed recipient: a mixed-case EVM address must
@@ -75,5 +76,5 @@ object Recipient {
         return EvmKind(contract, symbol)
     }
 
-    fun tokenContract(symbol: String) = "This is the $symbol token contract: funds sent there are lost."
+    fun tokenContract(symbol: String) = tr("This is the {1} token contract: funds sent there are lost.", symbol)
 }

@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.keys.wipe
 import trade.nesty.app.ui.GreenButton
 import trade.nesty.app.ui.SecureWindow
@@ -73,8 +74,8 @@ object Fingerprint {
         class Failed(val text: String) : Answer
     }
 
-    const val ADD_ONE = "Add a fingerprint in your phone's settings first."
-    const val DROPPED = "Your phone's fingerprints changed, so fingerprint unlock is off. Use your password, then turn it on again in the menu."
+    val ADD_ONE: String get() = tr("Add a fingerprint in your phone's settings first.")
+    val DROPPED: String get() = tr("Your phone's fingerprints changed, so fingerprint unlock is off. Use your password, then turn it on again in the menu.")
 
     fun can(context: Context): Can {
         val sdk = Build.VERSION.SDK_INT
@@ -116,13 +117,13 @@ object Fingerprint {
             } catch (_: Exception) {
                 return Outcome.Problem(ADD_ONE)
             }
-            return when (val a = ask(context, sealer, "Turn on fingerprint unlock", "Touch the sensor to confirm", "Cancel")) {
+            return when (val a = ask(context, sealer, tr("Turn on fingerprint unlock"), tr("Touch the sensor to confirm"), tr("Cancel"))) {
                 is Answer.Ok -> try {
                     withContext(Dispatchers.Default) { store.save(a.cipher, key) }
                     Outcome.Done
                 } catch (_: Exception) {
                     store.turnOff()
-                    Outcome.Problem("That did not work. Try again.")
+                    Outcome.Problem(tr("That did not work. Try again."))
                 }
                 Answer.Cancelled -> {
                     store.turnOff()
@@ -149,7 +150,7 @@ object Fingerprint {
             FingerprintOpener.Off -> return null.also { session.fingerprintChanged() }
             FingerprintOpener.Dropped -> return DROPPED.also { session.fingerprintChanged() }
         }
-        return when (val a = ask(context, opener, "Unlock Nesty", null, "Use password")) {
+        return when (val a = ask(context, opener, tr("Unlock Nesty"), null, tr("Use password"))) {
             is Answer.Ok -> try {
                 session.unlockWithKey(withContext(Dispatchers.Default) { store.open(a.cipher) })
                 null
@@ -158,7 +159,7 @@ object Fingerprint {
                 session.turnOffFingerprint()
                 DROPPED
             } catch (_: Exception) {
-                "Fingerprint did not work. Use your password."
+                tr("Fingerprint did not work. Use your password.")
             }
             Answer.Cancelled -> null
             is Answer.Failed -> a.text
@@ -176,7 +177,7 @@ object Fingerprint {
             AppGraph.session.fingerprintChanged()
             return false
         }
-        val a = ask(context, opener, title, subtitle, "Cancel") as? Answer.Ok ?: return false
+        val a = ask(context, opener, title, subtitle, tr("Cancel")) as? Answer.Ok ?: return false
         val key = withContext(Dispatchers.Default) { runCatching { store.open(a.cipher) }.getOrNull() } ?: return false
         return try {
             AppGraph.session.isKey(key)
@@ -203,7 +204,7 @@ object Fingerprint {
                 object : BiometricPrompt.AuthenticationCallback() {
                     override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                         val c = result.cryptoObject?.cipher
-                        if (cont.isActive) cont.resume(if (c != null) Answer.Ok(c) else Answer.Failed("Fingerprint did not work. Use your password."))
+                        if (cont.isActive) cont.resume(if (c != null) Answer.Ok(c) else Answer.Failed(tr("Fingerprint did not work. Use your password.")))
                     }
 
                     // A finger that does not match: the prompt says so itself and keeps listening.
@@ -214,10 +215,10 @@ object Fingerprint {
                         cont.resume(
                             when (errorCode) {
                                 BiometricPrompt.BIOMETRIC_ERROR_USER_CANCELED, BiometricPrompt.BIOMETRIC_ERROR_CANCELED -> Answer.Cancelled
-                                BiometricPrompt.BIOMETRIC_ERROR_LOCKOUT -> Answer.Failed("Too many tries. Wait a little, or use your password.")
-                                BiometricPrompt.BIOMETRIC_ERROR_LOCKOUT_PERMANENT -> Answer.Failed("Fingerprint is locked. Unlock the phone with its PIN, then try again.")
+                                BiometricPrompt.BIOMETRIC_ERROR_LOCKOUT -> Answer.Failed(tr("Too many tries. Wait a little, or use your password."))
+                                BiometricPrompt.BIOMETRIC_ERROR_LOCKOUT_PERMANENT -> Answer.Failed(tr("Fingerprint is locked. Unlock the phone with its PIN, then try again."))
                                 BiometricPrompt.BIOMETRIC_ERROR_NO_BIOMETRICS -> Answer.Failed(ADD_ONE)
-                                else -> Answer.Failed("Fingerprint did not work. Use your password.")
+                                else -> Answer.Failed(tr("Fingerprint did not work. Use your password."))
                             },
                         )
                     }
@@ -265,12 +266,12 @@ fun FingerprintSetting() {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Unlock with fingerprint", style = text(15, FontWeight.SemiBold))
+                Text(tr("Unlock with fingerprint"), style = text(15, FontWeight.SemiBold))
                 Text(
                     when {
-                        on -> "On. Your password opens Nesty too."
+                        on -> tr("On. Your password opens Nesty too.")
                         can == Fingerprint.Can.NONE_ENROLLED -> Fingerprint.ADD_ONE
-                        else -> "Asks for your password to turn on."
+                        else -> tr("Asks for your password to turn on.")
                     },
                     style = text(13, color = Ink.muted),
                 )
@@ -297,7 +298,7 @@ fun FingerprintSetting() {
                         .padding(horizontal = 16.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(if (on) "Turn off" else if (form) "Cancel" else "Turn on", style = text(14, FontWeight.Bold))
+                    Text(if (on) tr("Turn off") else if (form) tr("Cancel") else tr("Turn on"), style = text(14, FontWeight.Bold))
                 }
             }
         }
@@ -305,11 +306,11 @@ fun FingerprintSetting() {
         if (form && !on) {
             SecureWindow()
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Password", style = text(13, color = Ink.muted))
-                TextBox(password, { password = it }, "Password", Modifier.fillMaxWidth(), secret = true, bad = problem, ime = ImeAction.Go, onIme = turnOn)
+                Text(tr("Password"), style = text(13, color = Ink.muted))
+                TextBox(password, { password = it }, tr("Password"), Modifier.fillMaxWidth(), secret = true, bad = problem, ime = ImeAction.Go, onIme = turnOn)
             }
             problem?.let { Text(it, style = text(14, FontWeight.SemiBold, Ink.pinkSoft), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
-            GreenButton(if (busy) "Checking…" else "Turn on", turnOn, Modifier.fillMaxWidth(), solid = password.isNotEmpty() && !busy, height = 48.dp, fontSize = 15)
+            GreenButton(if (busy) tr("Checking…") else tr("Turn on"), turnOn, Modifier.fillMaxWidth(), solid = password.isNotEmpty() && !busy, height = 48.dp, fontSize = 15)
         }
     }
 }

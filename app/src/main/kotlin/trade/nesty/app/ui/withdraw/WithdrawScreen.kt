@@ -59,6 +59,7 @@ import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Balances
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Preset
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.move.LegKind
 import trade.nesty.app.move.LegQuote
 import trade.nesty.app.move.LegStatus
@@ -175,7 +176,7 @@ private fun costOf(offers: Offers, parts: List<Part>, to: Chain, recipient: Stri
             r == null -> known = false
             r.isFailure -> {
                 known = false
-                problem = problem ?: "Moving from ${p.chain.title}: ${r.exceptionOrNull()?.message ?: "the bridge did not answer."}"
+                problem = problem ?: tr("Moving from {1}: {2}", p.chain.title, r.exceptionOrNull()?.message ?: tr("the bridge did not answer."))
             }
             else -> {
                 val q = r.getOrThrow()
@@ -207,9 +208,9 @@ private fun ReadOffers(offers: Offers, parts: List<Part>?, to: Chain, recipient:
 
 private fun feeAndTime(c: Cost?): String = when {
     c == null -> ""
-    c.problem != null -> "Cannot move now"
+    c.problem != null -> tr("Cannot move now")
     c.feeUsd == null -> "…"
-    else -> "Fee about ${Fmt.usdFull(c.feeUsd)} · ${if (c.bridged) Fmt.eta(c.seconds) else "a few seconds"}"
+    else -> tr("Fee about {1} · {2}", Fmt.usdFull(c.feeUsd), if (c.bridged) Fmt.eta(c.seconds) else tr("a few seconds"))
 }
 
 private fun cap(s: String) = s.replaceFirstChar { it.uppercase() }
@@ -248,9 +249,9 @@ fun WithdrawScreen() {
     DisposableEffect(Unit) { onDispose { shownId?.let { mover.quiet.remove(it) } } }
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Withdraw", sub = "One Balance ${oneBalance()}", onBack = { nav.pop() })
+        BackHeader(tr("Withdraw"), sub = tr("One Balance {1}", oneBalance()), onBack = { nav.pop() })
         if (wallet == null) {
-            EmptyNote("Add a wallet first.")
+            EmptyNote(tr("Add a wallet first."))
             return@Column
         }
         val done = doneId?.let { mover.get(it) }
@@ -298,7 +299,7 @@ fun WithdrawScreen() {
         }
         val addressNote = when {
             typed is Typed.Bad -> typed.reason
-            self -> "This is this wallet's own address on ${dest.title}."
+            self -> tr("This is this wallet's own address on {1}.", dest.title)
             else -> check?.block
         }
         // Before an address is in, the fees are read as if to the wallet itself: the same to the bridge.
@@ -307,10 +308,10 @@ fun WithdrawScreen() {
         val cost = parts?.let { costOf(offers, it, dest, quoteTo) }
 
         val label = when {
-            to == null || addressNote != null -> "Enter an address"
-            usd == null -> "Enter an amount"
-            over -> "Amount is too high"
-            else -> "Review withdrawal"
+            to == null || addressNote != null -> tr("Enter an address")
+            usd == null -> tr("Enter an amount")
+            over -> tr("Amount is too high")
+            else -> tr("Review withdrawal")
         }
         val ready = to != null && addressNote == null && !checking && parts != null && cost != null && cost.problem == null && cost.feeUsd != null
 
@@ -325,20 +326,20 @@ fun WithdrawScreen() {
         ) {
             // Send to
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Send to", style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
+                Text(tr("Send to"), style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextBox(
                         address,
                         { address = it.trim() },
-                        "Address to send to",
+                        tr("Address to send to"),
                         Modifier.weight(1f),
-                        placeholder = "EVM or Solana address",
+                        placeholder = tr("EVM or Solana address"),
                         bad = addressNote,
                         ime = ImeAction.Next,
                     )
-                    Pill("Paste") {
+                    Pill(tr("Paste")) {
                         val pasted = SecretClipboard.paste(context)?.trim()
-                        if (pasted.isNullOrEmpty()) toasts.show("Nothing to paste", "Copy the address first.") else address = pasted
+                        if (pasted.isNullOrEmpty()) toasts.show(tr("Nothing to paste"), tr("Copy the address first.")) else address = pasted
                     }
                 }
                 if (addressNote != null) {
@@ -348,12 +349,12 @@ fun WithdrawScreen() {
 
             // Amount in dollars
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Amount in dollars", style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
+                Text(tr("Amount in dollars"), style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
                 AmountField(amount, enabled = true, bad = over) { amount = it }
-                val from = if (only == null) "all chains" else only.title
+                val from = if (only == null) tr("all chains") else only.title
                 Text(
-                    if (over) "The most you can send from $from is ${Fmt.usdFull(max)}"
-                    else "Up to ${Fmt.usdFull(max)} from $from. A little stays behind for network fees.",
+                    if (over) tr("The most you can send from {1} is {2}", from, Fmt.usdFull(max))
+                    else tr("Up to {1} from {2}. A little stays behind for network fees.", Fmt.usdFull(max), from),
                     style = text(13, color = if (over) Ink.pink else Ink.muted, lineHeight = 18.sp),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -361,7 +362,7 @@ fun WithdrawScreen() {
                         AmountChip("$$v", on = usd == v.toDouble(), enabled = true, modifier = Modifier.weight(1f)) { amount = v.toString() }
                     }
                     val all = floor(max * 100) / 100
-                    AmountChip("All", on = usd != null && all > 0 && usd == all, enabled = all > 0, modifier = Modifier.weight(1f)) {
+                    AmountChip(tr("All"), on = usd != null && all > 0 && usd == all, enabled = all > 0, modifier = Modifier.weight(1f)) {
                         amount = String.format(Locale.US, "%.2f", all)
                     }
                 }
@@ -370,9 +371,9 @@ fun WithdrawScreen() {
             // Taken from
             Column {
                 PickRow(
-                    "Taken from",
-                    if (only == null) "All chains" else "Only ${only.title}",
-                    "up to ${Fmt.usdFull(max)}",
+                    tr("Taken from"),
+                    if (only == null) tr("All chains") else tr("Only {1}", only.title),
+                    tr("up to {1}", Fmt.usdFull(max)),
                     takenOpen,
                 ) {
                     takenOpen = !takenOpen
@@ -384,8 +385,8 @@ fun WithdrawScreen() {
                         val allParts = usd?.let { Plans.withdrawParts(minOf(it, allMax), dest, funds, reserves, null) }
                         ReadOffers(offers, allParts, dest, quoteTo)
                         Choice(
-                            "All chains",
-                            "Up to ${Fmt.usdFull(allMax)}, ${dest.title} first, then the others",
+                            tr("All chains"),
+                            tr("Up to {1}, {2} first, then the others", Fmt.usdFull(allMax), dest.title),
                             feeAndTime(allParts?.let { costOf(offers, it, dest, quoteTo) }),
                             on = only == null,
                             enabled = true,
@@ -400,9 +401,9 @@ fun WithdrawScreen() {
                             Choice(
                                 c.title,
                                 when {
-                                    m <= 0 -> if (c != dest && !Plans.canLeave(c) && movableUsd(c) > 0) "Nothing to send here: ${c.title} funds stay on ${c.title}" else "Nothing to send here"
-                                    usd != null && m < usd -> "Up to ${Fmt.usdFull(m)}, less than this amount"
-                                    else -> "Up to ${Fmt.usdFull(m)}"
+                                    m <= 0 -> if (c != dest && !Plans.canLeave(c) && movableUsd(c) > 0) tr("Nothing to send here: {1} funds stay on {2}", c.title, c.title) else tr("Nothing to send here")
+                                    usd != null && m < usd -> tr("Up to {1}, less than this amount", Fmt.usdFull(m))
+                                    else -> tr("Up to {1}", Fmt.usdFull(m))
                                 },
                                 feeAndTime(cParts?.let { costOf(offers, it, dest, quoteTo) }),
                                 on = only == c,
@@ -419,7 +420,7 @@ fun WithdrawScreen() {
 
             // Arrives on
             Column {
-                PickRow("Arrives on", "${dest.title} as ${dest.native}", null, arrivesOpen) {
+                PickRow(tr("Arrives on"), tr("{1} as {2}", dest.title, dest.native), null, arrivesOpen) {
                     arrivesOpen = !arrivesOpen
                     takenOpen = false
                 }
@@ -432,13 +433,13 @@ fun WithdrawScreen() {
                             ReadOffers(offers, dParts, d, dTo)
                             val here = balance?.chains?.get(d) ?: 0.0
                             Choice(
-                                "${d.title} as ${d.native}",
+                                tr("{1} as {2}", d.title, d.native),
                                 when {
-                                    !works -> if (d.isEvm) "Needs an EVM address" else "Needs a Solana address"
-                                    dParts == null -> "You have ${Fmt.usdFull(here)} here"
-                                    dParts.all { it.chain == d } -> "You have ${Fmt.usdFull(here)} here · Straight from your ${d.title} balance"
-                                    dParts.any { it.chain == d } -> "You have ${Fmt.usdFull(here)} here · Part is moved here first"
-                                    else -> "You have ${Fmt.usdFull(here)} here · All of it is moved here first"
+                                    !works -> if (d.isEvm) tr("Needs an EVM address") else tr("Needs a Solana address")
+                                    dParts == null -> tr("You have {1} here", Fmt.usdFull(here))
+                                    dParts.all { it.chain == d } -> tr("You have {1} here · Straight from your {2} balance", Fmt.usdFull(here), d.title)
+                                    dParts.any { it.chain == d } -> tr("You have {1} here · Part is moved here first", Fmt.usdFull(here))
+                                    else -> tr("You have {1} here · All of it is moved here first", Fmt.usdFull(here))
                                 },
                                 if (works) feeAndTime(dParts?.let { costOf(offers, it, d, dTo) }) else "",
                                 on = d == dest,
@@ -458,7 +459,7 @@ fun WithdrawScreen() {
             Summary(dest, parts, cost, usd)
 
             Text(
-                "Coins you hold are not part of this. To send one, open it in Portfolio.",
+                tr("Coins you hold are not part of this. To send one, open it in Portfolio."),
                 style = text(13, color = Ink.muted, lineHeight = 18.sp),
             )
         }
@@ -480,7 +481,7 @@ fun WithdrawScreen() {
                     throw e
                 } catch (e: Exception) {
                     reviewing = false
-                    toasts.show("Withdrawal not sent", e.message ?: "Could not start.", bad = true)
+                    toasts.show(tr("Withdrawal not sent"), e.message ?: tr("Could not start."), bad = true)
                 }
             }
         }
@@ -511,8 +512,8 @@ private fun PickRow(title: String, value: String, sub: String?, open: Boolean, o
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clip(RoundedCornerShape(14.dp))
-            .clickable(onClickLabel = if (open) "Close the list" else "Change", role = Role.Button, onClick = onToggle)
-            .semantics(mergeDescendants = true) { stateDescription = if (open) "Open" else "Closed" }
+            .clickable(onClickLabel = if (open) tr("Close the list") else tr("Change"), role = Role.Button, onClick = onToggle)
+            .semantics(mergeDescendants = true) { stateDescription = if (open) tr("Expanded") else tr("Collapsed") }
             .padding(vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -522,7 +523,7 @@ private fun PickRow(title: String, value: String, sub: String?, open: Boolean, o
             Text(value, style = text(15, FontWeight.Bold))
             if (sub != null) Text(sub, style = text(13, color = Ink.muted))
         }
-        Text(if (open) "Close" else "Change", style = text(14, FontWeight.Bold, Ink.green))
+        Text(if (open) tr("Close") else tr("Change"), style = text(14, FontWeight.Bold, Ink.green))
     }
 }
 
@@ -562,10 +563,14 @@ private fun ChainNote(dest: Chain, parts: List<Part>?, cost: Cost?) {
     val moved = parts.orEmpty().filter { it.chain != dest }
     val text = when {
         cost?.problem != null -> cost.problem
-        parts == null -> "The receiver must be able to use ${dest.title}. Ask them if you are not sure."
-        moved.isEmpty() -> "Sent straight from your ${dest.title} balance. The receiver must be able to use ${dest.title}."
-        else -> moved.joinToString(" and ") { "${Fmt.usdFull(it.usd)} from ${it.chain.title}" } +
-            " is moved to ${dest.title} on the way. The receiver must be able to use ${dest.title}."
+        parts == null -> tr("The receiver must be able to use {1}. Ask them if you are not sure.", dest.title)
+        moved.isEmpty() -> tr("Sent straight from your {1} balance. The receiver must be able to use {2}.", dest.title, dest.title)
+        else -> tr(
+            "{1} is moved to {2} on the way. The receiver must be able to use {3}.",
+            Fmt.joinAnd(moved.map { tr("{1} from {2}", Fmt.usdFull(it.usd), it.chain.title) }),
+            dest.title,
+            dest.title,
+        )
     }
     Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         ToneMark(if (cost?.problem != null) Tone.BAD else Tone.INFO, 18.dp)
@@ -578,10 +583,10 @@ private fun Summary(dest: Chain, parts: List<Part>?, cost: Cost?, usd: Double?) 
     val shape = RoundedCornerShape(14.dp)
     val wait = if (usd != null && parts != null) "…" else Fmt.DASH
     Column(Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line, shape)) {
-        DetailRow(if (cost?.bridged == true) "Network and move fees" else "Network fee", cost?.feeUsd?.let { "about ${Fmt.usdFull(it)}" } ?: wait)
-        DetailRow("Arrives in", if (cost == null) wait else if (cost.bridged) cap(Fmt.eta(cost.seconds)) else "A few seconds")
+        DetailRow(if (cost?.bridged == true) tr("Network and move fees") else tr("Network fee"), cost?.feeUsd?.let { tr("about {1}", Fmt.usdFull(it)) } ?: wait)
+        DetailRow(tr("Arrives in"), if (cost == null) wait else if (cost.bridged) cap(Fmt.eta(cost.seconds)) else tr("A few seconds"))
         Box(Modifier.fillMaxWidth().background(Ink.raised)) {
-            DetailRow("They receive about", cost?.receiveUsd?.let { "${Fmt.usdFull(it)} in ${dest.native}" } ?: wait, strong = true)
+            DetailRow(tr("They receive about"), cost?.receiveUsd?.let { tr("{1} in {2}", Fmt.usdFull(it), dest.native) } ?: wait, strong = true)
         }
     }
 }
@@ -590,19 +595,19 @@ private fun Summary(dest: Chain, parts: List<Part>?, cost: Cost?, usd: Double?) 
 @Composable
 private fun Review(dest: Chain, to: String, usd: Double, parts: List<Part>, cost: Cost, onBack: () -> Unit, onConfirmed: () -> Unit) {
     val moved = parts.filter { it.chain != dest }
-    SendReview(dest, to, "Confirm withdrawal", "${Fmt.usdFull(usd)} to ${Fmt.address(to)} on ${dest.title}", onBack, onConfirmed) {
+    SendReview(dest, to, tr("Confirm withdrawal"), tr("{1} to {2} on {3}", Fmt.usdFull(usd), Fmt.address(to), dest.title), onBack, onConfirmed) {
         val shape = RoundedCornerShape(14.dp)
         Column(Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line, shape)) {
-            DetailRow("Leaves One Balance", Fmt.usdFull(usd))
-            DetailRow(if (cost.bridged) "Network and move fees" else "Network fee", cost.feeUsd?.let { "about ${Fmt.usdFull(it)}" } ?: Fmt.DASH)
-            DetailRow("Arrives in", if (cost.bridged) cap(Fmt.eta(cost.seconds)) else "A few seconds")
+            DetailRow(tr("Leaves One Balance"), Fmt.usdFull(usd))
+            DetailRow(if (cost.bridged) tr("Network and move fees") else tr("Network fee"), cost.feeUsd?.let { tr("about {1}", Fmt.usdFull(it)) } ?: Fmt.DASH)
+            DetailRow(tr("Arrives in"), if (cost.bridged) cap(Fmt.eta(cost.seconds)) else tr("A few seconds"))
             Box(Modifier.fillMaxWidth().background(Ink.raised)) {
-                DetailRow("They receive about", cost.receiveUsd?.let { "${Fmt.usdFull(it)} in ${dest.native}" } ?: Fmt.DASH, strong = true)
+                DetailRow(tr("They receive about"), cost.receiveUsd?.let { tr("{1} in {2}", Fmt.usdFull(it), dest.native) } ?: Fmt.DASH, strong = true)
             }
         }
         if (moved.isNotEmpty()) {
             Text(
-                moved.joinToString(" and ") { "${Fmt.usdFull(it.usd)} from ${it.chain.title}" } + " is moved to ${dest.title} on the way.",
+                tr("{1} is moved to {2} on the way.", Fmt.joinAnd(moved.map { tr("{1} from {2}", Fmt.usdFull(it.usd), it.chain.title) }), dest.title),
                 style = text(13, color = Ink.text2, lineHeight = 18.sp),
             )
         }
@@ -631,7 +636,7 @@ internal fun SendReview(
     var note by remember { mutableStateOf<String?>(null) }
     var password by remember { mutableStateOf("") }
     val finger = session.fingerprintOn && Fingerprint.can(context) == Fingerprint.Can.YES
-    NestySheet("Check before you send", onBack) {
+    NestySheet(tr("Check before you send"), onBack) {
         if (!finger) SecureWindow()
         Column(
             Modifier
@@ -642,7 +647,7 @@ internal fun SendReview(
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("To this address on ${chain.title}", style = text(13, color = Ink.muted))
+                Text(tr("To this address on {1}", chain.title), style = text(13, color = Ink.muted))
                 Text(
                     inFours(to),
                     style = figure(18, FontWeight.SemiBold).copy(lineHeight = 26.sp),
@@ -653,20 +658,20 @@ internal fun SendReview(
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ToneMark(Tone.WARN, 18.dp)
                 Text(
-                    "A send cannot be undone. Compare every character with the address you were given.",
+                    tr("A send cannot be undone. Compare every character with the address you were given."),
                     style = text(13, color = Ink.text2, lineHeight = 18.sp),
                     modifier = Modifier.weight(1f),
                 )
             }
             if (!finger) {
-                TextBox(password, { password = it; note = null }, "Your Nesty password", Modifier.fillMaxWidth(), placeholder = "Your Nesty password", secret = true, bad = note)
+                TextBox(password, { password = it; note = null }, tr("Your Nesty password"), Modifier.fillMaxWidth(), placeholder = tr("Your Nesty password"), secret = true, bad = note)
             }
             note?.let { Text(it, style = text(13, color = Ink.pink, lineHeight = 18.sp), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
             BuyButton(
                 when {
-                    busy -> "Checking…"
-                    finger -> "Confirm with fingerprint"
-                    else -> "Confirm with password"
+                    busy -> tr("Checking…")
+                    finger -> tr("Confirm with fingerprint")
+                    else -> tr("Confirm with password")
                 },
                 enabled = !busy && (finger || password.isNotEmpty()),
             ) {
@@ -676,7 +681,7 @@ internal fun SendReview(
                     try {
                         if (finger) {
                             val ok = Fingerprint.confirm(context, confirmTitle, confirmDetail)
-                            if (ok) onConfirmed() else note = if (session.fingerprintOn) "Not confirmed. Nothing was sent." else Fingerprint.DROPPED
+                            if (ok) onConfirmed() else note = if (session.fingerprintOn) tr("Not confirmed. Nothing was sent.") else Fingerprint.DROPPED
                         } else {
                             session.checkPassword(password)
                             password = ""
@@ -687,13 +692,13 @@ internal fun SendReview(
                     } catch (e: VaultException) {
                         note = e.say()
                     } catch (e: Exception) {
-                        note = e.message ?: "That did not work. Try again."
+                        note = e.message ?: tr("That did not work. Try again.")
                     } finally {
                         busy = false
                     }
                 }
             }
-            OutlineButton("Go back", onBack)
+            OutlineButton(tr("Go back"), onBack)
         }
     }
 }
@@ -702,26 +707,26 @@ internal fun SendReview(
 @Composable
 private fun Done(m: Move, onPortfolio: () -> Unit, onAgain: () -> Unit) {
     val dest = m.toChain
-    val destName = dest?.title ?: "the chain"
+    val destName = dest?.title ?: tr("the chain")
     val receive = m.legs.sumOf { it.usdOut ?: it.usdIn ?: 0.0 }
     val bridged = m.legs.filter { it.kind == LegKind.BRIDGE }
     val title = when (m.state) {
-        MoveState.DONE -> "Sent ${Fmt.usdFull(m.usd)}"
-        MoveState.PARTIAL -> "Part of it arrived"
-        MoveState.FAILED -> "Not sent"
-        else -> "On its way"
+        MoveState.DONE -> tr("Sent {1}", Fmt.usdFull(m.usd))
+        MoveState.PARTIAL -> tr("Part of it arrived")
+        MoveState.FAILED -> tr("Not sent")
+        else -> tr("On its way")
     }
     val waitS = bridged.mapNotNull { it.timeS }.maxOrNull()
     val note = when (m.state) {
         MoveState.WORKING -> when {
-            bridged.isEmpty() -> "It arrives in a few seconds."
-            bridged.size == m.legs.size -> "It is being moved to $destName first and arrives in ${Fmt.eta(waitS)}. You can follow it in Portfolio, under Activity."
-            else -> "Part of it is being moved to $destName first and arrives in ${Fmt.eta(waitS)}. You can follow it in Portfolio, under Activity."
+            bridged.isEmpty() -> tr("It arrives in a few seconds.")
+            bridged.size == m.legs.size -> tr("It is being moved to {1} first and arrives in {2}. You can follow it in Portfolio, under Activity.", destName, Fmt.eta(waitS))
+            else -> tr("Part of it is being moved to {1} first and arrives in {2}. You can follow it in Portfolio, under Activity.", destName, Fmt.eta(waitS))
         }
-        MoveState.PARTIAL -> "About ${Fmt.usdFull(m.arrivedUsd)} arrived. " +
-            (m.legs.firstNotNullOfOrNull { l -> l.error?.takeIf { l.status != LegStatus.DONE } } ?: "") +
-            " What did not leave is still in One Balance."
-        MoveState.FAILED -> m.legs.firstNotNullOfOrNull { it.error } ?: "Stopped."
+        MoveState.PARTIAL -> m.legs.firstNotNullOfOrNull { l -> l.error?.takeIf { l.status != LegStatus.DONE } }
+            ?.let { tr("About {1} arrived. {2} What did not leave is still in One Balance.", Fmt.usdFull(m.arrivedUsd), it) }
+            ?: tr("About {1} arrived. What did not leave is still in One Balance.", Fmt.usdFull(m.arrivedUsd))
+        MoveState.FAILED -> m.legs.firstNotNullOfOrNull { it.error } ?: tr("Stopped.")
         else -> null
     }
     Column(
@@ -741,14 +746,14 @@ private fun Done(m: Move, onPortfolio: () -> Unit, onAgain: () -> Unit) {
             }
             Text(title, style = text(22, FontWeight.Bold, lineHeight = 28.sp), textAlign = TextAlign.Center)
             Text(
-                "About ${Fmt.usdFull(receive)} to ${Fmt.address(m.recipient)} on $destName",
+                tr("About {1} to {2} on {3}", Fmt.usdFull(receive), Fmt.address(m.recipient), destName),
                 style = text(15, color = Ink.text2, lineHeight = 21.sp),
                 textAlign = TextAlign.Center,
             )
             if (note != null) Text(note.trim(), style = text(13, color = Ink.muted, lineHeight = 18.sp), textAlign = TextAlign.Center)
         }
         Box(Modifier.height(8.dp))
-        BuyButton("Back to Portfolio", enabled = true, onClick = onPortfolio)
-        OutlineButton("Withdraw again", onAgain)
+        BuyButton(tr("Back to Portfolio"), enabled = true, onClick = onPortfolio)
+        OutlineButton(tr("Withdraw again"), onAgain)
     }
 }

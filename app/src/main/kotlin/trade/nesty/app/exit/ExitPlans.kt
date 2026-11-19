@@ -1,5 +1,6 @@
 package trade.nesty.app.exit
 
+import trade.nesty.app.i18n.tr
 import kotlinx.serialization.Serializable
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Fill
@@ -68,7 +69,7 @@ data class ExitPlan(
 ) {
     val chain: Chain? get() = Chain.of(feed)
     val key: String get() = ExitMath.keyOf(walletId, feed, token)
-    val label: String get() = symbol.ifBlank { "this coin" }
+    val label: String get() = symbol.ifBlank { tr("this coin") }
 
     /** Steps still waiting. */
     val open: List<ExitRule> get() = rules.filter { !it.done }
@@ -169,11 +170,13 @@ object ExitMath {
 
     /** Short label for a step: "2.5× · sell 50%". */
     fun ruleText(r: ExitRule): String {
-        val sell = if (r.sellBps == 10_000) "sell all" else "sell ${trimPct(r.sellBps)}"
+        val all = r.sellBps == 10_000
+        val share = trimPct(r.sellBps)
+        // Whole labels, so each language words them itself.
         return when (r.kind) {
-            ExitKind.TP -> "${trim(r.triggerBps / 10_000.0)}× · $sell"
-            ExitKind.SL -> "−${trimPct(r.triggerBps)} · $sell"
-            ExitKind.TRAIL -> "−${trimPct(r.triggerBps)} from peak · $sell"
+            ExitKind.TP -> trim(r.triggerBps / 10_000.0).let { if (all) tr("{1}× · sell all", it) else tr("{1}× · sell {2}", it, share) }
+            ExitKind.SL -> trimPct(r.triggerBps).let { if (all) tr("−{1} · sell all", it) else tr("−{1} · sell {2}", it, share) }
+            ExitKind.TRAIL -> trimPct(r.triggerBps).let { if (all) tr("−{1} from peak · sell all", it) else tr("−{1} from peak · sell {2}", it, share) }
         }
     }
 

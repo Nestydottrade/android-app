@@ -32,6 +32,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import trade.nesty.app.data.await
 import java.io.IOException
 import java.math.BigInteger
+import trade.nesty.app.i18n.tr
 
 /** The chain answered with a JSON-RPC error (a revert carries its data). */
 class RpcError(val code: Int, message: String, val data: String? = null) : Exception(message)
@@ -99,7 +100,7 @@ class HttpRpc(
                 val eo = err.jsonObject
                 throw RpcError(
                     eo["code"]?.jsonPrimitive?.intOrNull ?: -1,
-                    eo["message"]?.jsonPrimitive?.contentOrNull ?: "RPC error",
+                    eo["message"]?.jsonPrimitive?.contentOrNull ?: tr("RPC error"),
                     eo["data"]?.let { d -> if (d is JsonPrimitive) d.contentOrNull else null },
                 )
             }

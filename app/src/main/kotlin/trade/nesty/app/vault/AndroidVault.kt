@@ -1,5 +1,6 @@
 package trade.nesty.app.vault
 
+import trade.nesty.app.i18n.tr
 import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -38,7 +39,7 @@ class AndroidKeyWrap(private val alias: String = "nesty.vault.v1") : KeyWrap {
     }
 
     override fun unwrap(wrapped: ByteArray): ByteArray {
-        val key = checkNotNull(key(create = false)) { "This phone's key is gone" }
+        val key = checkNotNull(key(create = false)) { tr("This phone's key is gone") }
         val cipher = Cipher.getInstance("AES/GCM/NoPadding")
         cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(128, wrapped, 0, NONCE))
         return cipher.doFinal(wrapped, NONCE, wrapped.size - NONCE)
@@ -68,7 +69,7 @@ class FileVaultStore(context: Context) : VaultStore {
             out.write(bytes)
             out.fd.sync()
         }
-        check(next.renameTo(file)) { "The vault could not be saved" }
+        check(next.renameTo(file)) { tr("The vault could not be saved") }
     }
 
     override fun readFails(): Fails? =

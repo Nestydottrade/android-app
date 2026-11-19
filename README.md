@@ -352,6 +352,31 @@ Around the release:
 - nesty.trade's Updates list tags the app's entries `app`, and the app's
   Updates screen files them under App. A release gets an entry there.
 
+## Languages
+
+English plus ten: Bahasa Indonesia, Deutsch, Español, Português (Brasil),
+Tiếng Việt, Русский, हिन्दी, 日本語, 简体中文, 한국어. The app follows the
+phone's language until one is picked in the menu's Language sheet, which lists
+them by their own names, Latin script A to Z first, then the other scripts
+(`Lang` in `i18n/I18n.kt`; a test keeps that order).
+
+- The code is written in English and each shown text goes through `tr("…")`,
+  `trCount(n, "one", "other")` or, for a text kept for later, `trKey("…")`.
+  `{1}`, `{2}`… are the places each language puts the arguments; never join
+  translated pieces or lowercase a label into a sentence.
+- `app/src/main/i18n/<tag>.json` maps each English text to its translation.
+  Plural texts are keyed `"one|other"`; their translations carry the language's
+  own forms, `|`-separated (one form for id, vi, ja, zh-CN, ko; two for de, es,
+  pt-BR, hi; three for ru).
+- The build packs them into `assets/i18n` (`PackI18n` in `app/build.gradle.kts`)
+  and the app reads only the language in use. A missing line shows English.
+- `TranslationsTest` fails when a text in the code has no line in a language,
+  a line outlives its text, or a line loses a `{n}`, a plural form or an edge
+  space. `testDebugUnitTest -Pnesty.pseudo=1` shows every text in brackets, so
+  logic that reads a shown text fails its tests.
+- Protocol data never goes through `tr` (BIP32's "Bitcoin seed", route labels the
+  code parses, prefs and JSON keys).
+
 ## Build
 
 The toolchain lives on `D:\Android` (JDK 21, Android SDK with platform 36,
@@ -399,6 +424,8 @@ D:\Android\sdk\emulator\emulator.exe -avd nesty36
   each move.
 - `ui/`: one folder per screen, shared parts in `Components.kt`, figures in
   `Format.kt`, the coin checks in `Checks.kt`; Withdraw in `ui/withdraw/`.
+- `i18n/`: the languages and their texts (`I18n.kt`); the translations sit in
+  `app/src/main/i18n/`.
 - `res/font/`: Inter, nesty.trade's typeface (SIL OFL 1.1,
   `assets/licenses/OFL-Inter.txt`), at the four weights the app uses. They are
   static fonts made from the site's Inter Variable by

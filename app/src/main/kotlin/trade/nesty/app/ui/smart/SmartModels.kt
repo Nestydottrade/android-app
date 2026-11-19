@@ -21,6 +21,8 @@ import trade.nesty.app.data.Share
 import trade.nesty.app.data.SignalFigures
 import trade.nesty.app.data.SignalRecord
 import trade.nesty.app.data.SignalRow
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.discover.shareKey
 
 /** The chains the book reads, so the ones with signals and a Leaderboard. Solana has neither yet. */
@@ -101,17 +103,26 @@ class SignalsModel(private val api: NestyApi) {
     }
 }
 
-enum class Sort(val key: String, val label: String) {
-    PROFIT("profit", "Profit"),
-    ROI("roi", "ROI"),
-    WIN("winRate", "Win rate"),
-    VOLUME("volume", "Volume"),
+enum class Sort(val key: String, private val labelKey: String, private val byKey: String) {
+    PROFIT("profit", trKey("Profit"), trKey("By profit, {1}")),
+    ROI("roi", trKey("ROI"), trKey("By ROI, {1}")),
+    WIN("winRate", trKey("Win rate"), trKey("By win rate, {1}")),
+    VOLUME("volume", trKey("Volume"), trKey("By volume, {1}"));
+
+    /** Its name in the language the app shows. */
+    val label: String get() = tr(labelKey)
+
+    /** "By profit, last 7 days": a whole sentence per sort, since languages bend the name. */
+    fun by(period: String): String = tr(byKey, period)
 }
 
-enum class Period(val window: String, val label: String, val words: String) {
-    D1("1d", "1D", "last day"),
-    D7("7d", "7D", "last 7 days"),
-    D30("30d", "30D", "last 30 days"),
+enum class Period(val window: String, val label: String, private val wordsKey: String) {
+    D1("1d", "1D", trKey("last day")),
+    D7("7d", "7D", trKey("last 7 days")),
+    D30("30d", "30D", trKey("last 30 days"));
+
+    /** The window in words, in the language the app shows. */
+    val words: String get() = tr(wordsKey)
 }
 
 class LeadersModel(private val api: NestyApi) {

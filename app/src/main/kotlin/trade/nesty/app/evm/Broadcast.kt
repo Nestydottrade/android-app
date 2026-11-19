@@ -24,6 +24,7 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import trade.nesty.app.data.await
 import java.io.IOException
+import trade.nesty.app.i18n.tr
 
 /** Sends a signed transaction. Separate from reads so tests can stand in for it. */
 fun interface TxSender {
@@ -44,7 +45,7 @@ class Broadcast(private val http: OkHttpClient) : TxSender {
 
     override suspend fun send(chain: EvmChain, raw: ByteArray): String {
         val urls = chain.mevRpc?.let { listOf(it) } ?: chain.rpcUrls.distinct()
-        if (urls.isEmpty()) throw IOException("No RPC to send to")
+        if (urls.isEmpty()) throw IOException(tr("No RPC to send to"))
         if (urls.size == 1) return post(urls[0], raw)
         val winner = CompletableDeferred<String>()
         val errors = arrayOfNulls<Exception>(urls.size)
@@ -62,7 +63,7 @@ class Broadcast(private val http: OkHttpClient) : TxSender {
         background.launch {
             jobs.joinAll()
             // Every endpoint refused: report the first one's reason.
-            if (!winner.isCompleted) winner.completeExceptionally(errors.firstOrNull { it != null } ?: IOException("No RPC accepted it"))
+            if (!winner.isCompleted) winner.completeExceptionally(errors.firstOrNull { it != null } ?: IOException(tr("No RPC accepted it")))
         }
         return winner.await()
     }

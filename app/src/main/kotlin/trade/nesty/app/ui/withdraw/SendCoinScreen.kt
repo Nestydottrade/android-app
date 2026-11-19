@@ -45,6 +45,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.move.CoinSend
 import trade.nesty.app.move.Move
 import trade.nesty.app.move.MoveState
@@ -110,9 +111,9 @@ fun SendCoinScreen(chain: Chain, token: String) {
     DisposableEffect(Unit) { onDispose { shownId?.let { mover.quiet.remove(it) } } }
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Send $symbol", sub = "On ${chain.title}", onBack = { nav.pop() })
+        BackHeader(tr("Send {1}", symbol), sub = tr("On {1}", chain.title), onBack = { nav.pop() })
         if (wallet == null || holding == null) {
-            EmptyNote(if (wallet == null) "Add a wallet first." else "This coin is not in your Portfolio.")
+            EmptyNote(if (wallet == null) tr("Add a wallet first.") else tr("This coin is not in your Portfolio."))
             return@Column
         }
         val done = doneId?.let { mover.get(it) }
@@ -155,8 +156,8 @@ fun SendCoinScreen(chain: Chain, token: String) {
 
         val addressNote = when {
             typed is Typed.Bad -> typed.reason
-            otherKind -> if (chain.isEvm) "This coin is on ${chain.title}: paste an EVM address." else "This coin is on Solana: paste a Solana address."
-            self -> "This is this wallet's own address."
+            otherKind -> if (chain.isEvm) tr("This coin is on {1}: paste an EVM address.", chain.title) else tr("This coin is on Solana: paste a Solana address.")
+            self -> tr("This is this wallet's own address.")
             else -> check?.block
         }
         val units = CoinSend.unitsOf(amount, decimals)
@@ -169,11 +170,11 @@ fun SendCoinScreen(chain: Chain, token: String) {
         val feeBlock = CoinSend.feeBlock(chain, AppGraph.balances.active?.raw?.get(chain), fee, rent, check?.keep ?: BigInteger.ZERO)
 
         val label = when {
-            to == null || addressNote != null -> "Enter an address"
-            units == null -> "Enter an amount"
-            over -> "Amount is too high"
-            feeBlock != null -> "Not enough ${chain.native} for the fee"
-            else -> "Review send"
+            to == null || addressNote != null -> tr("Enter an address")
+            units == null -> tr("Enter an amount")
+            over -> tr("Amount is too high")
+            feeBlock != null -> tr("Not enough {1} for the fee", chain.native)
+            else -> tr("Review send")
         }
         val ready = to != null && addressNote == null && !checking && units != null && !over && fee != null && feeBlock == null
 
@@ -188,20 +189,20 @@ fun SendCoinScreen(chain: Chain, token: String) {
         ) {
             // Send to
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Send to", style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
+                Text(tr("Send to"), style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     TextBox(
                         address,
                         { address = it.trim() },
-                        "Address to send to",
+                        tr("Address to send to"),
                         Modifier.weight(1f),
-                        placeholder = if (chain.isEvm) "EVM address" else "Solana address",
+                        placeholder = if (chain.isEvm) tr("EVM address") else tr("Solana address"),
                         bad = addressNote,
                         ime = ImeAction.Next,
                     )
-                    Pill("Paste") {
+                    Pill(tr("Paste")) {
                         val pasted = SecretClipboard.paste(context)?.trim()
-                        if (pasted.isNullOrEmpty()) toasts.show("Nothing to paste", "Copy the address first.") else address = pasted
+                        if (pasted.isNullOrEmpty()) toasts.show(tr("Nothing to paste"), tr("Copy the address first.")) else address = pasted
                     }
                 }
                 if (addressNote != null) {
@@ -211,15 +212,15 @@ fun SendCoinScreen(chain: Chain, token: String) {
 
             // Amount in the coin
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Amount in $symbol", style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
-                AmountField(amount, enabled = true, bad = over, prefix = null, describe = "Amount in $symbol", size = 36, clean = { CoinSend.clean(it, decimals) }) { amount = it }
+                Text(tr("Amount in {1}", symbol), style = text(13, color = Ink.muted), modifier = Modifier.semantics { heading() })
+                AmountField(amount, enabled = true, bad = over, prefix = null, describe = tr("Amount in {1}", symbol), size = 36, clean = { CoinSend.clean(it, decimals) }) { amount = it }
                 Text(
-                    if (over) "You hold ${Fmt.amount(holding.tokens)} $symbol"
-                    else listOfNotNull(usd?.let { "About ${Fmt.usdFull(it)}" }, "You hold ${Fmt.amount(holding.tokens)}").joinToString(" · "),
+                    if (over) tr("You hold {1} {2}", Fmt.amount(holding.tokens), symbol)
+                    else listOfNotNull(usd?.let { tr("About {1}", Fmt.usdFull(it)) }, tr("You hold {1}", Fmt.amount(holding.tokens))).joinToString(" · "),
                     style = text(13, color = if (over) Ink.pink else Ink.muted, lineHeight = 18.sp),
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    for ((bps, chip) in listOf(2_500 to "25%", 5_000 to "50%", 10_000 to "All")) {
+                    for ((bps, chip) in listOf(2_500 to "25%", 5_000 to "50%", 10_000 to tr("All"))) {
                         val v = CoinSend.share(held, bps)
                         AmountChip(chip, on = v.signum() > 0 && units == v, enabled = v.signum() > 0, modifier = Modifier.weight(1f)) {
                             amount = CoinSend.typed(v, decimals)
@@ -231,17 +232,17 @@ fun SendCoinScreen(chain: Chain, token: String) {
             Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ToneMark(Tone.INFO, 18.dp)
                 Text(
-                    "Sent on ${chain.title}. The receiver must be able to use ${chain.title}.",
+                    tr("Sent on {1}. The receiver must be able to use {2}.", chain.title, chain.title),
                     style = text(13, color = Ink.text2, lineHeight = 18.sp),
                     modifier = Modifier.weight(1f),
                 )
             }
 
             Column(Modifier.fillMaxWidth().clip(BOX).background(Ink.ground).border(1.dp, Ink.line, BOX)) {
-                DetailRow("Network fee", feeUsd?.let { "about ${Fmt.usdFull(it)}" } ?: Fmt.DASH)
-                if (rentUsd != null) DetailRow("Their account for this coin", "about ${Fmt.usdFull(rentUsd)}")
+                DetailRow(tr("Network fee"), feeUsd?.let { tr("about {1}", Fmt.usdFull(it)) } ?: Fmt.DASH)
+                if (rentUsd != null) DetailRow(tr("Their account for this coin"), tr("about {1}", Fmt.usdFull(rentUsd)))
                 Box(Modifier.fillMaxWidth().background(Ink.raised)) {
-                    DetailRow("You send", units?.let { "${Fmt.amount(CoinSend.tokens(it, decimals))} $symbol" } ?: Fmt.DASH, strong = true)
+                    DetailRow(tr("You send"), units?.let { "${Fmt.amount(CoinSend.tokens(it, decimals))} $symbol" } ?: Fmt.DASH, strong = true)
                 }
             }
             // On Solana it says what the fee, their account and the wallet's minimum take; elsewhere the button says it all.
@@ -261,8 +262,8 @@ fun SendCoinScreen(chain: Chain, token: String) {
             SendReview(
                 chain,
                 to,
-                "Confirm send",
-                "${Fmt.amount(tokens)} $symbol to ${Fmt.address(to)} on ${chain.title}",
+                tr("Confirm send"),
+                tr("{1} {2} to {3} on {4}", Fmt.amount(tokens), symbol, Fmt.address(to), chain.title),
                 onBack = { reviewing = false },
                 onConfirmed = {
                     try {
@@ -274,17 +275,17 @@ fun SendCoinScreen(chain: Chain, token: String) {
                         throw e
                     } catch (e: Exception) {
                         reviewing = false
-                        toasts.show("$symbol not sent", e.message ?: "Could not start.", bad = true)
+                        toasts.show(tr("{1} not sent", symbol), e.message ?: tr("Could not start."), bad = true)
                     }
                 },
             ) {
                 Column(Modifier.fillMaxWidth().clip(BOX).background(Ink.ground).border(1.dp, Ink.line, BOX)) {
                     Box(Modifier.fillMaxWidth().background(Ink.raised)) {
-                        DetailRow("You send", "${Fmt.amount(tokens)} $symbol", strong = true)
+                        DetailRow(tr("You send"), "${Fmt.amount(tokens)} $symbol", strong = true)
                     }
-                    if (usd != null) DetailRow("Worth about", Fmt.usdFull(usd))
-                    DetailRow("Network fee", feeUsd?.let { "about ${Fmt.usdFull(it)}" } ?: Fmt.DASH)
-                    if (rentUsd != null) DetailRow("Their account for this coin", "about ${Fmt.usdFull(rentUsd)}")
+                    if (usd != null) DetailRow(tr("Worth about"), Fmt.usdFull(usd))
+                    DetailRow(tr("Network fee"), feeUsd?.let { tr("about {1}", Fmt.usdFull(it)) } ?: Fmt.DASH)
+                    if (rentUsd != null) DetailRow(tr("Their account for this coin"), tr("about {1}", Fmt.usdFull(rentUsd)))
                 }
             }
         }
@@ -296,18 +297,18 @@ private val BOX = RoundedCornerShape(14.dp)
 /** After the confirmation: where the send stands, as it goes. */
 @Composable
 private fun CoinDone(m: Move, onClose: () -> Unit) {
-    val coin = m.symbol?.takeIf { it.isNotBlank() } ?: "coins"
+    val coin = m.symbol?.takeIf { it.isNotBlank() } ?: tr("coins")
     val error = m.legs.firstNotNullOfOrNull { it.error }
     val title = when (m.state) {
-        MoveState.DONE -> "Sent"
-        MoveState.PARTIAL -> "Not confirmed"
-        MoveState.FAILED -> "Not sent"
-        else -> "On its way"
+        MoveState.DONE -> tr("Sent")
+        MoveState.PARTIAL -> tr("Not confirmed")
+        MoveState.FAILED -> tr("Not sent")
+        else -> tr("On its way")
     }
     val note = when (m.state) {
-        MoveState.WORKING -> "It arrives in a few seconds."
-        MoveState.FAILED -> error ?: "Stopped."
-        MoveState.PARTIAL -> "It may still land. Check the explorer from Activity, in Portfolio."
+        MoveState.WORKING -> tr("It arrives in a few seconds.")
+        MoveState.FAILED -> error ?: tr("Stopped.")
+        MoveState.PARTIAL -> tr("It may still land. Check the explorer from Activity, in Portfolio.")
         else -> null
     }
     Column(
@@ -327,13 +328,13 @@ private fun CoinDone(m: Move, onClose: () -> Unit) {
             }
             Text(title, style = text(22, FontWeight.Bold, lineHeight = 28.sp), textAlign = TextAlign.Center)
             Text(
-                "${Fmt.amount(m.coinTokens)} $coin to ${Fmt.address(m.recipient)} on ${m.toChain?.title ?: "its chain"}",
+                tr("{1} {2} to {3} on {4}", Fmt.amount(m.coinTokens), coin, Fmt.address(m.recipient), m.toChain?.title ?: tr("its chain")),
                 style = text(15, color = Ink.text2, lineHeight = 21.sp),
                 textAlign = TextAlign.Center,
             )
             if (note != null) Text(note, style = text(13, color = Ink.muted, lineHeight = 18.sp), textAlign = TextAlign.Center)
         }
         Box(Modifier.height(8.dp))
-        BuyButton("Done", enabled = true, onClick = onClose)
+        BuyButton(tr("Done"), enabled = true, onClick = onClose)
     }
 }

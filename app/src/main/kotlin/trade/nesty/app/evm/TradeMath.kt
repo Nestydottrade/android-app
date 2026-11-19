@@ -7,6 +7,7 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+import trade.nesty.app.i18n.tr
 
 /**
  * What a transaction does, for its gas: `transfer` moves native, `tokenTransfer` an ERC-20,
@@ -116,8 +117,13 @@ object TradeMath {
         if (nativeUsd == null) return null
         val usd = formatEther(feeWei).toDouble() * nativeUsd
         if (usd <= maxGasUsd) return null
-        return "Gas fee about $${String.format(Locale.US, "%.2f", usd)} (${formatToken(feeWei, 18)} $symbol) is above your gas limit of " +
-            "$${plainNumber(maxGasUsd)}. Lower the priority fee or raise the limit in Settings."
+        return tr(
+            "Gas fee about \${1} ({2} {3}) is above your gas limit of \${4}. Lower the priority fee or raise the limit in Settings.",
+            String.format(Locale.US, "%.2f", usd),
+            formatToken(feeWei, 18),
+            symbol,
+            plainNumber(maxGasUsd),
+        )
     }
 
     /** An on-chain amount, compactly (format.ts formatToken): 1.28M, 0.0001235. */

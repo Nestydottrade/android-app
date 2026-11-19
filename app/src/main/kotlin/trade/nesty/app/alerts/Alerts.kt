@@ -12,6 +12,8 @@ import kotlinx.serialization.encodeToString
 import trade.nesty.app.data.AlertPrefs
 import trade.nesty.app.data.AlertSwitch
 import trade.nesty.app.data.NestyJson
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 
 /** What an alert is about; the Notifications screen's filters group them. */
 @Serializable
@@ -175,11 +177,14 @@ class Alerts(private val store: AlertStore, private val settings: AlertPrefs, pr
     }
 
     /** The Notifications screen's filters. */
-    enum class Filter(val label: String) {
-        ALL("All"),
-        YOURS("Your coins"),
-        TRACKER("Tracker"),
-        SIGNALS("Signals");
+    enum class Filter(private val key: String) {
+        ALL(trKey("All")),
+        YOURS(trKey("Your coins")),
+        TRACKER(trKey("Tracker")),
+        SIGNALS(trKey("Signals"));
+
+        /** Its name in the language the app shows. */
+        val label: String get() = tr(key)
 
         fun has(a: Alert): Boolean = when (this) {
             ALL -> true

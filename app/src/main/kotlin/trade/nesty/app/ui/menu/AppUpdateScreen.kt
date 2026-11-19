@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.sp
 import trade.nesty.app.BuildConfigLite
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.AppRelease
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.Divider
@@ -75,7 +76,7 @@ fun AppUpdateScreen() {
     DisposableEffect(Unit) { onDispose { if (installed != null) updater.seenUpdated() } }
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Update", onBack = { nav.pop() })
+        BackHeader(tr("Update"), onBack = { nav.pop() })
         Divider()
         if (installed != null) {
             Installed(installed) {
@@ -95,7 +96,7 @@ fun AppUpdateScreen() {
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                FigureText("Nesty ${r?.version ?: BuildConfigLite.VERSION}", 34)
+                FigureText(tr("Nesty {1}", r?.version ?: BuildConfigLite.VERSION), 34)
                 Text(lineOf(s), style = text(14, color = Ink.muted, lineHeight = 20.sp), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
                 if (s is UpdateState.Fetching && r != null) {
                     Meter(s.bytes.toDouble() / r.size, Modifier.fillMaxWidth().padding(top = 8.dp))
@@ -108,7 +109,7 @@ fun AppUpdateScreen() {
                 }
             }
             if (r != null && r.notes.isNotEmpty()) {
-                Part("New in this version") {
+                Part(tr("New in this version")) {
                     r.notes.forEachIndexed { i, n ->
                         if (i > 0) Divider()
                         Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -122,17 +123,17 @@ fun AppUpdateScreen() {
                 Checked(r!!, signerRead = (s as? UpdateState.Ready)?.signerRead ?: true)
             }
             if (r == null && (s is UpdateState.Newest || s is UpdateState.Unreachable)) {
-                GhostButton("Check again", onClick = { updater.retry() }, modifier = Modifier.padding(horizontal = 4.dp))
+                GhostButton(tr("Check again"), onClick = { updater.retry() }, modifier = Modifier.padding(horizontal = 4.dp))
             }
             if (r != null) {
                 Column(Modifier.padding(horizontal = 4.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        "Nesty changes only through updates you install. It never downloads code while it runs. Your wallets and settings stay on this phone.",
+                        tr("Nesty changes only through updates you install. It never downloads code while it runs. Your wallets and settings stay on this phone."),
                         style = text(13, color = Ink.muted, lineHeight = 19.sp),
                     )
                     if (AppGraph.exitStore.plans.isNotEmpty()) {
                         Text(
-                            "Your exit plans stop while Android installs it, and sell again once you unlock Nesty.",
+                            tr("Your exit plans stop while Android installs it, and sell again once you unlock Nesty."),
                             style = text(13, color = Ink.muted, lineHeight = 19.sp),
                         )
                     }
@@ -142,9 +143,9 @@ fun AppUpdateScreen() {
         if (r != null) {
             BottomBarFrame {
                 when (s) {
-                    is UpdateState.Ready -> GreenButton("Install update", onClick = { updater.installNow() }, modifier = Modifier.fillMaxWidth(), solid = true, height = 56.dp)
-                    is UpdateState.Failed -> GreenButton("Try again", onClick = { updater.retry() }, modifier = Modifier.fillMaxWidth(), solid = true, height = 56.dp)
-                    else -> Waiting(if (s is UpdateState.Installing) "Installing…" else "Downloading…")
+                    is UpdateState.Ready -> GreenButton(tr("Install update"), onClick = { updater.installNow() }, modifier = Modifier.fillMaxWidth(), solid = true, height = 56.dp)
+                    is UpdateState.Failed -> GreenButton(tr("Try again"), onClick = { updater.retry() }, modifier = Modifier.fillMaxWidth(), solid = true, height = 56.dp)
+                    else -> Waiting(if (s is UpdateState.Installing) tr("Installing…") else tr("Downloading…"))
                 }
                 Box(
                     Modifier
@@ -153,7 +154,7 @@ fun AppUpdateScreen() {
                         .clickable(role = Role.Button) { nav.pop() },
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Later", style = text(15, FontWeight.Bold, Ink.text2))
+                    Text(tr("Later"), style = text(15, FontWeight.Bold, Ink.text2))
                 }
             }
         }
@@ -178,17 +179,17 @@ private fun Waiting(label: String) {
 
 /** The line under the version: what the phone has and where the file is. */
 private fun lineOf(s: UpdateState): String {
-    val have = "You have ${BuildConfigLite.VERSION}"
+    val have = tr("You have {1}", BuildConfigLite.VERSION)
     val r = s.release
     return when (s) {
-        UpdateState.Unknown, UpdateState.Asking -> "Asking nesty.trade for a newer version…"
-        UpdateState.Newest -> "This is the newest version."
-        UpdateState.Unreachable -> "nesty.trade could not be reached. Check your connection."
+        UpdateState.Unknown, UpdateState.Asking -> tr("Asking nesty.trade for a newer version…")
+        UpdateState.Newest -> tr("This is the newest version.")
+        UpdateState.Unreachable -> tr("nesty.trade could not be reached. Check your connection.")
         is UpdateState.Out -> "$have · ${Releases.sizeText(r!!.size)}"
-        is UpdateState.Fetching -> "$have · ${Releases.sizeText(r!!.size)} · downloading ${(s.bytes * 100 / r.size.coerceAtLeast(1)).coerceIn(0, 100)}%"
-        is UpdateState.Ready -> "$have · ${Releases.sizeText(r!!.size)} · already downloaded"
+        is UpdateState.Fetching -> tr("{1} · {2} · downloading {3}%", have, Releases.sizeText(r!!.size), (s.bytes * 100 / r.size.coerceAtLeast(1)).coerceIn(0, 100))
+        is UpdateState.Ready -> tr("{1} · {2} · already downloaded", have, Releases.sizeText(r!!.size))
         is UpdateState.Failed -> "$have · ${Releases.sizeText(r!!.size)}"
-        is UpdateState.Installing -> "$have · Android is installing it"
+        is UpdateState.Installing -> tr("{1} · Android is installing it", have)
     }
 }
 
@@ -205,14 +206,14 @@ private fun Part(title: String, content: @Composable ColumnScope.() -> Unit) {
 @Composable
 private fun Checked(r: AppRelease, signerRead: Boolean) {
     val fromSite = r.url.startsWith("https://${Releases.HOST}/")
-    Part("Checked on this phone") {
-        CheckRow(if (fromSite) "Came from nesty.trade" else "Came from the test server", if (fromSite) "The address is built into the app" else "A debug build's test server on this computer")
+    Part(tr("Checked on this phone")) {
+        CheckRow(if (fromSite) tr("Came from nesty.trade") else tr("Came from the test server"), if (fromSite) tr("The address is built into the app") else tr("A debug build's test server on this computer"))
         Divider()
-        CheckRow("Matches the published fingerprint", null, figure = Releases.shortHash(r.sha256))
+        CheckRow(tr("Matches the published fingerprint"), null, figure = Releases.shortHash(r.sha256))
         Divider()
         CheckRow(
-            "Signed with Nesty's key",
-            if (signerRead) "Android refuses an update signed by anyone else" else "Android checks it as it installs and refuses any other key",
+            tr("Signed with Nesty's key"),
+            if (signerRead) tr("Android refuses an update signed by anyone else") else tr("Android checks it as it installs and refuses any other key"),
         )
     }
 }
@@ -243,9 +244,9 @@ private fun ColumnScope.Installed(version: String, onOpen: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(NIcons.doneCircle, contentDescription = null, tint = Ink.green, modifier = Modifier.size(64.dp))
-        Text("Nesty $version is installed", style = text(24, FontWeight.Bold), textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
-        Text("Your wallets, positions and exit plans are as you left them.", style = text(15, color = Ink.text2, lineHeight = 22.sp), textAlign = TextAlign.Center)
+        Text(tr("Nesty {1} is installed", version), style = text(24, FontWeight.Bold), textAlign = TextAlign.Center, modifier = Modifier.semantics { heading() })
+        Text(tr("Your wallets, positions and exit plans are as you left them."), style = text(15, color = Ink.text2, lineHeight = 22.sp), textAlign = TextAlign.Center)
         Spacer(Modifier.weight(1f))
-        GreenButton("Open Nesty", onClick = onOpen, modifier = Modifier.fillMaxWidth(), solid = true, height = 56.dp)
+        GreenButton(tr("Open Nesty"), onClick = onOpen, modifier = Modifier.fillMaxWidth(), solid = true, height = 56.dp)
     }
 }

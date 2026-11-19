@@ -37,6 +37,7 @@ import trade.nesty.app.evm.TxDraft
 import trade.nesty.app.evm.ValidationContext
 import trade.nesty.app.evm.orNull
 import trade.nesty.app.evm.shortErr
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.HttpSolCall
 import trade.nesty.app.sol.Layouts
 import trade.nesty.app.sol.RelayDepositContext
@@ -194,7 +195,7 @@ class Mover(
         } catch (e: Relay.RelayError) {
             throw MoveRefused(bridgeSays(e.message))
         } catch (e: Exception) {
-            throw MoveRefused("The bridge did not answer: ${shortErr(e)}")
+            throw MoveRefused(tr("The bridge did not answer: {1}", shortErr(e)))
         }
         val pIn = trading.priceOf(from)
         val pOut = trading.priceOf(to)
@@ -239,7 +240,7 @@ class Mover(
             SolSend.recipientBlock(recipient, accs.getOrNull(0))?.let { return CoinCheck(it) }
             return CoinCheck(null, if (accs.getOrNull(1) == null) tokenAccountRent(meta) else BigInteger.ZERO, rentMin())
         }
-        val evm = trading.evmOf(chain) ?: return CoinCheck("This version of Nesty cannot send on ${chain.title}.")
+        val evm = trading.evmOf(chain) ?: return CoinCheck(tr("This version of Nesty cannot send on {1}.", chain.title))
         return CoinCheck(Recipient.evmKind(directReader(evm), recipient).tokenSymbol?.let { Recipient.tokenContract(it) })
     }
 
@@ -269,11 +270,11 @@ class Mover(
      * bridge is quoted again right before it is signed. Returns at once; the legs run on.
      */
     fun withdraw(to: Chain, recipient: String, usd: Double, parts: List<Part>, shown: Map<Chain, LegQuote>, preset: Preset): Move {
-        val wallet = session.active ?: throw MoveRefused("Add a wallet first.")
-        if (parts.isEmpty()) throw MoveRefused("Enter an amount.")
+        val wallet = session.active ?: throw MoveRefused(tr("Add a wallet first."))
+        if (parts.isEmpty()) throw MoveRefused(tr("Enter an amount."))
         for (p in parts) {
-            if (p.chain.isEvm && session.evmSigner() == null) throw MoveRefused("Unlock your wallets first.")
-            if (!p.chain.isEvm && session.solSigner() == null) throw MoveRefused("Unlock your wallets first.")
+            if (p.chain.isEvm && session.evmSigner() == null) throw MoveRefused(tr("Unlock your wallets first."))
+            if (!p.chain.isEvm && session.solSigner() == null) throw MoveRefused(tr("Unlock your wallets first."))
             if (p.chain != to && !Plans.canLeave(p.chain)) throw MoveRefused(ELYSIUM_OUT)
         }
         val legs = parts.map { p ->
@@ -310,11 +311,11 @@ class Mover(
      * out as usual. If it lands too late to trust the price the sheet showed, the user is asked again.
      */
     fun buyWithMove(chain: Chain, token: String, usd: Double, presetIndex: Int, info: CoinInfo, from: Chain, shortfall: BigInteger, cap: BigInteger, shown: LegQuote): Move {
-        val wallet = session.active ?: throw MoveRefused("Add a wallet first.")
+        val wallet = session.active ?: throw MoveRefused(tr("Add a wallet first."))
         val recipient = own(chain) ?: throw MoveRefused(if (chain == Chain.SOLANA) Trading.NO_SOL else Trading.NO_EVM)
         if (own(from) == null) throw MoveRefused(if (from == Chain.SOLANA) Trading.NO_SOL else Trading.NO_EVM)
         if (!Plans.canLeave(from)) throw MoveRefused(ELYSIUM_OUT)
-        if ((if (from.isEvm) session.evmSigner() else session.solSigner()) == null) throw MoveRefused("Unlock your wallets first.")
+        if ((if (from.isEvm) session.evmSigner() else session.solSigner()) == null) throw MoveRefused(tr("Unlock your wallets first."))
         val leg = MoveLeg(
             kind = LegKind.BRIDGE,
             from = from.feed,
@@ -352,11 +353,11 @@ class Mover(
      * again and checked right before signing. Returns at once; the send runs on.
      */
     fun sendCoin(chain: Chain, token: String, symbol: String?, decimals: Int, recipient: String, amount: BigInteger, usd: Double?, preset: Preset): Move {
-        val wallet = session.active ?: throw MoveRefused("Add a wallet first.")
+        val wallet = session.active ?: throw MoveRefused(tr("Add a wallet first."))
         if (own(chain) == null) throw MoveRefused(if (chain == Chain.SOLANA) Trading.NO_SOL else Trading.NO_EVM)
-        if (chain.isEvm && trading.evmOf(chain) == null) throw MoveRefused("This version of Nesty cannot send on ${chain.title}.")
-        if ((if (chain.isEvm) session.evmSigner() else session.solSigner()) == null) throw MoveRefused("Unlock your wallets first.")
-        if (amount.signum() <= 0) throw MoveRefused("Enter an amount.")
+        if (chain.isEvm && trading.evmOf(chain) == null) throw MoveRefused(tr("This version of Nesty cannot send on {1}.", chain.title))
+        if ((if (chain.isEvm) session.evmSigner() else session.solSigner()) == null) throw MoveRefused(tr("Unlock your wallets first."))
+        if (amount.signum() <= 0) throw MoveRefused(tr("Enter an amount."))
         val leg = MoveLeg(
             kind = LegKind.SEND,
             from = chain.feed,
@@ -395,13 +396,13 @@ class Mover(
      * (`usd` and `preset` as picked there). The move's cost joins the buy's cost basis.
      */
     suspend fun buyAsked(id: String, usd: Double, presetIndex: Int, info: CoinInfo): StateFlow<EngineTrade> {
-        val m = store.get(id) ?: throw MoveRefused("This move is no longer here.")
-        if (m.state != MoveState.ASK) throw MoveRefused("This move was already used.")
-        val chain = m.toChain ?: throw MoveRefused("Unknown chain.")
-        val token = m.token ?: throw MoveRefused("Unknown coin.")
+        val m = store.get(id) ?: throw MoveRefused(tr("This move is no longer here."))
+        if (m.state != MoveState.ASK) throw MoveRefused(tr("This move was already used."))
+        val chain = m.toChain ?: throw MoveRefused(tr("Unknown chain."))
+        val token = m.token ?: throw MoveRefused(tr("Unknown coin."))
         store.update(id) { it.copy(state = MoveState.BUYING, usd = usd, preset = presetIndex.coerceIn(0, 2), buyError = null) }
         return startBuy(id, chain, token, usd, presetIndex.coerceIn(0, 2), info, m.legs[0])
-            ?: throw MoveRefused(store.get(id)?.buyError ?: "Could not start.")
+            ?: throw MoveRefused(store.get(id)?.buyError ?: tr("Could not start."))
     }
 
     /** A move for a buy of this coin that is waiting on the user, if any. */
@@ -418,16 +419,16 @@ class Mover(
     /** One leg, from its checks to its end: sent, landed, and for a bridge paid out. */
     private suspend fun runLeg(id: String, i: Int, preset: Preset, exactOut: BigInteger? = null, cap: BigInteger? = null) {
         val leg = store.get(id)?.legs?.getOrNull(i) ?: return
-        val from = leg.fromChain ?: return fail(id, i, "Unknown chain.")
-        val to = leg.toChain ?: return fail(id, i, "Unknown chain.")
+        val from = leg.fromChain ?: return fail(id, i, tr("Unknown chain."))
+        val to = leg.toChain ?: return fail(id, i, tr("Unknown chain."))
         val m = store.get(id) ?: return
         val recipient = m.recipient
         store.leg(id, i) { it.copy(status = LegStatus.SENDING, error = null) }
         try {
             when {
                 m.kind == MoveKind.SEND_COIN -> {
-                    val token = m.token ?: throw MoveRefused("Unknown coin.")
-                    val decimals = m.decimals ?: throw MoveRefused("Unknown coin.")
+                    val token = m.token ?: throw MoveRefused(tr("Unknown coin."))
+                    val decimals = m.decimals ?: throw MoveRefused(tr("Unknown coin."))
                     if (from == Chain.SOLANA) sendCoinSol(id, i, token, m.symbol, decimals, recipient, BigInteger(leg.amountIn), preset)
                     else sendCoinEvm(id, i, from, token, decimals, recipient, BigInteger(leg.amountIn), preset)
                 }
@@ -439,11 +440,11 @@ class Mover(
         } catch (e: CancellationException) {
             throw e
         } catch (e: MoveRefused) {
-            fail(id, i, e.message ?: "Could not start.")
+            fail(id, i, e.message ?: tr("Could not start."))
         } catch (e: Exception) {
             val l = store.get(id)?.legs?.getOrNull(i)
             // After a signature the transaction may be out: never say it failed when it is not known.
-            if (l?.hash != null) fail(id, i, "Not confirmed. Check the explorer.", LegStatus.UNKNOWN) else fail(id, i, shortErr(e))
+            if (l?.hash != null) fail(id, i, tr("Not confirmed. Check the explorer."), LegStatus.UNKNOWN) else fail(id, i, shortErr(e))
         }
         balancesLater()
     }
@@ -460,8 +461,8 @@ class Mover(
 
     /** A plain send of `value` wei to `recipient`, read and simulated on the chain's own RPCs. */
     private suspend fun sendEvm(id: String, i: Int, chain: Chain, recipient: String, value: BigInteger, preset: Preset) {
-        val evm = trading.evmOf(chain) ?: throw MoveRefused("This version of Nesty cannot send on ${chain.title}.")
-        val signer = session.evmSigner() ?: throw MoveRefused("Unlock your wallets first.")
+        val evm = trading.evmOf(chain) ?: throw MoveRefused(tr("This version of Nesty cannot send on {1}.", chain.title))
+        val signer = session.evmSigner() ?: throw MoveRefused(tr("Unlock your wallets first."))
         val reader = directReader(evm)
         // The receiver again, right before signing.
         Recipient.evmKind(reader, recipient).tokenSymbol?.let { throw MoveRefused(Recipient.tokenContract(it)) }
@@ -474,8 +475,8 @@ class Mover(
                 signedAt(id, i, r.hash)
                 val receipt = trading.engine.receiptOf(evm.id, r.hash, signer.address, reader)
                 when {
-                    receipt == null -> fail(id, i, "Not confirmed. Check the explorer.", LegStatus.UNKNOWN)
-                    !receipt.success -> fail(id, i, "The send failed on chain.")
+                    receipt == null -> fail(id, i, tr("Not confirmed. Check the explorer."), LegStatus.UNKNOWN)
+                    !receipt.success -> fail(id, i, tr("The send failed on chain."))
                     else -> store.leg(id, i) { it.copy(status = LegStatus.DONE, gasUsd = gasUsd(chain, receipt.feeWei), endedAt = now()) }
                 }
             }
@@ -484,8 +485,8 @@ class Mover(
 
     /** A plain send of `value` lamports to `recipient`, on Solana's public RPC. */
     private suspend fun sendSol(id: String, i: Int, recipient: String, value: BigInteger, preset: Preset) {
-        val signer = session.solSigner() ?: throw MoveRefused("Unlock your wallets first.")
-        if (recipient == signer.address) throw MoveRefused("This is the wallet you are sending from.")
+        val signer = session.solSigner() ?: throw MoveRefused(tr("Unlock your wallets first."))
+        if (recipient == signer.address) throw MoveRefused(tr("This is the wallet you are sending from."))
         val acc = solDirectRpc.getAccount(recipient)
         val min = rentMin()
         SolSend.recipientBlock(recipient, acc)?.let { throw MoveRefused(it) }
@@ -512,8 +513,8 @@ class Mover(
      * this payee only) and simulated, all on the chain's own RPCs.
      */
     private suspend fun sendCoinEvm(id: String, i: Int, chain: Chain, token: String, decimals: Int, recipient: String, amount: BigInteger, preset: Preset) {
-        val evm = trading.evmOf(chain) ?: throw MoveRefused("This version of Nesty cannot send on ${chain.title}.")
-        val signer = session.evmSigner() ?: throw MoveRefused("Unlock your wallets first.")
+        val evm = trading.evmOf(chain) ?: throw MoveRefused(tr("This version of Nesty cannot send on {1}.", chain.title))
+        val signer = session.evmSigner() ?: throw MoveRefused(tr("Unlock your wallets first."))
         if (sameAddress(recipient, signer.address)) throw MoveRefused(SAME_WALLET)
         val reader = directReader(evm)
         // The receiver again, right before signing.
@@ -529,12 +530,12 @@ class Mover(
         val held = reads.held
         val nativeHeld = reads.native
         val base = reads.baseFee
-        if (held == null || nativeHeld == null || base == null) throw MoveRefused("Could not read your balances just now. Try again.")
+        if (held == null || nativeHeld == null || base == null) throw MoveRefused(tr("Could not read your balances just now. Try again."))
         // The amount was typed in whole coins at these decimals: a coin that says otherwise is not sent.
         if (reads.decimals != null && reads.decimals != decimals) throw MoveRefused(COIN_CHANGED)
-        if (held < amount) throw MoveRefused("Not enough tokens.")
+        if (held < amount) throw MoveRefused(tr("Not enough tokens."))
         val fees = TradeMath.computeFees(evm, base, Trading.gasOf(evm, preset.speed))
-        val short = "Not enough ${evm.nativeSymbol} for the fee."
+        val short = tr("Not enough {1} for the fee.", evm.nativeSymbol)
         if (nativeHeld < TradeMath.staticGas(evm, GasKind.TOKEN_TRANSFER) * fees.maxFeePerGas) throw MoveRefused(short)
         val tx = TxDraft(token, Erc20.transfer.encode(recipient, amount), BigInteger.ZERO)
         val vctx = ValidationContext(chain = evm, from = signer.address, ownWallets = session.ownEvm(), token = token, maxValue = BigInteger.ZERO, payee = recipient, nowS = now() / 1000)
@@ -548,8 +549,8 @@ class Mover(
                 signedAt(id, i, r.hash)
                 val receipt = trading.engine.receiptOf(evm.id, r.hash, signer.address, reader)
                 when {
-                    receipt == null -> fail(id, i, "Not confirmed. Check the explorer.", LegStatus.UNKNOWN)
-                    !receipt.success -> fail(id, i, "The send failed on chain.")
+                    receipt == null -> fail(id, i, tr("Not confirmed. Check the explorer."), LegStatus.UNKNOWN)
+                    !receipt.success -> fail(id, i, tr("The send failed on chain."))
                     else -> store.leg(id, i) { it.copy(status = LegStatus.DONE, gasUsd = gasUsd(chain, receipt.feeWei), endedAt = now()) }
                 }
             }
@@ -562,7 +563,7 @@ class Mover(
      * checked transfer, on Solana's public RPC.
      */
     private suspend fun sendCoinSol(id: String, i: Int, mint: String, symbol: String?, decimals: Int, recipient: String, amount: BigInteger, preset: Preset) {
-        val signer = session.solSigner() ?: throw MoveRefused("Unlock your wallets first.")
+        val signer = session.solSigner() ?: throw MoveRefused(tr("Unlock your wallets first."))
         if (recipient == signer.address) throw MoveRefused(SAME_WALLET)
         val meta = orNull { solDirect.tokenMeta(mint) } ?: throw MoveRefused(COIN_UNREAD)
         SolSend.coinBlock(meta)?.let { throw MoveRefused(it) }
@@ -573,7 +574,7 @@ class Mover(
         )
         SolSend.recipientBlock(recipient, accs.getOrNull(0))?.let { throw MoveRefused(it) }
         val held = accs.getOrNull(1)?.let { Layouts.decodeTokenAccount(it.data)?.amount } ?: BigInteger.ZERO
-        if (held < amount) throw MoveRefused("Not enough ${meta.symbol.ifBlank { "tokens" }}.")
+        if (held < amount) throw MoveRefused(tr("Not enough {1}.", meta.symbol.ifBlank { tr("tokens") }))
         val rent = if (accs.getOrNull(2) == null) tokenAccountRent(meta) else BigInteger.ZERO
         val min = rentMin()
         val prefs = Trading.solPrefsOf(preset)
@@ -631,9 +632,9 @@ class Mover(
 
     /** A bridge out of an EVM chain: a fresh quote, its deposit checked and signed, then followed until it pays out. */
     private suspend fun bridgeFromEvm(id: String, i: Int, from: Chain, to: Chain, recipient: String, amount: BigInteger, preset: Preset, exactOut: BigInteger?, cap: BigInteger?) {
-        val evm = trading.evmOf(from) ?: throw MoveRefused("This version of Nesty cannot move funds from ${from.title}.")
+        val evm = trading.evmOf(from) ?: throw MoveRefused(tr("This version of Nesty cannot move funds from {1}.", from.title))
         if (!Plans.canLeave(from)) throw MoveRefused(ELYSIUM_OUT)
-        val signer = session.evmSigner() ?: throw MoveRefused("Unlock your wallets first.")
+        val signer = session.evmSigner() ?: throw MoveRefused(tr("Unlock your wallets first."))
         val ask = Relay.Ask(signer.address, recipient, evm.id, Plans.bridgeId(to), exactOut ?: amount, if (exactOut != null) cap else null)
         // Always a fresh quote right before signing; its checks pin what it may do.
         val q = try {
@@ -659,8 +660,8 @@ class Mover(
                 signedAt(id, i, r.hash)
                 val receipt = trading.engine.receiptOf(evm.id, r.hash, signer.address)
                 when {
-                    receipt == null -> fail(id, i, "Not confirmed. Check the explorer.", LegStatus.UNKNOWN)
-                    !receipt.success -> fail(id, i, "The deposit failed on chain. Nothing was moved.")
+                    receipt == null -> fail(id, i, tr("Not confirmed. Check the explorer."), LegStatus.UNKNOWN)
+                    !receipt.success -> fail(id, i, tr("The deposit failed on chain. Nothing was moved."))
                     else -> {
                         store.leg(id, i) { it.copy(status = LegStatus.MOVING, gasUsd = gasUsd(from, receipt.feeWei)) }
                         follow(id, i)
@@ -672,7 +673,7 @@ class Mover(
 
     /** A bridge out of Solana to an EVM chain: a fresh quote, its deposit built around the quoted id, then followed. */
     private suspend fun bridgeFromSol(id: String, i: Int, to: Chain, recipient: String, amount: BigInteger, preset: Preset, exactOut: BigInteger?, cap: BigInteger?) {
-        val signer = session.solSigner() ?: throw MoveRefused("Unlock your wallets first.")
+        val signer = session.solSigner() ?: throw MoveRefused(tr("Unlock your wallets first."))
         val ask = Relay.Ask(signer.address, recipient, Relay.SOLANA_CHAIN_ID, Plans.bridgeId(to), exactOut ?: amount, if (exactOut != null) cap else null)
         val q = try {
             relay.quoteFromSolana(ask)
@@ -716,7 +717,7 @@ class Mover(
      */
     private suspend fun follow(id: String, i: Int) {
         val leg = store.get(id)?.legs?.getOrNull(i) ?: return
-        val path = leg.statusPath ?: return fail(id, i, "Not confirmed. Check the explorer.", LegStatus.UNKNOWN)
+        val path = leg.statusPath ?: return fail(id, i, tr("Not confirmed. Check the explorer."), LegStatus.UNKNOWN)
         val to = leg.toChain ?: return
         val from = leg.fromChain ?: return
         val started = now()
@@ -735,11 +736,11 @@ class Mover(
                     store.leg(id, i) { it.copy(status = LegStatus.DONE, endedAt = now()) }
                     return
                 }
-                "refund" -> return fail(id, i, "The bridge gave it back on ${from.title}.", LegStatus.REFUNDED)
-                "failure" -> return fail(id, i, "The bridge did not pay it out. Anything it gives back arrives on ${from.title}.")
+                "refund" -> return fail(id, i, tr("The bridge gave it back on {1}.", from.title), LegStatus.REFUNDED)
+                "failure" -> return fail(id, i, tr("The bridge did not pay it out. Anything it gives back arrives on {1}.", from.title))
             }
         }
-        fail(id, i, "The bridge has not said it paid out yet. Check your balances later.", LegStatus.UNKNOWN)
+        fail(id, i, tr("The bridge has not said it paid out yet. Check your balances later."), LegStatus.UNKNOWN)
     }
 
     /** A withdrawal or a coin send whose legs all ended: its state and a note. */
@@ -750,13 +751,13 @@ class Mover(
         if (s == MoveState.WORKING) return
         store.update(id) { it.copy(state = s) }
         if (m.kind == MoveKind.SEND_COIN) return settleCoin(m, s)
-        val to = m.toChain?.title ?: "the chain"
+        val to = m.toChain?.title ?: tr("the chain")
         val who = Fmt.address(m.recipient)
         notesFlow.tryEmit(
             when (s) {
-                MoveState.DONE -> MoveNote(id, "Sent ${Fmt.usdFull(m.usd)}", "to $who on $to", ok = true)
-                MoveState.PARTIAL -> MoveNote(id, "Part of your withdrawal arrived", "About ${Fmt.usdFull(m.arrivedUsd)} to $who. See Activity.", ok = false)
-                else -> MoveNote(id, "Withdrawal not sent", m.legs.firstNotNullOfOrNull { it.error } ?: "Stopped", ok = false)
+                MoveState.DONE -> MoveNote(id, tr("Sent {1}", Fmt.usdFull(m.usd)), tr("to {1} on {2}", who, to), ok = true)
+                MoveState.PARTIAL -> MoveNote(id, tr("Part of your withdrawal arrived"), tr("About {1} to {2}. See Activity.", Fmt.usdFull(m.arrivedUsd), who), ok = false)
+                else -> MoveNote(id, tr("Withdrawal not sent"), m.legs.firstNotNullOfOrNull { it.error } ?: tr("Stopped"), ok = false)
             },
         )
     }
@@ -768,7 +769,7 @@ class Mover(
     private fun settleCoin(m: Move, s: MoveState) {
         val leg = m.legs.firstOrNull() ?: return
         val chain = m.toChain ?: return
-        val coin = m.symbol ?: "coins"
+        val coin = m.symbol ?: tr("coins")
         val token = m.token
         val decimals = m.decimals
         val hash = leg.hash
@@ -784,9 +785,9 @@ class Mover(
         val who = Fmt.address(m.recipient)
         notesFlow.tryEmit(
             when (s) {
-                MoveState.DONE -> MoveNote(m.id, "Sent ${Fmt.amount(m.coinTokens)} $coin", "to $who on ${chain.title}", ok = true)
-                MoveState.PARTIAL -> MoveNote(m.id, "Send not confirmed", leg.error ?: "Check the explorer.", ok = false)
-                else -> MoveNote(m.id, "$coin not sent", leg.error ?: "Stopped", ok = false)
+                MoveState.DONE -> MoveNote(m.id, tr("Sent {1} {2}", Fmt.amount(m.coinTokens), coin), tr("to {1} on {2}", who, chain.title), ok = true)
+                MoveState.PARTIAL -> MoveNote(m.id, tr("Send not confirmed"), leg.error ?: tr("Check the explorer."), ok = false)
+                else -> MoveNote(m.id, tr("{1} not sent", coin), leg.error ?: tr("Stopped"), ok = false)
             },
         )
     }
@@ -799,13 +800,13 @@ class Mover(
         if (leg.status != LegStatus.DONE) {
             store.update(id) { it.copy(state = MoveState.FAILED) }
             val sent = leg.hash != null
-            notesFlow.tryEmit(MoveNote(id, if (sent) "Move failed" else "Move not sent", leg.error ?: "Stopped", ok = false))
+            notesFlow.tryEmit(MoveNote(id, if (sent) tr("Move failed") else tr("Move not sent"), leg.error ?: tr("Stopped"), ok = false))
             return
         }
         val token = m.token ?: return
         if (resumed || now() - confirmedAt > FRESH_MS) {
             store.update(id) { it.copy(state = MoveState.ASK) }
-            notesFlow.tryEmit(MoveNote(id, "Moved to ${chain.title}", "Buy ${m.symbol ?: "the coin"} at today's price, or keep the funds there. See Portfolio.", ok = true))
+            notesFlow.tryEmit(MoveNote(id, tr("Moved to {1}", chain.title), tr("Buy {1} at today's price, or keep the funds there. See Portfolio.", m.symbol ?: tr("the coin")), ok = true))
             return
         }
         store.update(id) { it.copy(state = MoveState.BUYING) }
@@ -843,9 +844,9 @@ class Mover(
             throw e
         } catch (e: Exception) {
             // Nothing was signed: the funds are on the chain, and the user decides again.
-            val why = e.message ?: "Could not start."
+            val why = e.message ?: tr("Could not start.")
             store.update(id) { it.copy(state = MoveState.ASK, buyError = why) }
-            notesFlow.tryEmit(MoveNote(id, "Moved, but the buy was not sent", "$why The funds are in your ${chain.title} balance.", ok = false))
+            notesFlow.tryEmit(MoveNote(id, tr("Moved, but the buy was not sent"), tr("{1} The funds are in your {2} balance.", why, chain.title), ok = false))
             return null
         }
         buys[id] = flow
@@ -855,7 +856,7 @@ class Mover(
             val t = flow.first { it.status != TradeStatus.WORKING }
             store.update(id) {
                 if (t.status == TradeStatus.DONE) it.copy(state = MoveState.DONE, buyTx = t.swap.hash)
-                else it.copy(state = MoveState.FAILED, buyTx = t.swap.hash, buyError = t.swap.error ?: "Stopped")
+                else it.copy(state = MoveState.FAILED, buyTx = t.swap.hash, buyError = t.swap.error ?: tr("Stopped"))
             }
         }
         return flow
@@ -897,9 +898,9 @@ class Mover(
         val leg = store.get(id)?.legs?.getOrNull(i) ?: return
         val from = leg.fromChain ?: return
         when (leg.status) {
-            LegStatus.WAITING -> fail(id, i, "The app closed before it was sent.")
+            LegStatus.WAITING -> fail(id, i, tr("The app closed before it was sent."))
             LegStatus.SENDING -> if (leg.hash == null) {
-                fail(id, i, "The app closed while it was being sent. Your balances show whether it went out.", LegStatus.UNKNOWN)
+                fail(id, i, tr("The app closed while it was being sent. Your balances show whether it went out."), LegStatus.UNKNOWN)
             } else watchSent(id, i, leg, from)
             LegStatus.SENT -> watchSent(id, i, leg, from)
             LegStatus.MOVING -> follow(id, i)
@@ -925,8 +926,8 @@ class Mover(
             trading.engine.receiptOf(evm.id, hash, signer, reader)?.also { r -> store.leg(id, i) { it.copy(gasUsd = gasUsd(from, r.feeWei)) } }?.success
         }
         when (landed) {
-            null -> fail(id, i, "Not confirmed. Check the explorer.", LegStatus.UNKNOWN)
-            false -> fail(id, i, if (leg.kind == LegKind.SEND) "The send failed on chain." else "The deposit failed on chain. Nothing was moved.")
+            null -> fail(id, i, tr("Not confirmed. Check the explorer."), LegStatus.UNKNOWN)
+            false -> fail(id, i, if (leg.kind == LegKind.SEND) tr("The send failed on chain.") else tr("The deposit failed on chain. Nothing was moved."))
             true -> if (leg.kind == LegKind.SEND) {
                 store.leg(id, i) { it.copy(status = LegStatus.DONE, endedAt = now()) }
             } else {
@@ -938,13 +939,13 @@ class Mover(
 
     companion object {
         /** The bridge's own words, without its name: the screens name no provider. */
-        fun bridgeSays(message: String?): String = (message ?: "The bridge did not answer.").replace(Regex("(?i)\\brelay\\b"), "bridge")
+        fun bridgeSays(message: String?): String = (message ?: tr("The bridge did not answer.")).replace(Regex("(?i)\\brelay\\b"), "bridge")
 
-        const val ELYSIUM_OUT = "Funds cannot leave Elysium for another chain in this version of Nesty. They can still be sent on Elysium."
+        val ELYSIUM_OUT: String get() = tr("Funds cannot leave Elysium for another chain in this version of Nesty. They can still be sent on Elysium.")
 
-        const val SAME_WALLET = "This is the wallet you are sending from."
-        const val COIN_UNREAD = "Could not read this coin just now. Try again."
-        const val COIN_CHANGED = "This coin's details changed. Open it again and check the amount."
+        val SAME_WALLET: String get() = tr("This is the wallet you are sending from.")
+        val COIN_UNREAD: String get() = tr("Could not read this coin just now. Try again.")
+        val COIN_CHANGED: String get() = tr("This coin's details changed. Open it again and check the amount.")
 
         /** A wallet's rent exemption until the chain is read (it was 890,880 lamports for years). */
         val DEFAULT_RENT: BigInteger = BigInteger.valueOf(890_880)

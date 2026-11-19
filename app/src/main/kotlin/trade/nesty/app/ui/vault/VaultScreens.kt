@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import trade.nesty.app.R
 import trade.nesty.app.data.AppGraph
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.GreenButton
@@ -67,17 +68,17 @@ import trade.nesty.app.vault.passwordNeeds
 
 /** What a refusal of the vault says on screen. A wait is said as a length of time, never a clock time. */
 fun VaultException.say(): String = when (code) {
-    VaultError.BAD_PASSWORD -> "Wrong password"
-    VaultError.TOO_MANY_ATTEMPTS -> "Too many wrong tries. Try again in ${Fmt.duration((retryAfterMs ?: 0).toDouble().coerceAtLeast(1_000.0))}."
-    VaultError.WEAK_PASSWORD -> "This password is too easy to guess"
-    VaultError.BAD_PHRASE -> "These words do not make a recovery phrase. Check each one."
-    VaultError.BAD_KEY -> "This is not an EVM or Solana key"
-    VaultError.DUPLICATE -> "This wallet is already here"
-    VaultError.LIMIT -> "You have ${Vault.MAX_WALLETS} wallets, the most Nesty keeps"
-    VaultError.CORRUPT -> "This phone cannot open its saved wallets. Restore them from your backups."
-    VaultError.LOCKED -> "Nesty is locked"
+    VaultError.BAD_PASSWORD -> tr("Wrong password")
+    VaultError.TOO_MANY_ATTEMPTS -> tr("Too many wrong tries. Try again in {1}.", Fmt.duration((retryAfterMs ?: 0).toDouble().coerceAtLeast(1_000.0)))
+    VaultError.WEAK_PASSWORD -> tr("This password is too easy to guess")
+    VaultError.BAD_PHRASE -> tr("These words do not make a recovery phrase. Check each one.")
+    VaultError.BAD_KEY -> tr("This is not an EVM or Solana key")
+    VaultError.DUPLICATE -> tr("This wallet is already here")
+    VaultError.LIMIT -> tr("You have {1} wallets, the most Nesty keeps", Vault.MAX_WALLETS)
+    VaultError.CORRUPT -> tr("This phone cannot open its saved wallets. Restore them from your backups.")
+    VaultError.LOCKED -> tr("Nesty is locked")
     VaultError.STALE_KEY -> Fingerprint.DROPPED
-    else -> "That did not work. Try again."
+    else -> tr("That did not work. Try again.")
 }
 
 /**
@@ -125,7 +126,7 @@ fun UnlockScreen() {
                 } catch (e: VaultException) {
                     if (e.code == VaultError.TOO_MANY_ATTEMPTS) waitUntil = System.currentTimeMillis() + (e.retryAfterMs ?: 0) else problem = e.say()
                 } catch (_: Exception) {
-                    problem = "That did not work. Try again."
+                    problem = tr("That did not work. Try again.")
                 } finally {
                     password = ""
                     busy = false
@@ -140,23 +141,23 @@ fun UnlockScreen() {
     ) {
         Column(Modifier.padding(top = 72.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(painterResource(R.drawable.nesty_egg), contentDescription = null, tint = Color.Unspecified, modifier = Modifier.size(72.dp))
-            Text("Nesty", style = figure(38, FontWeight.Bold), modifier = Modifier.semantics { heading() })
-            Text("Keys stay encrypted on this phone", style = text(15, color = Ink.muted))
+            Text(tr("Nesty"), style = figure(38, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+            Text(tr("Keys stay encrypted on this phone"), style = text(15, color = Ink.muted))
         }
         Column(Modifier.fillMaxWidth().padding(top = 36.dp, bottom = 24.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text("Password", style = text(13, color = Ink.muted))
-            TextBox(password, { password = it }, "Password", Modifier.fillMaxWidth(), secret = true, bad = problem, ime = ImeAction.Go, onIme = go)
-            GreenButton(if (busy) "Unlocking…" else "Unlock", go, Modifier.fillMaxWidth(), solid = true)
+            Text(tr("Password"), style = text(13, color = Ink.muted))
+            TextBox(password, { password = it }, tr("Password"), Modifier.fillMaxWidth(), secret = true, bad = problem, ime = ImeAction.Go, onIme = go)
+            GreenButton(if (busy) tr("Unlocking…") else tr("Unlock"), go, Modifier.fillMaxWidth(), solid = true)
             if (finger) {
                 val shape = RoundedCornerShape(14.dp)
                 Box(
                     Modifier.fillMaxWidth().height(52.dp).clip(shape).border(1.dp, Ink.line3, shape).clickable(role = Role.Button, onClick = useFinger),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text("Use fingerprint", style = text(17, FontWeight.Bold))
+                    Text(tr("Use fingerprint"), style = text(17, FontWeight.Bold))
                 }
             }
-            val said = if (waiting) "Too many wrong tries. Try again in ${Fmt.duration((waitUntil - now).toDouble().coerceAtLeast(1_000.0))}." else problem
+            val said = if (waiting) tr("Too many wrong tries. Try again in {1}.", Fmt.duration((waitUntil - now).toDouble().coerceAtLeast(1_000.0))) else problem
             if (said != null) {
                 Text(
                     said,
@@ -170,10 +171,10 @@ fun UnlockScreen() {
 }
 
 private fun needText(need: PasswordNeed): String = when (need) {
-    PasswordNeed.LENGTH -> "At least $MIN_PASSWORD_LENGTH characters"
-    PasswordNeed.UPPER -> "An uppercase letter"
-    PasswordNeed.LOWER -> "A lowercase letter"
-    PasswordNeed.DIGIT -> "A number"
+    PasswordNeed.LENGTH -> tr("At least {1} characters", MIN_PASSWORD_LENGTH)
+    PasswordNeed.UPPER -> tr("An uppercase letter")
+    PasswordNeed.LOWER -> tr("A lowercase letter")
+    PasswordNeed.DIGIT -> tr("A number")
 }
 
 /**
@@ -207,7 +208,7 @@ fun SetupScreen() {
                 } catch (e: VaultException) {
                     problem = e.say()
                 } catch (_: Exception) {
-                    problem = "That did not work. Try again."
+                    problem = tr("That did not work. Try again.")
                 } finally {
                     busy = false
                 }
@@ -216,34 +217,34 @@ fun SetupScreen() {
     }
 
     Column(Modifier.fillMaxSize().imePadding()) {
-        BackHeader("Create a password", onBack = { nav.pop() })
+        BackHeader(tr("Create a password"), onBack = { nav.pop() })
         Column(
             Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             Text(
-                "It encrypts your wallets on this phone and opens Nesty when it is locked. Nesty cannot reset it, so keep each wallet's backup.",
+                tr("It encrypts your wallets on this phone and opens Nesty when it is locked. Nesty cannot reset it, so keep each wallet's backup."),
                 style = text(14, color = Ink.text2, lineHeight = 20.sp),
             )
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Password", style = text(13, color = Ink.muted))
-                TextBox(password, { password = it }, "Password", Modifier.fillMaxWidth(), secret = true, ime = ImeAction.Next)
+                Text(tr("Password"), style = text(13, color = Ink.muted))
+                TextBox(password, { password = it }, tr("Password"), Modifier.fillMaxWidth(), secret = true, ime = ImeAction.Next)
             }
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (need in PasswordNeed.entries) {
                     val met = need !in needs
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.semantics(mergeDescendants = true) {}) {
                         ToneMark(if (met) Tone.OK else Tone.NONE, 18.dp)
-                        Text(needText(need) + if (met) "" else ": not yet", style = text(13, color = if (met) Ink.text2 else Ink.muted))
+                        Text(if (met) needText(need) else tr("{1}: not yet", needText(need)), style = text(13, color = if (met) Ink.text2 else Ink.muted))
                     }
                 }
             }
             Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("Type it again", style = text(13, color = Ink.muted))
-                TextBox(again, { again = it }, "Type the password again", Modifier.fillMaxWidth(), secret = true, bad = "The two do not match".takeIf { differs }, ime = ImeAction.Go, onIme = go)
-                if (differs) Text("The two do not match", style = text(13, color = Ink.pinkSoft))
+                Text(tr("Type it again"), style = text(13, color = Ink.muted))
+                TextBox(again, { again = it }, tr("Type the password again"), Modifier.fillMaxWidth(), secret = true, bad = tr("The two do not match").takeIf { differs }, ime = ImeAction.Go, onIme = go)
+                if (differs) Text(tr("The two do not match"), style = text(13, color = Ink.pinkSoft))
             }
-            GreenButton(if (busy) "Encrypting…" else "Continue", go, Modifier.fillMaxWidth(), solid = ready)
+            GreenButton(if (busy) tr("Encrypting…") else tr("Continue"), go, Modifier.fillMaxWidth(), solid = ready)
             problem?.let { Text(it, style = text(14, FontWeight.SemiBold, Ink.pinkSoft), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
         }
     }

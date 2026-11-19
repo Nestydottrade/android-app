@@ -12,6 +12,7 @@ import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
 import javax.crypto.spec.GCMParameterSpec
+import trade.nesty.app.i18n.tr
 
 /** What fingerprint unlock has ready: a cipher for the prompt, nothing, or a key Android dropped. */
 sealed interface FingerprintOpener {
@@ -65,7 +66,7 @@ class FingerprintKey(context: Context, private val alias: String = "nesty.finger
             out.write(bytes)
             out.fd.sync()
         }
-        check(next.renameTo(file)) { "Fingerprint unlock could not be saved" }
+        check(next.renameTo(file)) { tr("Fingerprint unlock could not be saved") }
     }
 
     /** A cipher for the prompt to authorise, to open the kept key. */
@@ -90,7 +91,7 @@ class FingerprintKey(context: Context, private val alias: String = "nesty.finger
 
     /** The vault's key, from an [opener] cipher the prompt authorised. The caller wipes it. */
     fun open(opener: Cipher): ByteArray {
-        val bytes = read() ?: throw IllegalStateException("Fingerprint unlock is off")
+        val bytes = read() ?: throw IllegalStateException(tr("Fingerprint unlock is off"))
         opener.updateAAD(AAD)
         return opener.doFinal(bytes, 1 + NONCE, bytes.size - 1 - NONCE)
     }

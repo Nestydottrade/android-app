@@ -7,6 +7,7 @@ import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import trade.nesty.app.i18n.tr
 
 /** One answer to a fetch: its status and its body, closed together. */
 class ApkBody(val status: Int, val stream: InputStream?, private val onClose: () -> Unit = {}) : Closeable {
@@ -59,16 +60,16 @@ class ApkFetch(private val source: ApkSource) {
         if (have == size) return have
         source.open(url, have).use { body ->
             when (body.status) {
-                206 -> if (have == 0L) throw IOException("A part came back for a whole file")
+                206 -> if (have == 0L) throw IOException(tr("A part came back for a whole file"))
                 200 -> have = 0
                 416 -> {
                     // What is on disk no longer fits the file served: start again next time.
                     part.delete()
-                    throw IOException("The server refused the rest of the file")
+                    throw IOException(tr("The server refused the rest of the file"))
                 }
                 else -> throw IOException("HTTP ${body.status}")
             }
-            val input = body.stream ?: throw IOException("No file came back")
+            val input = body.stream ?: throw IOException(tr("No file came back"))
             FileOutputStream(part, have > 0).use { out ->
                 val buf = ByteArray(64 * 1024)
                 var told = have
@@ -79,7 +80,7 @@ class ApkFetch(private val source: ApkSource) {
                     if (have + n > size) {
                         out.close()
                         part.delete()
-                        throw IOException("The file is larger than published")
+                        throw IOException(tr("The file is larger than published"))
                     }
                     out.write(buf, 0, n)
                     have += n
@@ -91,7 +92,7 @@ class ApkFetch(private val source: ApkSource) {
             }
             progress(have)
         }
-        if (have < size && goOn()) throw IOException("The download stopped before the end")
+        if (have < size && goOn()) throw IOException(tr("The download stopped before the end"))
         return have
     }
 

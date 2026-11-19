@@ -15,6 +15,7 @@ import trade.nesty.app.data.Fill
 import java.math.BigInteger
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.coroutineContext
+import trade.nesty.app.i18n.tr
 
 /** What the watcher reads and does through the engines, so tests can stand in for them. */
 interface ExitMarket {
@@ -138,7 +139,7 @@ class ExitWatcher(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            pause(key, "Price check failed; trying again.")
+            pause(key, tr("Price check failed; trying again."))
         }
     }
 
@@ -149,7 +150,7 @@ class ExitWatcher(
     /** One check of one plan: measure, then sell the step that is due, if any. */
     internal suspend fun check(plan: ExitPlan) {
         val key = plan.key
-        val held = market.held(plan) ?: return pause(key, "Price check failed; trying again.")
+        val held = market.held(plan) ?: return pause(key, tr("Price check failed; trying again."))
         if (held.signum() == 0) {
             val n = (zeros[key] ?: 0) + 1
             zeros[key] = n
@@ -158,14 +159,14 @@ class ExitWatcher(
                 remove(key)
                 return
             }
-            return pause(key, "You hold none of it now.")
+            return pause(key, tr("You hold none of it now."))
         }
         zeros.remove(key)
         val value = market.sellValue(plan, held)
         if (value is SellValue.None) return pause(key, value.why)
         val usd = (value as SellValue.Usd).usd
         val covered = ExitMath.covered(held, ExitMath.costBasis(market.fills(plan)))
-        if (covered.tokens.signum() == 0 || covered.costUsd <= 0) return pause(key, "No cost on record for what you hold.")
+        if (covered.tokens.signum() == 0 || covered.costUsd <= 0) return pause(key, tr("No cost on record for what you hold."))
 
         val nowBps = ExitMath.multipleBps(usd, held, covered)
         val due = ExitMath.dueRule(plan.rules, plan.peakBps, nowBps)
@@ -211,7 +212,7 @@ class ExitWatcher(
                 eventsFlow.emit(ExitEvent.Sold(fresh, rule, atBps, end.usd, gain))
             } else {
                 val tries = rule.tries + 1
-                val error = (end.error?.takeIf { it.isNotBlank() } ?: "Could not sell.").take(140)
+                val error = (end.error?.takeIf { it.isNotBlank() } ?: tr("Could not sell.")).take(140)
                 val givenUp = !end.retry || tries >= ExitMath.TRIES
                 store.patchRule(key, rule.id) { it.copy(done = givenUp, tries = tries, error = error) }
                 eventsFlow.emit(ExitEvent.Failed(fresh, rule, error, givenUp))
@@ -245,7 +246,7 @@ class ExitWatcher(
         /** How often each plan is checked. The extension checks about every second in a desktop browser. */
         const val CHECK_MS = 3_000L
         private const val IDLE_MS = 1_000L
-        const val LOCKED = "Paused until you unlock Nesty."
-        const val CLOSED = "Nesty closed while this step sold. Check your activity."
+        val LOCKED: String get() = tr("Paused until you unlock Nesty.")
+        val CLOSED: String get() = tr("Nesty closed while this step sold. Check your activity.")
     }
 }

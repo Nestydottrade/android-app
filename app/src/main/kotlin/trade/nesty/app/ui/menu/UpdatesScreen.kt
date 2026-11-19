@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.sp
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Update
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.Chip
@@ -44,16 +45,16 @@ import trade.nesty.app.ui.theme.text
 
 /** What an entry is about, as the app files it: App for the app, Data for what the server reads. */
 fun kindOf(u: Update): String? = when {
-    "app" in u.tags || "android" in u.tags -> "App"
-    "website" in u.tags -> "Data"
+    "app" in u.tags || "android" in u.tags -> tr("App")
+    "website" in u.tags -> tr("Data")
     else -> null
 }
 
 /** The chains an entry names, or All chains. */
 fun chainsOf(u: Update): String {
-    val list = u.chains ?: return "All chains"
+    val list = u.chains ?: return tr("All chains")
     val names = list.mapNotNull { Chain.ofSlug(it)?.label }
-    return if (names.isEmpty()) "All chains" else names.joinToString(" · ")
+    return if (names.isEmpty()) tr("All chains") else names.joinToString(" · ")
 }
 
 @Composable
@@ -73,15 +74,15 @@ fun UpdatesScreen() {
     val days = shown.groupBy { it.day }.toList()
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Updates", onBack = { nav.pop() })
+        BackHeader(tr("Updates"), onBack = { nav.pop() })
         Row(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("All", "App", "Data").forEachIndexed { i, label -> Chip(label, filter == i, { filter = i }) }
+            listOf(tr("All"), tr("App"), tr("Data")).forEachIndexed { i, label -> Chip(label, filter == i, { filter = i }) }
         }
         Divider()
         when {
-            list == null && failed -> EmptyNote("Could not reach Nesty. Try again later.")
-            list == null -> EmptyNote("Loading…")
-            days.isEmpty() -> EmptyNote("Nothing here yet.")
+            list == null && failed -> EmptyNote(tr("Could not reach Nesty. Try again later."))
+            list == null -> EmptyNote(tr("Loading…"))
+            days.isEmpty() -> EmptyNote(tr("Nothing here yet."))
             else -> LazyColumn(Modifier.weight(1f).fillMaxWidth()) {
                 uniqueItems(days, { it.first }) { (day, entries) ->
                     Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -99,7 +100,7 @@ fun UpdatesScreen() {
                                                 .background(if (k == "App") Ink.violetBg else Ink.track, RoundedCornerShape(11.dp))
                                                 .padding(horizontal = 8.dp),
                                             contentAlignment = Alignment.Center,
-                                        ) { Text(k, style = text(12, FontWeight.Bold, if (k == "App") Ink.violetSoft else Ink.text2)) }
+                                        ) { Text(tr(k), style = text(12, FontWeight.Bold, if (k == "App") Ink.violetSoft else Ink.text2)) }
                                     }
                                     Text(u.text, style = text(13, color = Ink.text2, lineHeight = 19.sp))
                                     Text(chainsOf(u), style = text(12, color = Ink.muted))

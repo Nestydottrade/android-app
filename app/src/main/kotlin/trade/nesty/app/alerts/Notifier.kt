@@ -18,6 +18,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import trade.nesty.app.MainActivity
 import trade.nesty.app.R
+import trade.nesty.app.i18n.tr
 
 /**
  * Android's side of the alerts: the channels the user can tune in the phone's settings, the
@@ -54,14 +55,14 @@ object Notifier {
         val nm = context.getSystemService(NotificationManager::class.java) ?: return
         nm.createNotificationChannels(
             listOf(
-                NotificationChannel(PLANS, "Exit plans", NotificationManager.IMPORTANCE_HIGH).apply { description = "Each step that sells, with what you got" },
-                NotificationChannel(HELD, "Coins you hold", NotificationManager.IMPORTANCE_HIGH).apply { description = "A followed wallet sells a coin you hold" },
-                NotificationChannel(YOURS, "Your trades", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "Your buys, sells and moves that end while Nesty is closed" },
-                NotificationChannel(TRACKER, "Tracked wallets", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "Buys and sells by the wallets you follow" },
-                NotificationChannel(SIGNALS, "Signals", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "When proven wallets buy the same coin" },
-                NotificationChannel(UPDATES, "App updates", NotificationManager.IMPORTANCE_DEFAULT).apply { description = "A new version of Nesty is ready to install" },
-                NotificationChannel(WATCH, "Watching", NotificationManager.IMPORTANCE_LOW).apply {
-                    description = "Shown while Nesty watches your exit plans and alerts"
+                NotificationChannel(PLANS, tr("Exit plans"), NotificationManager.IMPORTANCE_HIGH).apply { description = tr("Each step that sells, with what you got") },
+                NotificationChannel(HELD, tr("Coins you hold"), NotificationManager.IMPORTANCE_HIGH).apply { description = tr("A followed wallet sells a coin you hold") },
+                NotificationChannel(YOURS, tr("Your trades"), NotificationManager.IMPORTANCE_DEFAULT).apply { description = tr("Your buys, sells and moves that end while Nesty is closed") },
+                NotificationChannel(TRACKER, tr("Tracked wallets"), NotificationManager.IMPORTANCE_DEFAULT).apply { description = tr("Buys and sells by the wallets you follow") },
+                NotificationChannel(SIGNALS, tr("Signals"), NotificationManager.IMPORTANCE_DEFAULT).apply { description = tr("When proven wallets buy the same coin") },
+                NotificationChannel(UPDATES, tr("App updates"), NotificationManager.IMPORTANCE_DEFAULT).apply { description = tr("A new version of Nesty is ready to install") },
+                NotificationChannel(WATCH, tr("Watching"), NotificationManager.IMPORTANCE_LOW).apply {
+                    description = tr("Shown while Nesty watches your exit plans and alerts")
                     setShowBadge(false)
                 },
             ),
@@ -136,7 +137,7 @@ object Notifier {
     private fun summary(context: Context, channel: String): Notification =
         NotificationCompat.Builder(context, channel)
             .setSmallIcon(R.drawable.nesty_egg)
-            .setContentTitle("Alerts")
+            .setContentTitle(tr("Alerts"))
             .setGroup(GROUP)
             .setGroupSummary(true)
             .setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_CHILDREN)
@@ -147,11 +148,11 @@ object Notifier {
 
     /** A checked update is ready to install: a tap opens the Update screen. */
     fun updateReady(context: Context, version: String) =
-        postUpdate(context, "Nesty $version is ready to install", "Downloaded and checked. Tap to install it.", AlertLink(AlertLink.UPDATE))
+        postUpdate(context, tr("Nesty {1} is ready to install", version), tr("Downloaded and checked. Tap to install it."), AlertLink(AlertLink.UPDATE))
 
     /** The new version's first start after an update. */
     fun updated(context: Context, version: String) =
-        postUpdate(context, "Nesty $version is installed", "Your wallets, positions and exit plans are as you left them.", null)
+        postUpdate(context, tr("Nesty {1} is installed", version), tr("Your wallets, positions and exit plans are as you left them."), null)
 
     /** Nesty is open: its own screen says what the update line said. */
     fun clearUpdate(context: Context) = NotificationManagerCompat.from(context).cancel(UPDATE_ID)

@@ -1,6 +1,7 @@
 package trade.nesty.app.evm
 
 import java.math.BigInteger
+import trade.nesty.app.i18n.tr
 
 /** A transaction as a venue builds it, before gas and nonce. */
 data class TxDraft(val to: String, val data: ByteArray, val value: BigInteger) {
@@ -97,12 +98,12 @@ object Validator {
     private fun paysUser(ctx: ValidationContext, r: String) = sameAddress(r, MSG_SENDER) || isOwn(ctx, r)
 
     private fun checkPermit(permit: PermitSingle, ctx: ValidationContext): BlockedAction {
-        val label = "Permit2: allow router to pull ${permit.amount} of ${shortAddress(permit.token)}"
-        if (ctx.token == null || !sameAddress(permit.token, ctx.token)) return act(label, "Permit is for a different token")
-        if (ctx.router == null || !sameAddress(permit.spender, ctx.router)) return act(label, "Permit spender is not the router")
-        if (ctx.maxPermit == null || permit.amount > ctx.maxPermit) return act(label, "Permit amount is above the amount being sold")
-        if (permit.expiration > ctx.nowS + MAX_PERMIT_TTL_S) return act(label, "Permit expiry too long")
-        if (permit.sigDeadline > big(ctx.nowS + MAX_PERMIT_TTL_S)) return act(label, "Permit signature deadline too long")
+        val label = tr("Permit2: allow router to pull {1} of {2}", permit.amount, shortAddress(permit.token))
+        if (ctx.token == null || !sameAddress(permit.token, ctx.token)) return act(label, tr("Permit is for a different token"))
+        if (ctx.router == null || !sameAddress(permit.spender, ctx.router)) return act(label, tr("Permit spender is not the router"))
+        if (ctx.maxPermit == null || permit.amount > ctx.maxPermit) return act(label, tr("Permit amount is above the amount being sold"))
+        if (permit.expiration > ctx.nowS + MAX_PERMIT_TTL_S) return act(label, tr("Permit expiry too long"))
+        if (permit.sigDeadline > big(ctx.nowS + MAX_PERMIT_TTL_S)) return act(label, tr("Permit signature deadline too long"))
         return act(label)
     }
 
@@ -114,34 +115,34 @@ object Validator {
             fun nativeSide(c: String) = sameAddress(c, NATIVE) || sameAddress(c, ctx.chain.wrappedNative)
             // Native ↔ hop asset (ETH → flETH): its output stays in the unlock as credit.
             val bridgeLeg = (nativeSide(c0) && isStable(ctx.chain, c1)) || (nativeSide(c1) && isStable(ctx.chain, c0))
-            if (!allowedAsset(ctx, c0) || !allowedAsset(ctx, c1)) out += act(label, "Pool contains an unexpected asset")
+            if (!allowedAsset(ctx, c0) || !allowedAsset(ctx, c1)) out += act(label, tr("Pool contains an unexpected asset"))
             else if (!bridgeLeg && (ctx.token == null || (!sameAddress(c0, ctx.token) && !sameAddress(c1, ctx.token)))) {
-                out += act(label, "Pool does not contain the traded token")
+                out += act(label, tr("Pool does not contain the traded token"))
             } else out += act(label)
             false
         }
         is V4Action.Settle -> {
             val label = "v4 settle ${shortAddress(a.currency)}${if (a.payerIsUser) " from wallet" else " from router"}"
-            out += if (allowedAsset(ctx, a.currency)) act(label) else act(label, "Unexpected asset")
+            out += if (allowedAsset(ctx, a.currency)) act(label) else act(label, tr("Unexpected asset"))
             false
         }
         is V4Action.SettleAll -> {
             val label = "v4 settle all ${shortAddress(a.currency)}"
-            out += if (allowedAsset(ctx, a.currency)) act(label) else act(label, "Unexpected asset")
+            out += if (allowedAsset(ctx, a.currency)) act(label) else act(label, tr("Unexpected asset"))
             false
         }
         is V4Action.Take -> {
             val label = "v4 take ${shortAddress(a.currency)} → ${shortAddress(a.recipient)}"
             out += when {
-                !allowedAsset(ctx, a.currency) -> act(label, "Unexpected asset")
-                !recipientOk(ctx, a.recipient) -> act(label, "Recipient is not one of your wallets")
+                !allowedAsset(ctx, a.currency) -> act(label, tr("Unexpected asset"))
+                !recipientOk(ctx, a.recipient) -> act(label, tr("Recipient is not one of your wallets"))
                 else -> act(label)
             }
             paysUser(ctx, a.recipient)
         }
         is V4Action.TakeAll -> {
             val label = "v4 take all ${shortAddress(a.currency)} → sender"
-            out += if (allowedAsset(ctx, a.currency)) act(label) else act(label, "Unexpected asset")
+            out += if (allowedAsset(ctx, a.currency)) act(label) else act(label, tr("Unexpected asset"))
             true
         }
     }
@@ -157,22 +158,22 @@ object Validator {
         is Command.WrapEth -> {
             val label = "Wrap ${if (c.amount == CONTRACT_BALANCE) "all" else formatEther(c.amount)} ${ctx.chain.nativeSymbol}"
             out += when {
-                !sameAddress(c.recipient, ADDRESS_THIS) && !isOwn(ctx, c.recipient) -> act(label, "Wrapped funds go to an unknown address")
-                c.amount != CONTRACT_BALANCE && c.amount > value -> act(label, "Wraps more than the transaction value")
+                !sameAddress(c.recipient, ADDRESS_THIS) && !isOwn(ctx, c.recipient) -> act(label, tr("Wrapped funds go to an unknown address"))
+                c.amount != CONTRACT_BALANCE && c.amount > value -> act(label, tr("Wraps more than the transaction value"))
                 else -> act(label)
             }
             isOwn(ctx, c.recipient)
         }
         is Command.UnwrapWeth -> {
-            val label = "Unwrap to ${shortAddress(c.recipient)}"
-            out += if (paysUser(ctx, c.recipient)) act(label) else act(label, "Recipient is not one of your wallets")
+            val label = tr("Unwrap to {1}", shortAddress(c.recipient))
+            out += if (paysUser(ctx, c.recipient)) act(label) else act(label, tr("Recipient is not one of your wallets"))
             paysUser(ctx, c.recipient)
         }
         is Command.Sweep -> {
             val label = "Sweep ${shortAddress(c.token)} → ${shortAddress(c.recipient)}"
             out += when {
-                !allowedAsset(ctx, c.token) -> act(label, "Unexpected asset")
-                !paysUser(ctx, c.recipient) -> act(label, "Recipient is not one of your wallets")
+                !allowedAsset(ctx, c.token) -> act(label, tr("Unexpected asset"))
+                !paysUser(ctx, c.recipient) -> act(label, tr("Recipient is not one of your wallets"))
                 else -> act(label)
             }
             paysUser(ctx, c.recipient)
@@ -190,12 +191,12 @@ object Validator {
             // Native ↔ stable leg of a stable-quoted route: its output stays in the router.
             val bridgeLeg = !tradesToken && sameAddress(recipient, ADDRESS_THIS) && tokens.any { it != null && isStable(ctx.chain, it) }
             out += when {
-                tokens.any { it == null || !allowedAsset(ctx, it) } -> act(label, "Path contains an unexpected asset")
-                !tradesToken && !bridgeLeg -> act(label, "Path does not trade the selected token")
+                tokens.any { it == null || !allowedAsset(ctx, it) } -> act(label, tr("Path contains an unexpected asset"))
+                !tradesToken && !bridgeLeg -> act(label, tr("Path does not trade the selected token"))
                 tokens.drop(1).dropLast(1).any { it != null && !isStable(ctx.chain, it) } ->
-                    act(label, "Only a stablecoin may sit between native and the token")
-                !recipientOk(ctx, recipient) -> act(label, "Recipient is not one of your wallets")
-                amountOutMin.signum() == 0 -> act(label, "No minimum output (no slippage protection)")
+                    act(label, tr("Only a stablecoin may sit between native and the token"))
+                !recipientOk(ctx, recipient) -> act(label, tr("Recipient is not one of your wallets"))
+                amountOutMin.signum() == 0 -> act(label, tr("No minimum output (no slippage protection)"))
                 else -> act(label)
             }
             paysUser(ctx, recipient)
@@ -208,7 +209,7 @@ object Validator {
             var pays = false
             for (a in c.actions) pays = checkV4(a, ctx, out) || pays
             if (c.actions.any { it is V4Action.SwapExactInSingle && it.amountOutMinimum.signum() == 0 }) {
-                out += act("v4 swap minimum output", "No minimum output (no slippage protection)")
+                out += act("v4 swap minimum output", tr("No minimum output (no slippage protection)"))
             }
             pays
         }
@@ -252,59 +253,59 @@ object Validator {
         val decoded = try {
             UniversalRouter.decodeExecute(tx.data)
         } catch (e: DecodeError) {
-            return listOf(act("Universal Router call", e.message))
+            return listOf(act(tr("Universal Router call"), e.message))
         } catch (e: Exception) {
-            return listOf(act("Universal Router call", "Could not decode"))
+            return listOf(act(tr("Universal Router call"), tr("Could not decode")))
         }
         val (commands, deadline) = decoded
         if (deadline < big(ctx.nowS) || deadline > big(ctx.nowS + MAX_DEADLINE_S)) {
-            out += act("Deadline", "Deadline outside the allowed window")
+            out += act("Deadline", tr("Deadline outside the allowed window"))
         }
         var paysOut = false
         for (c in commands) paysOut = checkCommand(c, ctx, tx.value, out) || paysOut
-        if (!paysOut) out += act("Output", "No step sends the output to your wallet")
+        if (!paysOut) out += act("Output", tr("No step sends the output to your wallet"))
         for (s in strandedStables(commands, ctx)) {
-            out += act("Stablecoin ${shortAddress(s)}", "Left in the router instead of being swapped on")
+            out += act("Stablecoin ${shortAddress(s)}", tr("Left in the router instead of being swapped on"))
         }
         if (tx.value.signum() > 0 && commands.none { it is Command.WrapEth || it is Command.V4Swap }) {
-            out += act("Value", "Sends native funds without using them")
+            out += act("Value", tr("Sends native funds without using them"))
         }
         return out
     }
 
     private fun validateToken(tx: TxDraft, ctx: ValidationContext): List<BlockedAction> {
-        if (tx.value.signum() != 0) return listOf(act("Token call", "Token calls must not carry native value"))
+        if (tx.value.signum() != 0) return listOf(act(tr("Token call"), tr("Token calls must not carry native value")))
         val approve = runCatching { erc20Approve.decodeCall(tx.data) }.getOrNull()
         val transfer = if (approve == null) runCatching { erc20Transfer.decodeCall(tx.data) }.getOrNull() else null
         if (approve != null) {
             val spender = approve[0] as String
             val amount = approve[1] as BigInteger
-            val label = "Approve ${shortAddress(spender)} for $amount"
+            val label = tr("Approve {1} for {2}", shortAddress(spender), amount)
             val spenderOk = sameAddress(spender, Permit2.ADDRESS) || ctx.extraContracts[spender.lowercase()]?.approvalSpender == true
-            if (!spenderOk) return listOf(act(label, "Spender is not Permit2 or an allowlisted launchpad"))
-            if (ctx.maxApproval == null || amount > ctx.maxApproval) return listOf(act(label, "Approval above the bounded amount"))
+            if (!spenderOk) return listOf(act(label, tr("Spender is not Permit2 or an allowlisted launchpad")))
+            if (ctx.maxApproval == null || amount > ctx.maxApproval) return listOf(act(label, tr("Approval above the bounded amount")))
             return listOf(act(label))
         }
-        if (transfer == null) return listOf(act("Call to token ${shortAddress(tx.to)}", "Unknown function"))
+        if (transfer == null) return listOf(act(tr("Call to token {1}", shortAddress(tx.to)), tr("Unknown function")))
         val to = transfer[0] as String
         val amount = transfer[1] as BigInteger
-        val label = "Transfer $amount to ${shortAddress(to)}"
-        return listOf(if (isOwn(ctx, to) || isPayee(ctx, to)) act(label) else act(label, "Recipient is not one of your wallets"))
+        val label = tr("Transfer {1} to {2}", amount, shortAddress(to))
+        return listOf(if (isOwn(ctx, to) || isPayee(ctx, to)) act(label) else act(label, tr("Recipient is not one of your wallets")))
     }
 
     fun validateTx(tx: TxDraft, ctx: ValidationContext): ValidationResult {
         val pre = mutableListOf<BlockedAction>()
-        if (!isOwn(ctx, ctx.from)) pre += act("Sender", "Sender is not one of your wallets")
-        if (tx.value > ctx.maxValue) pre += act("Value ${formatEther(tx.value)} ${ctx.chain.nativeSymbol}", "Above your per-transaction limit")
+        if (!isOwn(ctx, ctx.from)) pre += act("Sender", tr("Sender is not one of your wallets"))
+        if (tx.value > ctx.maxValue) pre += act("Value ${formatEther(tx.value)} ${ctx.chain.nativeSymbol}", tr("Above your per-transaction limit"))
         val extra = ctx.extraContracts[tx.to.lowercase()]
         val actions = when {
             ctx.router != null && sameAddress(tx.to, ctx.router) -> validateUniversalRouter(tx, ctx)
             ctx.token != null && sameAddress(tx.to, ctx.token) -> validateToken(tx, ctx)
             extra != null -> extra.validate(tx, ctx)
             isOwn(ctx, tx.to) || isPayee(ctx, tx.to) ->
-                if (tx.data.isEmpty()) listOf(act("Send ${formatEther(tx.value)} ${ctx.chain.nativeSymbol} to ${shortAddress(tx.to)}"))
-                else listOf(act("Call to ${shortAddress(tx.to)}", "Calls with data to a wallet are not allowed"))
-            else -> listOf(act("Call to ${shortAddress(tx.to)}", "Contract is not on the allowlist"))
+                if (tx.data.isEmpty()) listOf(act(tr("Send {1} {2} to {3}", formatEther(tx.value), ctx.chain.nativeSymbol, shortAddress(tx.to))))
+                else listOf(act(tr("Call to {1}", shortAddress(tx.to)), tr("Calls with data to a wallet are not allowed")))
+            else -> listOf(act(tr("Call to {1}", shortAddress(tx.to)), tr("Contract is not on the allowlist")))
         }
         return result(pre + actions)
     }

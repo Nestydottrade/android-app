@@ -1,5 +1,7 @@
 package trade.nesty.app.ui.token
 
+import trade.nesty.app.ui.appendTr
+import trade.nesty.app.i18n.trKey
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -62,6 +64,7 @@ import trade.nesty.app.data.Links
 import trade.nesty.app.data.Served
 import trade.nesty.app.data.Trade
 import trade.nesty.app.data.TradersAnswer
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.Check
 import trade.nesty.app.ui.Checks
@@ -157,12 +160,12 @@ fun TokenScreen(chain: Chain, address: String, openBuy: Boolean = false, buyUsd:
                     }
                     Card {
                         val note = listOfNotNull(
-                            model.traders?.trades?.let { Fmt.counted(it.toLong(), "trade") },
-                            model.holderCount?.let { Fmt.counted(it.toLong(), "holder") },
+                            model.traders?.trades?.let { Fmt.counted(it.toLong(), "{1} trade", "{1} trades") },
+                            model.holderCount?.let { Fmt.counted(it.toLong(), "{1} holder", "{1} holders") },
                         ).joinToString(" · ")
-                        NavRow("Trades and holders", note.ifEmpty { null }, onClick = { nav.push(Route.TradesHolders(chain, address)) })
+                        NavRow(tr("Trades and holders"), note.ifEmpty { null }, onClick = { nav.push(Route.TradesHolders(chain, address)) })
                         Divider()
-                        NavRow("Key wallets", onClick = { nav.push(Route.KeyWallets(chain, address)) })
+                        NavRow(tr("Key wallets"), onClick = { nav.push(Route.KeyWallets(chain, address)) })
                     }
                 }
                 TradeBar(chain, address, coin, checks, onChecks = { scope.launch { scroll.animateScrollTo(checksY.toInt()) } }, openBuy = openBuy, openUsd = buyUsd)
@@ -180,10 +183,10 @@ fun TokenScreen(chain: Chain, address: String, openBuy: Boolean = false, buyUsd:
                 }
             }
             model.coinPhase == trade.nesty.app.ui.token.Phase.EMPTY ->
-                Box(Modifier.weight(1f).navigationBarsPadding()) { EmptyNote("Nesty does not know this coin on ${chain.title}.") }
+                Box(Modifier.weight(1f).navigationBarsPadding()) { EmptyNote(tr("Nesty does not know this coin on {1}.", chain.title)) }
             model.coinPhase == trade.nesty.app.ui.token.Phase.FAILED ->
-                Box(Modifier.weight(1f).navigationBarsPadding()) { EmptyNote("Could not reach Nesty. Trying again.") }
-            else -> Box(Modifier.weight(1f).navigationBarsPadding()) { EmptyNote("Loading…") }
+                Box(Modifier.weight(1f).navigationBarsPadding()) { EmptyNote(tr("Could not reach Nesty. Trying again.")) }
+            else -> Box(Modifier.weight(1f).navigationBarsPadding()) { EmptyNote(tr("Loading…")) }
         }
     }
 }
@@ -218,7 +221,7 @@ private fun TokenHeader(coin: Coin?, chain: Chain, address: String, now: Long, o
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        IconButton48(NIcons.arrowBack, "Back", Ink.text, onClick = onBack)
+        IconButton48(NIcons.arrowBack, tr("Back"), Ink.text, onClick = onBack)
         // Asked once the coin's answer is in, as it may carry the picture itself.
         val picture = if (coin == null) null else rememberCoinImage(chain, address, coin.image, Served(coin.launchpad))
         CoinAvatar(picture, symbol, address, chain, 38.dp)
@@ -234,27 +237,27 @@ private fun TokenHeader(coin: Coin?, chain: Chain, address: String, now: Long, o
         Box(
             Modifier
                 .size(48.dp)
-                .clickable(onClickLabel = "Watchlist", role = Role.Switch) { settings.toggleWatch(chain, address) }
+                .clickable(onClickLabel = tr("Watchlist"), role = Role.Switch) { settings.toggleWatch(chain, address) }
                 .semantics {
-                    contentDescription = "Watchlist"
-                    stateDescription = if (watched) "On the watchlist" else "Not on the watchlist"
+                    contentDescription = tr("Watchlist")
+                    stateDescription = if (watched) tr("On the watchlist") else tr("Not on the watchlist")
                 },
             contentAlignment = Alignment.Center,
         ) {
             Icon(if (watched) NIcons.starFilled else NIcons.star, contentDescription = null, tint = if (watched) Ink.violet else Ink.text2, modifier = Modifier.size(21.dp))
         }
         Box {
-            IconButton48(NIcons.more, "Links and address", size = 20.dp) { menu = true }
+            IconButton48(NIcons.more, tr("Links and address"), size = 20.dp) { menu = true }
             DropdownMenu(expanded = menu, onDismissRequest = { menu = false }, containerColor = Ink.raised) {
                 DropdownMenuItem(
-                    text = { MenuText("Copy address", Fmt.address(address)) },
+                    text = { MenuText(tr("Copy address"), Fmt.address(address)) },
                     onClick = {
                         menu = false
-                        copyText(context, "Address", address)
-                        toasts.show("Address copied", Fmt.address(address))
+                        copyText(context, tr("Address"), address)
+                        toasts.show(tr("Address copied"), Fmt.address(address))
                     },
                 )
-                DropdownMenuItem(text = { MenuText("Open in explorer") }, onClick = {
+                DropdownMenuItem(text = { MenuText(tr("Open in explorer")) }, onClick = {
                     menu = false
                     runCatching { uri.openUri(chain.tokenUrl(address)) }
                 })
@@ -275,7 +278,7 @@ private fun MenuText(title: String, note: String? = null) {
 private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Double?, onChecks: () -> Unit, onWallets: () -> Unit) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Column {
-            Text("Market cap", style = text(13, color = Ink.muted))
+            Text(tr("Market cap"), style = text(13, color = Ink.muted))
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Row(Modifier.weight(1f), verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     // Smaller only where the coin's pages beside it leave it too little room.
@@ -293,7 +296,7 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Doub
                         Text(
                             Fmt.pctChange(day),
                             style = text(17, FontWeight.Bold, pctColor(day)),
-                            modifier = Modifier.padding(bottom = 4.dp).semantics { contentDescription = "${Fmt.pctChange(day)} over 24 hours" },
+                            modifier = Modifier.padding(bottom = 4.dp).semantics { contentDescription = tr("{1} over 24 hours", Fmt.pctChange(day)) },
                         )
                     }
                 }
@@ -306,15 +309,15 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Doub
                 val supply = model.supply ?: coin.supply
                 Stat("ATH", if (supply != null && supply > 0) Fmt.usd(ath * supply) else "$" + Fmt.amount(ath), Modifier.weight(1f))
             }
-            Stat("Liquidity", Fmt.usd(coin.liquidityUsd), Modifier.weight(1f))
-            Stat("Volume 24h", Fmt.usd(coin.volume24), Modifier.weight(1f))
-            Stat("Holders", model.holderCount?.let { Fmt.count(it.toLong()) } ?: Fmt.DASH, Modifier.weight(1f))
+            Stat(tr("Liquidity"), Fmt.usd(coin.liquidityUsd), Modifier.weight(1f))
+            Stat(tr("Volume 24h"), Fmt.usd(coin.volume24), Modifier.weight(1f))
+            Stat(tr("Holders"), model.holderCount?.let { Fmt.count(it.toLong()) } ?: Fmt.DASH, Modifier.weight(1f))
         }
         val progress = coin.progress
         if (coin.onCurve && progress != null) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 Meter(progress, Modifier.weight(1f))
-                Text("Bonding curve ${(progress * 100).toInt()}%", style = text(13, FontWeight.SemiBold, Ink.text2))
+                Text(tr("Bonding curve {1}%", (progress * 100).toInt()), style = text(13, FontWeight.SemiBold, Ink.text2))
             }
         }
         val bad = checks.count { it.tone == Tone.BAD }
@@ -323,10 +326,10 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Doub
         val signal = model.signalHead
         if (bad + warn + ok > 0 || signal != null) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (bad > 0) ToneChip(Tone.BAD, if (bad == 1) "1 red flag" else "$bad red flags", onClick = onChecks)
-                if (warn > 0) ToneChip(Tone.WARN, "$warn to watch", onClick = onChecks)
-                if (signal != null) ToneChip(Tone.WALLETS, "${signal.size} proven wallets", does = "See what these wallets did", onClick = onWallets)
-                if (ok > 0) ToneChip(Tone.OK, "$ok fine", onClick = onChecks)
+                if (bad > 0) ToneChip(Tone.BAD, if (bad == 1) tr("1 red flag") else tr("{1} red flags", bad), onClick = onChecks)
+                if (warn > 0) ToneChip(Tone.WARN, tr("{1} to watch", warn), onClick = onChecks)
+                if (signal != null) ToneChip(Tone.WALLETS, tr("{1} proven wallets", signal.size), does = tr("See what these wallets did"), onClick = onWallets)
+                if (ok > 0) ToneChip(Tone.OK, tr("{1} fine", ok), onClick = onChecks)
             }
         }
     }
@@ -337,9 +340,9 @@ private fun Market(coin: Coin, model: TokenModel, checks: List<Check>, ath: Doub
 private fun Socials(links: Links?) {
     val uri = LocalUriHandler.current
     val pages = listOfNotNull(
-        links?.x?.let { Triple(NIcons.x, "Open X", it) },
-        links?.telegram?.let { Triple(NIcons.telegram, "Open Telegram", it) },
-        links?.website?.let { Triple(NIcons.globe, "Open website", it) },
+        links?.x?.let { Triple(NIcons.x, tr("Open X"), it) },
+        links?.telegram?.let { Triple(NIcons.telegram, tr("Open Telegram"), it) },
+        links?.website?.let { Triple(NIcons.globe, tr("Open website"), it) },
     ).filter { it.third.startsWith("http") }
     if (pages.isEmpty()) return
     // Their marks line up under the header's buttons.
@@ -360,7 +363,7 @@ private fun FramePicker(frame: Frame, onPick: (Frame) -> Unit) {
             Pill(
                 listed?.label,
                 listed != null,
-                modifier = Modifier.semantics { contentDescription = listed?.let { "${it.words} candles. More lengths" } ?: "More lengths" },
+                modifier = Modifier.semantics { contentDescription = listed?.let { tr("{1} candles. More lengths", it.words) } ?: tr("More lengths") },
                 role = Role.DropdownList,
                 trailing = { ink -> Icon(NIcons.chevronDown, contentDescription = null, tint = ink, modifier = Modifier.size(14.dp)) },
             ) { open = true }
@@ -391,7 +394,7 @@ private fun ChartSection(model: TokenModel, coin: Coin, ath: Double?) {
             FramePicker(model.frame) { model.frame = it }
             if (model.live) LiveMark(Modifier.padding(end = 4.dp))
         }
-        val symbol = coin.symbol ?: "This coin"
+        val symbol = coin.symbol ?: tr("This coin")
         when {
             candles.isNotEmpty() && supply != null && supply > 0 -> {
                 val from = candles.takeLast(36).first().open * supply
@@ -401,15 +404,15 @@ private fun ChartSection(model: TokenModel, coin: Coin, ath: Double?) {
                 CandleChart(
                     candles,
                     supply,
-                    "$symbol market cap in ${model.frame.words} candles, from about ${Fmt.usd(from)} to ${Fmt.usd(to)}" +
-                        (ath?.let { ", all-time high ${Fmt.usd(it * supply)}" } ?: ""),
+                    ath?.let { tr("{1} market cap in {2} candles, from about {3} to {4}, all-time high {5}", symbol, model.frame.words, Fmt.usd(from), Fmt.usd(to), Fmt.usd(it * supply)) }
+                        ?: tr("{1} market cap in {2} candles, from about {3} to {4}", symbol, model.frame.words, Fmt.usd(from), Fmt.usd(to)),
                     view,
                     ath = ath,
                 )
             }
-            model.chartPhase == Phase.LOADING -> ChartNote("Loading the chart…")
-            model.chartPhase == Phase.FAILED -> ChartNote("The chart could not be read. Trying again.")
-            else -> ChartNote("No trades in this length yet.")
+            model.chartPhase == Phase.LOADING -> ChartNote(tr("Loading the chart…"))
+            model.chartPhase == Phase.FAILED -> ChartNote(tr("The chart could not be read. Trying again."))
+            else -> ChartNote(tr("No trades in this length yet."))
         }
     }
 }
@@ -427,8 +430,8 @@ private fun ChecksCard(checks: List<Check>) {
     val bad = checks.count { it.tone == Tone.BAD }
     val warn = checks.count { it.tone == Tone.WARN }
     val summary = listOf(
-        if (bad == 0) "No red flags" else if (bad == 1) "1 red flag" else "$bad red flags",
-    ).plus(if (warn > 0) listOf("$warn to watch") else emptyList()).joinToString(" · ")
+        if (bad == 0) tr("No red flags") else if (bad == 1) tr("1 red flag") else tr("{1} red flags", bad),
+    ).plus(if (warn > 0) listOf(tr("{1} to watch", warn)) else emptyList()).joinToString(" · ")
     val shown = if (open) checks else checks.take(3)
     Card {
         Row(
@@ -436,7 +439,7 @@ private fun ChecksCard(checks: List<Check>) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Text("Checks", style = text(16, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+            Text(tr("Checks"), style = text(16, FontWeight.Bold), modifier = Modifier.semantics { heading() })
             Text(summary, style = text(13, color = Ink.muted))
         }
         for (c in shown) {
@@ -467,10 +470,10 @@ private fun ChecksCard(checks: List<Check>) {
             val restOk = rest.count { it.tone == Tone.OK }
             val restNone = rest.count { it.tone == Tone.NONE }
             val restOther = rest.size - restOk - restNone
-            val moreText = if (open) "All ${checks.size} checks" else listOfNotNull(
-                if (restOther > 0) "$restOther more" else null,
-                if (restOk > 0) "$restOk more fine" else null,
-                if (restNone > 0) "$restNone not read yet" else null,
+            val moreText = if (open) tr("All {1} checks", checks.size) else listOfNotNull(
+                if (restOther > 0) tr("{1} more", restOther) else null,
+                if (restOk > 0) tr("{1} more fine", restOk) else null,
+                if (restNone > 0) tr("{1} not read yet", restNone) else null,
             ).joinToString(", ")
             Divider()
             Row(
@@ -478,14 +481,14 @@ private fun ChecksCard(checks: List<Check>) {
                     .fillMaxWidth()
                     .heightIn(min = 52.dp)
                     .clickable(role = Role.Button) { open = !open }
-                    .semantics { stateDescription = if (open) "Expanded" else "Collapsed" }
+                    .semantics { stateDescription = if (open) tr("Expanded") else tr("Collapsed") }
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(moreText, style = text(14, color = Ink.text2))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(if (open) "Show less" else "Show all", style = text(14, FontWeight.Bold, Ink.green))
+                    Text(if (open) tr("Show less") else tr("Show all"), style = text(14, FontWeight.Bold, Ink.green))
                     Icon(if (open) NIcons.chevronUp else NIcons.chevronDown, contentDescription = null, tint = Ink.green, modifier = Modifier.size(16.dp))
                 }
             }
@@ -500,7 +503,7 @@ private fun pctOf(part: Int, n: Int) = if (n <= 0) "0%" else "${Math.round(part 
 private fun WalletsCard(model: TokenModel, signal: SignalHead?, followed: List<FollowedTrade>, now: Long, onSignal: () -> Unit) {
     val nav = LocalNavigator.current
     Card {
-        Text("Wallets in it", style = text(16, FontWeight.Bold), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp).semantics { heading() })
+        Text(tr("Wallets in it"), style = text(16, FontWeight.Bold), modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp).semantics { heading() })
         if (signal != null) {
             val record = model.record
             val key = listOf(5, 3, 2).firstOrNull { signal.size >= it }?.toString()
@@ -508,7 +511,7 @@ private fun WalletsCard(model: TokenModel, signal: SignalHead?, followed: List<F
             Row(
                 Modifier
                     .fillMaxWidth()
-                    .clickable(onClickLabel = "See what these wallets did", role = Role.Button, onClick = onSignal)
+                    .clickable(onClickLabel = tr("See what these wallets did"), role = Role.Button, onClick = onSignal)
                     .padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -516,12 +519,12 @@ private fun WalletsCard(model: TokenModel, signal: SignalHead?, followed: List<F
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     val within = (signal.at - signal.first).coerceAtLeast(0)
                     Text(
-                        "${signal.size} proven wallets bought" + if (within >= 1_000) " within ${Fmt.duration(within.toDouble())}" else "",
+                        if (within >= 1_000) tr("{1} proven wallets bought within {2}", signal.size, Fmt.duration(within.toDouble())) else tr("{1} proven wallets bought", signal.size),
                         style = text(14, FontWeight.Bold),
                     )
                     if (figures != null && figures.n > 0 && model.recordDays > 0) {
                         Text(
-                            "Of signals like this in the last ${model.recordDays} days, ${pctOf(figures.x2, figures.n)} reached 2× and ${pctOf(figures.half, figures.n)} fell by half.",
+                            tr("Of signals like this in the last {1} days, {2} reached 2× and {3} fell by half.", model.recordDays, pctOf(figures.x2, figures.n), pctOf(figures.half, figures.n)),
                             style = text(13, color = Ink.text2, lineHeight = 18.sp),
                         )
                     }
@@ -544,11 +547,15 @@ private fun WalletsCard(model: TokenModel, signal: SignalHead?, followed: List<F
                 Icon(NIcons.eye, contentDescription = null, tint = Ink.violet, modifier = Modifier.size(22.dp))
                 Text(
                     buildAnnotatedString {
-                        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(f.name) }
-                        withStyle(SpanStyle(color = Ink.text2)) {
-                            append(if (t.isBuy) " bought " else " sold ")
-                            append(t.usd?.let { Fmt.usdFull(it) } ?: "some")
-                            append(", ${Fmt.age(now - t.at)} ago")
+                        val bold = SpanStyle(fontWeight = FontWeight.Bold)
+                        val rest = SpanStyle(color = Ink.text2)
+                        val age = Fmt.age(now - t.at)
+                        val usd = t.usd?.let { Fmt.usdFull(it) }
+                        when {
+                            t.isBuy && usd != null -> appendTr(trKey("{1} bought {2}, {3} ago"), 1, bold, rest, f.name, usd, age)
+                            t.isBuy -> appendTr(trKey("{1} bought some, {2} ago"), 1, bold, rest, f.name, age)
+                            usd != null -> appendTr(trKey("{1} sold {2}, {3} ago"), 1, bold, rest, f.name, usd, age)
+                            else -> appendTr(trKey("{1} sold some, {2} ago"), 1, bold, rest, f.name, age)
                         }
                     },
                     style = text(14),

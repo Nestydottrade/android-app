@@ -7,6 +7,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.IOException
 import java.math.BigInteger
+import trade.nesty.app.i18n.tr
 
 /**
  * Bonding-curve launchpads, ported from the extension's launchpads.ts and virtuals.ts. A coin
@@ -166,58 +167,58 @@ object FourMeme : Venue {
     private val feeRate = AbiFunction("function feeRate() view returns (uint256)")
 
     val rule = ContractRule("four.meme", approvalSpender = true) { tx, ctx ->
-        val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly("four.meme call", "Unknown function")
+        val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly("four.meme call", tr("Unknown function"))
         when (fn) {
             buyTokenAMAP -> {
                 val l = "four.meme buy"
                 when {
-                    ctx.token == null || !sameAddress(a[0] as String, ctx.token) -> reasonOnly(l, "Different token")
-                    !Validator.isOwn(ctx, a[1] as String) -> reasonOnly(l, "Recipient is not one of your wallets")
-                    uint(a[3]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-                    tx.value != uint(a[2]) -> reasonOnly(l, "Value does not match funds")
+                    ctx.token == null || !sameAddress(a[0] as String, ctx.token) -> reasonOnly(l, tr("Different token"))
+                    !Validator.isOwn(ctx, a[1] as String) -> reasonOnly(l, tr("Recipient is not one of your wallets"))
+                    uint(a[3]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+                    tx.value != uint(a[2]) -> reasonOnly(l, tr("Value does not match funds"))
                     else -> reasonOnly(l)
                 }
             }
             sellToken -> {
                 val l = "four.meme sell"
                 when {
-                    uint(a[0]).signum() != 0 -> reasonOnly(l, "Unexpected origin")
-                    ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, "Different token")
-                    uint(a[3]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-                    tx.value.signum() != 0 -> reasonOnly(l, "Sell must not carry native value")
+                    uint(a[0]).signum() != 0 -> reasonOnly(l, tr("Unexpected origin"))
+                    ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, tr("Different token"))
+                    uint(a[3]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+                    tx.value.signum() != 0 -> reasonOnly(l, tr("Sell must not carry native value"))
                     else -> reasonOnly(l)
                 }
             }
-            else -> reasonOnly("four.meme ${fn.name}", "Not a trade")
+            else -> reasonOnly("four.meme ${fn.name}", tr("Not a trade"))
         }
     }
 
     val helperRule = ContractRule("four.meme helper") { tx, ctx ->
-        val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly("four.meme helper call", "Unknown function")
+        val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly("four.meme helper call", tr("Unknown function"))
         when (fn) {
             buyWithEth -> {
                 val l = "four.meme buy"
                 when {
-                    uint(a[0]).signum() != 0 -> reasonOnly(l, "Unexpected origin")
-                    ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, "Different token")
-                    !Validator.isOwn(ctx, a[2] as String) -> reasonOnly(l, "Recipient is not one of your wallets")
-                    uint(a[4]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-                    tx.value != uint(a[3]) -> reasonOnly(l, "Value does not match funds")
+                    uint(a[0]).signum() != 0 -> reasonOnly(l, tr("Unexpected origin"))
+                    ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, tr("Different token"))
+                    !Validator.isOwn(ctx, a[2] as String) -> reasonOnly(l, tr("Recipient is not one of your wallets"))
+                    uint(a[4]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+                    tx.value != uint(a[3]) -> reasonOnly(l, tr("Value does not match funds"))
                     else -> reasonOnly(l)
                 }
             }
             sellForEth -> {
                 val l = "four.meme sell"
                 when {
-                    uint(a[0]).signum() != 0 -> reasonOnly(l, "Unexpected origin")
-                    ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, "Different token")
-                    uint(a[3]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-                    uint(a[4]).signum() != 0 || !sameAddress(a[5] as String, ZERO_ADDRESS) -> reasonOnly(l, "Pays a fee to a third party")
-                    tx.value.signum() != 0 -> reasonOnly(l, "Sell must not carry native value")
+                    uint(a[0]).signum() != 0 -> reasonOnly(l, tr("Unexpected origin"))
+                    ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, tr("Different token"))
+                    uint(a[3]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+                    uint(a[4]).signum() != 0 || !sameAddress(a[5] as String, ZERO_ADDRESS) -> reasonOnly(l, tr("Pays a fee to a third party"))
+                    tx.value.signum() != 0 -> reasonOnly(l, tr("Sell must not carry native value"))
                     else -> reasonOnly(l)
                 }
             }
-            else -> reasonOnly("four.meme ${fn.name}", "Not a trade")
+            else -> reasonOnly("four.meme ${fn.name}", tr("Not a trade"))
         }
     }
 
@@ -322,7 +323,7 @@ object FourMeme : Venue {
     override suspend fun idle(ctx: VenueCtx, token: String): String? {
         val info = orNull { ctx.reader.read(HELPER, getTokenInfo, token) } ?: return null
         if (uint(info[0]) != big(2) || !sameAddress(info[1] as String, TOKEN_MANAGER) || info[11] == true) return null
-        return if (uint(info[7]).signum() == 0 || uint(info[9]) >= uint(info[10])) "four.meme curve full · waiting for DEX" else null
+        return if (uint(info[7]).signum() == 0 || uint(info[9]) >= uint(info[10])) tr("four.meme curve full · waiting for DEX") else null
     }
 
     // The manager pulls the tokens either way.
@@ -379,21 +380,21 @@ object Flap : Venue {
         // What the curve trades against: native (address 0) or the pool's ERC-20.
         val asset = quote ?: ZERO_ADDRESS
         return ContractRule("Flap", approvalSpender = true) { tx, ctx ->
-            val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly("Flap call", "Unknown function")
-            if (fn !== swapExactInput) return@ContractRule reasonOnly("Flap ${fn.name}", "Not a trade")
+            val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly(tr("Flap call"), tr("Unknown function"))
+            if (fn !== swapExactInput) return@ContractRule reasonOnly("Flap ${fn.name}", tr("Not a trade"))
             val s = a[0] as List<*>
-            val l = "Flap swap"
+            val l = tr("Flap swap")
             val input = s[0] as String
             val output = s[1] as String
             fun isTok(x: String) = ctx.token != null && sameAddress(x, ctx.token)
             val buy = sameAddress(input, asset) && isTok(output)
             val sell = isTok(input) && sameAddress(output, asset)
             when {
-                !buy && !sell -> reasonOnly(l, "Unexpected assets")
-                (s[4] as ByteArray).isNotEmpty() -> reasonOnly(l, "Embedded permits are not allowed")
-                uint(s[3]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-                buy && tx.value != (if (quote != null) BigInteger.ZERO else uint(s[2])) -> reasonOnly(l, "Value does not match input")
-                sell && tx.value.signum() != 0 -> reasonOnly(l, "Sell must not carry native value")
+                !buy && !sell -> reasonOnly(l, tr("Unexpected assets"))
+                (s[4] as ByteArray).isNotEmpty() -> reasonOnly(l, tr("Embedded permits are not allowed"))
+                uint(s[3]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+                buy && tx.value != (if (quote != null) BigInteger.ZERO else uint(s[2])) -> reasonOnly(l, tr("Value does not match input"))
+                sell && tx.value.signum() != 0 -> reasonOnly(l, tr("Sell must not carry native value"))
                 // Output goes to msg.sender (the validated `from`).
                 else -> reasonOnly(l)
             }
@@ -506,27 +507,27 @@ object Pons : Venue {
     private val all = listOf(token, factory, graduated, isNativeQuote, pairToken, getReserves, feeBps, creatorTaxBps, snipeTax, buy, sell)
 
     fun rule(nativeQuote: Boolean) = ContractRule("Pons curve", approvalSpender = true) { tx, ctx ->
-        val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly("Pons call", "Unknown function")
+        val (fn, a) = decodeAny(all, tx.data) ?: return@ContractRule reasonOnly(tr("Pons call"), tr("Unknown function"))
         when (fn) {
             buy -> {
-                val l = "Pons buy"
+                val l = tr("Pons buy")
                 when {
-                    !Validator.isOwn(ctx, a[2] as String) -> reasonOnly(l, "Recipient is not one of your wallets")
-                    uint(a[1]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-                    tx.value != (if (nativeQuote) uint(a[0]) else BigInteger.ZERO) -> reasonOnly(l, "Value does not match input")
+                    !Validator.isOwn(ctx, a[2] as String) -> reasonOnly(l, tr("Recipient is not one of your wallets"))
+                    uint(a[1]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+                    tx.value != (if (nativeQuote) uint(a[0]) else BigInteger.ZERO) -> reasonOnly(l, tr("Value does not match input"))
                     else -> reasonOnly(l)
                 }
             }
             sell -> {
-                val l = "Pons sell"
+                val l = tr("Pons sell")
                 when {
-                    !Validator.isOwn(ctx, a[2] as String) -> reasonOnly(l, "Recipient is not one of your wallets")
-                    uint(a[1]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-                    tx.value.signum() != 0 -> reasonOnly(l, "Sell must not carry native value")
+                    !Validator.isOwn(ctx, a[2] as String) -> reasonOnly(l, tr("Recipient is not one of your wallets"))
+                    uint(a[1]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+                    tx.value.signum() != 0 -> reasonOnly(l, tr("Sell must not carry native value"))
                     else -> reasonOnly(l)
                 }
             }
-            else -> reasonOnly("Pons ${fn.name}", "Not a trade")
+            else -> reasonOnly("Pons ${fn.name}", tr("Not a trade"))
         }
     }
 
@@ -664,23 +665,23 @@ object Montra : Venue {
     private fun isHook(a: String) = HOOKS.any { sameAddress(it, a) }
 
     val rule = ContractRule("Montra router", approvalSpender = true) { tx, ctx ->
-        val (fn, a) = decodeAny(listOf(quoteExactIn, swapExactIn), tx.data) ?: return@ContractRule reasonOnly("Montra call", "Unknown function")
-        if (fn !== swapExactIn) return@ContractRule reasonOnly("Montra ${fn.name}", "Not a trade")
+        val (fn, a) = decodeAny(listOf(quoteExactIn, swapExactIn), tx.data) ?: return@ContractRule reasonOnly(tr("Montra call"), tr("Unknown function"))
+        if (fn !== swapExactIn) return@ContractRule reasonOnly("Montra ${fn.name}", tr("Not a trade"))
         val s = a[0] as List<*>
         val key = PoolKey.of(s[0])
         val buy = s[1] as Boolean
         val amountIn = uint(s[2])
-        val l = if (buy) "Montra buy" else "Montra sell"
+        val l = if (buy) tr("Montra buy") else tr("Montra sell")
         val deadline = uint(s[5])
         when {
-            !isHook(key.hooks) -> reasonOnly(l, "Not a Montra pool")
-            !sameAddress(key.currency0, ZERO_ADDRESS) -> reasonOnly(l, "Pool is not paired with native")
-            ctx.token != null && !sameAddress(key.currency1, ctx.token) -> reasonOnly(l, "Pool is not the token being traded")
-            !Validator.isOwn(ctx, s[4] as String) -> reasonOnly(l, "Recipient is not one of your wallets")
-            uint(s[3]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-            deadline < big(ctx.nowS) || deadline > big(ctx.nowS + MAX_DEADLINE_S) -> reasonOnly(l, "Deadline out of range")
-            buy && tx.value != amountIn -> reasonOnly(l, "Value does not match input")
-            !buy && tx.value.signum() != 0 -> reasonOnly(l, "Sell must not carry native value")
+            !isHook(key.hooks) -> reasonOnly(l, tr("Not a Montra pool"))
+            !sameAddress(key.currency0, ZERO_ADDRESS) -> reasonOnly(l, tr("Pool is not paired with native"))
+            ctx.token != null && !sameAddress(key.currency1, ctx.token) -> reasonOnly(l, tr("Pool is not the token being traded"))
+            !Validator.isOwn(ctx, s[4] as String) -> reasonOnly(l, tr("Recipient is not one of your wallets"))
+            uint(s[3]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+            deadline < big(ctx.nowS) || deadline > big(ctx.nowS + MAX_DEADLINE_S) -> reasonOnly(l, tr("Deadline out of range"))
+            buy && tx.value != amountIn -> reasonOnly(l, tr("Value does not match input"))
+            !buy && tx.value.signum() != 0 -> reasonOnly(l, tr("Sell must not carry native value"))
             else -> reasonOnly(l)
         }
     }
@@ -777,16 +778,16 @@ object Virtuals : Venue {
     private const val DEADLINE_MAX_S = 30 * 60L
 
     private val bondingRule = ContractRule("Virtuals curve") { tx, ctx ->
-        val (fn, a) = decodeAny(listOf(buy, sell, tokenInfo), tx.data) ?: return@ContractRule reasonOnly("Virtuals call", "Unknown function")
-        if (fn !== buy && fn !== sell) return@ContractRule reasonOnly("Virtuals ${fn.name}", "Not a trade")
+        val (fn, a) = decodeAny(listOf(buy, sell, tokenInfo), tx.data) ?: return@ContractRule reasonOnly(tr("Virtuals call"), tr("Unknown function"))
+        if (fn !== buy && fn !== sell) return@ContractRule reasonOnly("Virtuals ${fn.name}", tr("Not a trade"))
         val l = "Virtuals ${fn.name}"
         val deadline = uint(a[3])
         when {
-            ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, "Wrong token")
-            tx.value.signum() != 0 -> reasonOnly(l, "Must not carry native value (paid in VIRTUAL)")
-            uint(a[0]).signum() == 0 -> reasonOnly(l, "Zero amount")
-            uint(a[2]).signum() == 0 -> reasonOnly(l, "No minimum output (no slippage protection)")
-            deadline < big(ctx.nowS) || deadline > big(ctx.nowS + DEADLINE_MAX_S) -> reasonOnly(l, "Deadline outside the allowed window")
+            ctx.token == null || !sameAddress(a[1] as String, ctx.token) -> reasonOnly(l, tr("Wrong token"))
+            tx.value.signum() != 0 -> reasonOnly(l, tr("Must not carry native value (paid in VIRTUAL)"))
+            uint(a[0]).signum() == 0 -> reasonOnly(l, tr("Zero amount"))
+            uint(a[2]).signum() == 0 -> reasonOnly(l, tr("No minimum output (no slippage protection)"))
+            deadline < big(ctx.nowS) || deadline > big(ctx.nowS + DEADLINE_MAX_S) -> reasonOnly(l, tr("Deadline outside the allowed window"))
             // The curve pays msg.sender (the validated `from`).
             else -> reasonOnly(l)
         }
@@ -794,7 +795,7 @@ object Virtuals : Venue {
 
     /** The router is only ever an approval spender, never called directly. */
     private val spenderRule = ContractRule("Virtuals router", approvalSpender = true) { _, _ ->
-        reasonOnly("Call to the Virtuals router", "Only approvals are allowed")
+        reasonOnly(tr("Call to the Virtuals router"), tr("Only approvals are allowed"))
     }
 
     private fun deployment(ctx: VenueCtx) = DEPLOYMENTS.getValue(ctx.chain.id)

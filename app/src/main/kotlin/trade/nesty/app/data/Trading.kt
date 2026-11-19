@@ -36,6 +36,7 @@ import trade.nesty.app.evm.TradeStatus
 import trade.nesty.app.evm.orNull
 import trade.nesty.app.evm.sanitizeLabel
 import trade.nesty.app.evm.shortErr
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.move.Recipient
 import trade.nesty.app.move.Typed
 import trade.nesty.app.sol.HttpSolCall
@@ -78,7 +79,7 @@ data class CoinInfo(
     val priceUsd: Double? = null,
     val launchpad: String? = null,
 ) {
-    val label: String get() = symbol?.takeIf { it.isNotBlank() } ?: "this coin"
+    val label: String get() = symbol?.takeIf { it.isNotBlank() } ?: tr("this coin")
 
     companion object {
         private val POOL_ID = Regex("^0x[0-9a-fA-F]{64}$")
@@ -216,15 +217,15 @@ class Trading(
 
     /** Why a trade on `chain` cannot start now, before anything is read; null when it can. */
     fun cannotTrade(chain: Chain): String? {
-        if (!canTrade(chain)) return "This version of Nesty cannot trade on ${chain.title} yet."
-        val wallet = session.active ?: return "Add a wallet first."
+        if (!canTrade(chain)) return tr("This version of Nesty cannot trade on {1} yet.", chain.title)
+        val wallet = session.active ?: return tr("Add a wallet first.")
         if (chain == Chain.SOLANA) {
             if (wallet.sol == null) return NO_SOL
-            if (session.solSigner() == null) return "Unlock your wallets first."
+            if (session.solSigner() == null) return tr("Unlock your wallets first.")
             return null
         }
         if (wallet.evm == null) return NO_EVM
-        if (session.evmSigner() == null) return "Unlock your wallets first."
+        if (session.evmSigner() == null) return tr("Unlock your wallets first.")
         return null
     }
 
@@ -259,15 +260,15 @@ class Trading(
     }
 
     private fun signer(): EvmSigner {
-        val wallet = session.active ?: throw TradeRefused("Add a wallet first.")
+        val wallet = session.active ?: throw TradeRefused(tr("Add a wallet first."))
         if (wallet.evm == null) throw TradeRefused(NO_EVM)
-        return session.evmSigner() ?: throw TradeRefused("Unlock your wallets first.")
+        return session.evmSigner() ?: throw TradeRefused(tr("Unlock your wallets first."))
     }
 
     private fun solSigner(): SolSigner {
-        val wallet = session.active ?: throw TradeRefused("Add a wallet first.")
+        val wallet = session.active ?: throw TradeRefused(tr("Add a wallet first."))
         if (wallet.sol == null) throw TradeRefused(NO_SOL)
-        return session.solSigner() ?: throw TradeRefused("Unlock your wallets first.")
+        return session.solSigner() ?: throw TradeRefused(tr("Unlock your wallets first."))
     }
 
     private fun evm(chain: Chain): EvmChain = evmOf(chain) ?: throw TradeRefused(LOCKED)
@@ -295,17 +296,17 @@ class Trading(
     ): StateFlow<EngineTrade> {
         val tapped = System.currentTimeMillis()
         val send = if (chain == Chain.SOLANA) solBuyer(token, preset, info) else evmBuyer(chain, token, preset, info)
-        if (usd <= 0 || usd.isNaN()) throw TradeRefused("Enter an amount.")
-        val price = priceOf(chain) ?: throw TradeRefused("The ${chain.native} price is not read yet. Try again in a moment.")
+        if (usd <= 0 || usd.isNaN()) throw TradeRefused(tr("Enter an amount."))
+        val price = priceOf(chain) ?: throw TradeRefused(tr("The {1} price is not read yet. Try again in a moment.", chain.native))
         val wei = weiOf(usd, chain, price)
         val balance = balances.active
         val have = balance?.raw?.get(chain)
         if (have != null && have < wei) {
-            throw TradeRefused("More than your ${chain.title} balance of ${Fmt.usdFull(balance.chains[chain] ?: 0.0)}.")
+            throw TradeRefused(tr("More than your {1} balance of {2}.", chain.title, Fmt.usdFull(balance.chains[chain] ?: 0.0)))
         }
         val flow = start { send(wei) }
         val p = Pending(
-            chain, info, "Bought ${Fmt.usdFull(usd)} of ${info.label}", price, tapped,
+            chain, info, tr("Bought {1} of {2}", Fmt.usdFull(usd), info.label), price, tapped,
             extraFeeUsd = moved?.move?.feeUsd?.coerceAtLeast(0.0) ?: 0.0,
             preset = preset, presetIndex = presetIndex, usd = usd, moved = moved,
         )
@@ -376,11 +377,11 @@ class Trading(
     } catch (e: CancellationException) {
         throw e
     } catch (e: TradeException) {
-        throw TradeRefused(e.message ?: "Could not start.")
+        throw TradeRefused(e.message ?: tr("Could not start."))
     } catch (e: TradeRefused) {
         throw e
     } catch (e: Exception) {
-        throw TradeRefused("Could not read the chain: ${shortErr(e)}")
+        throw TradeRefused(tr("Could not read the chain: {1}", shortErr(e)))
     }
 
     /** A buy of `native` (the chain's own coin, in its smallest unit): what it gets now, or null. */
@@ -552,7 +553,7 @@ class Trading(
             usd = if (buy) p.usd else null,
             feeUsd = withExtra(feeUsd(t, chain, p.price), p),
             exact = false,
-            detail = detailOf(t, chain, p).copy(error = t.swap.error ?: "Stopped"),
+            detail = detailOf(t, chain, p).copy(error = t.swap.error ?: tr("Stopped")),
             failed = true,
         )
     }
@@ -614,7 +615,11 @@ class Trading(
                 val tokens = out?.let { BigDecimal(it).movePointLeft(decimalsOf(t, p)).toDouble() }
                 val paid = swap.amountIn?.let { w -> p.price?.let { usdOf(w, p.chain.decimals, it) } }
                 val mcap = if (tokens != null && tokens > 0 && paid != null && p.info.supply != null) paid / tokens * p.info.supply else null
-                listOfNotNull(tokens?.let { "≈ ${Fmt.amount(it)} ${p.info.label}" }, mcap?.let { "at MC ${Fmt.usd(it)}" }).joinToString(" ")
+                when {
+                    tokens == null -> ""
+                    mcap != null -> tr("≈ {1} {2} at MC {3}", Fmt.amount(tokens), p.info.label, Fmt.usd(mcap))
+                    else -> "≈ ${Fmt.amount(tokens)} ${p.info.label}"
+                }
             } else {
                 val payout = t.payout
                 if (payout != null) {
@@ -622,13 +627,13 @@ class Trading(
                     val amount = swap.amountOut?.let { BigDecimal(it).movePointLeft(payout.decimals).toDouble() }
                     val usd = amount?.let { a -> payout.usd?.let { a * it } }
                     when {
-                        amount == null -> "Paid in ${payout.symbol}, which stays in the wallet"
-                        usd != null -> "≈ ${Fmt.amount(amount)} ${payout.symbol} (${Fmt.usdFull(usd)}) stays in the wallet"
-                        else -> "≈ ${Fmt.amount(amount)} ${payout.symbol} stays in the wallet"
+                        amount == null -> tr("Paid in {1}, which stays in the wallet", payout.symbol)
+                        usd != null -> tr("≈ {1} {2} ({3}) stays in the wallet", Fmt.amount(amount), payout.symbol, Fmt.usdFull(usd))
+                        else -> tr("≈ {1} {2} stays in the wallet", Fmt.amount(amount), payout.symbol)
                     }
                 } else {
                     val got = swap.amountOut?.let { w -> p.price?.let { usdOf(w, p.chain.decimals, it) } }
-                    got?.let { "About ${Fmt.usdFull(it)} is back in One Balance" } ?: "Back in One Balance on ${p.chain.title}"
+                    got?.let { tr("About {1} is back in One Balance", Fmt.usdFull(it)) } ?: tr("Back in One Balance on {1}", p.chain.title)
                 }
             }
             return TradeNote(t.id, p.title, detail, p.chain, t.token, ok = true)
@@ -636,12 +641,17 @@ class Trading(
         // A sell through its pay token landed, but that token did not go back to SOL.
         val fund = t.steps.firstOrNull { it.kind == StepKind.FUND && it.status != StepStatus.CONFIRMED }
         if (!buy && swap.status == StepStatus.CONFIRMED && fund != null) {
-            return TradeNote(t.id, "Sold, not back in ${p.chain.native}", fund.error ?: "Stopped", p.chain, t.token, ok = false)
+            return TradeNote(t.id, tr("Sold, not back in {1}", p.chain.native), fund.error ?: tr("Stopped"), p.chain, t.token, ok = false)
         }
         // Nothing went out unless the swap has a hash: then it was sent and did not land.
         val sent = swap.hash != null
-        val title = (if (buy) "Buy" else "Sell") + if (sent) " failed" else " not sent"
-        return TradeNote(t.id, title, swap.error ?: "Stopped", p.chain, t.token, ok = false)
+        val title = when {
+            buy && sent -> tr("Buy failed")
+            buy -> tr("Buy not sent")
+            sent -> tr("Sell failed")
+            else -> tr("Sell not sent")
+        }
+        return TradeNote(t.id, title, swap.error ?: tr("Stopped"), p.chain, t.token, ok = false)
     }
 
     private fun chainOf(t: EngineTrade): Chain? = if (t.chainId == SolTrader.CHAIN_ID) Chain.SOLANA else Chain.of(t.chainId.toString())
@@ -782,38 +792,38 @@ class Trading(
      * TradeRefused with the reason when nothing was added.
      */
     suspend fun importCoin(input: String): List<Imported> {
-        val wallet = session.active ?: throw TradeRefused("Add a wallet first.")
-        val typed = Recipient.parse(input) ?: throw TradeRefused("Paste the coin's address.")
+        val wallet = session.active ?: throw TradeRefused(tr("Add a wallet first."))
+        val typed = Recipient.parse(input) ?: throw TradeRefused(tr("Paste the coin's address."))
         val (owner, chains) = when (typed) {
             is Typed.Bad -> throw TradeRefused(typed.reason)
             is Typed.EvmAddress -> (wallet.evm ?: throw TradeRefused(NO_EVM)) to Balances.chainsOf(wallet).filter { it.isEvm }
             is Typed.SolAddress -> (wallet.sol ?: throw TradeRefused(NO_SOL)) to listOf(Chain.SOLANA)
         }
         val token = keyOf(chains.first(), typed.address)
-        if (sameToken(chains.first(), token, owner)) throw TradeRefused("This is your wallet's own address. Paste the coin's address.")
+        if (sameToken(chains.first(), token, owner)) throw TradeRefused(tr("This is your wallet's own address. Paste the coin's address."))
         val answer = try {
             api.balances(owner, chains.map { it to token })
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            throw TradeRefused("Could not read your balances just now. Try again.")
+            throw TradeRefused(tr("Could not read your balances just now. Try again."))
         }
         val read = answer.chains.filter { !it.failed }.mapNotNull { b -> Chain.of(b.feed)?.takeIf { it in chains }?.let { it to b } }
         val held = read.filter { (c, b) -> b.tokens.any { sameToken(c, it.address, token) && (it.raw?.toBigIntegerOrNull()?.signum() ?: 0) > 0 } }.map { it.first }
         if (held.isEmpty()) {
-            throw TradeRefused(if (read.size < chains.size) "Some chains could not be read just now. Try again." else "This wallet holds none of this coin.")
+            throw TradeRefused(if (read.size < chains.size) tr("Some chains could not be read just now. Try again.") else tr("This wallet holds none of this coin."))
         }
         val fresh = held.filter { c -> store.of(owner).none { it.feed == c.feed && sameToken(c, it.token, token) } && imports.find(owner, c, token) == null }
-        if (fresh.isEmpty()) throw TradeRefused("This coin is already in your Portfolio.")
+        if (fresh.isEmpty()) throw TradeRefused(tr("This coin is already in your Portfolio."))
         val added = fresh.mapNotNull { c ->
             val facts = factsOf(c, token) ?: return@mapNotNull null
             facts.priceUsd?.takeIf { it > 0 && it.isFinite() }?.let { prices[Balances.tokenKey(c, token)] = it }
             facts.mcapUsd?.takeIf { it > 0 && it.isFinite() }?.let { mcaps[Balances.tokenKey(c, token)] = it }
             Imported(keyOf(c, owner), c.feed, token, facts.symbol, facts.decimals, System.currentTimeMillis())
         }
-        if (added.isEmpty()) throw TradeRefused("Could not read this coin just now. Try again.")
+        if (added.isEmpty()) throw TradeRefused(tr("Could not read this coin just now. Try again."))
         for (i in added) {
-            if (!imports.put(i)) throw TradeRefused("You have added ${ImportStore.MAX_PER_WALLET} coins to this wallet already. Remove one first.")
+            if (!imports.put(i)) throw TradeRefused(tr("You have added {1} coins to this wallet already. Remove one first.", ImportStore.MAX_PER_WALLET))
         }
         // The balance that names the new coin, so its row shows what the wallet holds at once.
         orNull { balances.refresh() }
@@ -881,9 +891,9 @@ class Trading(
     }
 
     companion object {
-        const val LOCKED = "This version of Nesty cannot trade this coin yet. Everything else on this page still works."
-        const val NO_EVM = "This wallet was made from a Solana key: it has no EVM address."
-        const val NO_SOL = "This wallet was made from an EVM key: it has no Solana address."
+        val LOCKED: String get() = tr("This version of Nesty cannot trade this coin yet. Everything else on this page still works.")
+        val NO_EVM: String get() = tr("This wallet was made from a Solana key: it has no EVM address.")
+        val NO_SOL: String get() = tr("This wallet was made from an EVM key: it has no Solana address.")
 
         /** How long a read of a chain's own coin price stands. */
         private const val NATIVE_TTL_MS = 60_000L

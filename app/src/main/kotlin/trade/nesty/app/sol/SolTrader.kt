@@ -29,6 +29,7 @@ import trade.nesty.app.evm.TradeStep
 import trade.nesty.app.evm.orNull
 import trade.nesty.app.evm.sanitizeLabel
 import trade.nesty.app.evm.shortErr
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.keys.Base58
 import trade.nesty.app.sol.dex.BatchedReader
 import trade.nesty.app.sol.dex.Dex
@@ -423,7 +424,7 @@ class SolTrader(
     private suspend fun payInfo(route: SolRoute): PayInfo {
         val asset = SolRoutes.pay(route)
         if (asset.isSol) return solPay(solUsd())
-        val meta = tokenMeta(asset.mint) ?: throw TradeException("rpc", "Could not read the token this coin is bought with.")
+        val meta = tokenMeta(asset.mint) ?: throw TradeException("rpc", tr("Could not read the token this coin is bought with."))
         val stable = asset.mint in SolAddr.STABLE_MINTS
         val usd = if (stable) 1.0 else tokenUsd(asset.mint)
         return PayInfo(asset, meta.symbol, meta.decimals, usd, stable)
@@ -502,7 +503,7 @@ class SolTrader(
             val ammGlobal = if (ag?.owner == Pump.PUMP_AMM_PROGRAM) Pump.decodeAmmGlobalConfig(ag.data) else null
             val ammFees = af?.let { Pump.decodeFeeConfig(it.data) }
             if (global == null || pumpFees == null || ammGlobal == null || ammFees == null) {
-                throw TradeException("rpc", "Could not read pump.fun settings.")
+                throw TradeException("rpc", tr("Could not read pump.fun settings."))
             }
             Configs(now(), global, pumpFees, ammGlobal, ammFees).also { configs = it }
         }
@@ -659,7 +660,7 @@ class SolTrader(
 
     /** Starts a buy with SOL and returns its live state. Throws when it cannot start. */
     suspend fun buy(req: SolBuyRequest, wallet: SolSigner): StateFlow<Trade> {
-        if (req.amount.signum() <= 0) throw TradeException("insufficient_funds", "Amount too small.")
+        if (req.amount.signum() <= 0) throw TradeException("insufficient_funds", tr("Amount too small."))
         val m = market(req.mint, MAX_QUOTE_AGE_MS, req.poolHints)
         val primary = m.routes.firstOrNull() ?: throw TradeException("no_route", m.idle ?: NO_ROUTE)
         m.idle?.let { throw TradeException("no_route", it) }
@@ -730,8 +731,8 @@ class SolTrader(
             val leg = into?.let { SolRoute.OnDex(it.route) }
             val toToken = leg?.let { SolRoutes.tradeBuilder(it, random) }
             if (into == null || leg == null || toToken == null) {
-                t.set(stepAt) { it.copy(status = StepStatus.FAILED, error = "No $sym quote") }
-                return fail("Could not get $sym")
+                t.set(stepAt) { it.copy(status = StepStatus.FAILED, error = tr("No {1} quote", sym)) }
+                return fail(tr("Could not get {1}", sym))
             }
             val swap = toToken.build(Side.BUY, p.wallet.address, p.amount, minAfter(into.out, FUNDING_SLIPPAGE_BPS))
             val arrived = CompletableDeferred<BigInteger?>()
@@ -749,12 +750,12 @@ class SolTrader(
             if (got == null || got.signum() <= 0) {
                 // What stopped the step stops the buy: a wallet short of SOL is skipped, as any buy is.
                 val step = t.step(stepAt)
-                if (step.status == StepStatus.SKIPPED || step.status == StepStatus.BLOCKED) return fail(step.error ?: "Could not get $sym", step.status)
+                if (step.status == StepStatus.SKIPPED || step.status == StepStatus.BLOCKED) return fail(step.error ?: tr("Could not get {1}", sym), step.status)
                 return fail(
                     when (step.status) {
-                        StepStatus.CONFIRMED -> "Could not read the $sym that arrived: it stays in the wallet."
-                        StepStatus.SUBMITTED -> "The $sym swap has not confirmed, so nothing was bought with it."
-                        else -> step.error ?: "Could not get $sym"
+                        StepStatus.CONFIRMED -> tr("Could not read the {1} that arrived: it stays in the wallet.", sym)
+                        StepStatus.SUBMITTED -> tr("The {1} swap has not confirmed, so nothing was bought with it.", sym)
+                        else -> step.error ?: tr("Could not get {1}", sym)
                     },
                 )
             }
@@ -764,7 +765,7 @@ class SolTrader(
             val priced = routes.filter { SolRoutes.pay(it).mint == p.pay.asset.mint }
             val coin = SolRoutes.bestRoute(priced, Side.BUY, got)
             val buy = coin?.let { SolRoutes.tradeBuilder(it.route, random) }
-            if (coin == null || buy == null) return fail("No route for this coin right now: the $sym stays in the wallet.")
+            if (coin == null || buy == null) return fail(tr("No route for this coin right now: the {1} stays in the wallet.", sym))
             val least = minAfter(coin.out, p.prefs.slippageBps)
             t.set(i) { it.copy(minOut = least) }
             val ixs = buy.build(Side.BUY, p.wallet.address, got, least)
@@ -784,7 +785,7 @@ class SolTrader(
         val meta = tokenMeta(req.mint) ?: throw TradeException("no_route", NO_ROUTE)
         val held = tokenBalance(wallet.address, req.mint, meta.tokenProgram)
         val amount = held * BigInteger.valueOf(req.bps.coerceIn(0, 10_000).toLong()) / TEN_K
-        if (amount.signum() == 0) throw TradeException("insufficient_funds", "No tokens to sell.")
+        if (amount.signum() == 0) throw TradeException("insufficient_funds", tr("No tokens to sell."))
         val m = market(req.mint, MAX_QUOTE_AGE_MS, req.poolHints)
         if (m.routes.isEmpty()) throw TradeException("no_route", m.idle ?: NO_ROUTE)
         m.idle?.let { throw TradeException("no_route", it) }
@@ -795,7 +796,7 @@ class SolTrader(
         val best = (if (funded != null) Best(funded.route, funded.mid) else SolRoutes.bestRoute(m.routes, Side.SELL, amount))
         if (best == null || (funding != null && funded == null)) throw TradeException("no_route", NO_ROUTE)
         val pay = payInfo(best.route)
-        val solUsd = solUsd() ?: throw TradeException("limit_exceeded", "No USD price for SOL, so the network fee cannot be checked against your limit.")
+        val solUsd = solUsd() ?: throw TradeException("limit_exceeded", tr("No USD price for SOL, so the network fee cannot be checked against your limit."))
         val build = SolRoutes.tradeBuilder(best.route, random) ?: throw TradeException("no_route", FEE_ACCOUNTS)
         val label = routeLabel(best.route)
         // Paid out in the token itself when no pool turns it into SOL.
@@ -850,18 +851,18 @@ class SolTrader(
         val sym = p.pay.symbol
         fun stop(error: String, status: StepStatus) = t.set(stepAt) { it.copy(status = status, error = error) }
         val leg = t.step(i)
-        if (leg.status == StepStatus.SUBMITTED) return stop("Not confirmed yet: any $sym it pays stays in the wallet.", StepStatus.SKIPPED)
-        if (leg.status != StepStatus.CONFIRMED) return stop("The sell did not go through.", StepStatus.SKIPPED)
+        if (leg.status == StepStatus.SUBMITTED) return stop(tr("Not confirmed yet: any {1} it pays stays in the wallet.", sym), StepStatus.SKIPPED)
+        if (leg.status != StepStatus.CONFIRMED) return stop(tr("The sell did not go through."), StepStatus.SKIPPED)
         // The coin's sell landed: it is recorded once what it got back is known, or cannot be.
         var record = true
         try {
-            if (got == null || got.signum() <= 0) return stop("Could not read the $sym it paid: that stays in the wallet.", StepStatus.FAILED)
+            if (got == null || got.signum() <= 0) return stop(tr("Could not read the {1} it paid: that stays in the wallet.", sym), StepStatus.FAILED)
             t.set(stepAt) { it.copy(amountIn = got) }
             val found = orNull { fundingLegs(p.pay.asset) } ?: emptyList()
             val back = SolRoutes.bestLeg(found, Side.SELL, got)
             val leg2 = back?.let { SolRoute.OnDex(it.route) }
             val toSol = leg2?.let { SolRoutes.tradeBuilder(it, random) }
-            if (back == null || leg2 == null || toSol == null) return stop("No route from $sym to SOL right now: it stays in the wallet.", StepStatus.FAILED)
+            if (back == null || leg2 == null || toSol == null) return stop(tr("No route from {1} to SOL right now: it stays in the wallet.", sym), StepStatus.FAILED)
             val ixs = toSol.build(Side.SELL, p.wallet.address, got, minAfter(back.out, FUNDING_SLIPPAGE_BPS))
             record = false
             trade(
@@ -1043,7 +1044,7 @@ class SolTrader(
                 units = minOf(Spl.MAX_COMPUTE_UNITS, maxOf(30_000, ceil(used * 1.2).toInt()) + random(256))
                 ixs = withBudget(units)
                 // Same instructions, new budget: checked again all the same.
-                if (!validate(ixs).ok) throw IllegalStateException("Blocked after simulation")
+                if (!validate(ixs).ok) throw IllegalStateException(tr("Blocked after simulation"))
             }
 
             val message = SolTx.compileMessage(wallet.address, ixs, bh.blockhash)
@@ -1091,7 +1092,7 @@ class SolTrader(
         /** The signature, right before the transaction is sent: a caller keeps it in case the app closes. */
         onSigned: (String) -> Unit = {},
     ): Plain = when (val s = submitLeg(wallet, instructions, units, prefs.copy(tipLamports = BigInteger.ZERO), validate, shortfall, onSigned)) {
-        is LegSubmit.Blocked -> Plain.Refused(s.actions.firstOrNull { !it.ok }?.reason ?: "Blocked", s.actions)
+        is LegSubmit.Blocked -> Plain.Refused(s.actions.firstOrNull { !it.ok }?.reason ?: tr("Blocked"), s.actions)
         is LegSubmit.Skipped -> Plain.Refused(s.reason)
         is LegSubmit.Failed -> Plain.Refused(s.error)
         is LegSubmit.Out -> Plain.Out(s.sent.sig, s.sent)
@@ -1127,14 +1128,14 @@ class SolTrader(
     private suspend fun buyShortfall(wallet: String, pay: PayInfo, spend: BigInteger, fee: BigInteger): String? {
         if (pay.asset.isSol) {
             val need = spend + fee + BUY_HEADROOM
-            return if (rpc.getBalance(wallet) < need) "Insufficient SOL: about ${units(need, 9)} needed." else null
+            return if (rpc.getBalance(wallet) < need) tr("Insufficient SOL: about {1} needed.", units(need, 9)) else null
         }
         val accs = rpc.getMultipleAccounts(listOf(wallet, SolAddr.associatedTokenAddress(wallet, pay.asset.mint, pay.asset.program)))
         val held = accs.getOrNull(1)?.let { Layouts.decodeTokenAccount(it.data)?.amount } ?: BigInteger.ZERO
-        if (held < spend) return "Insufficient ${pay.symbol}: ${units(spend, pay.decimals)} needed."
+        if (held < spend) return tr("Insufficient {1}: {2} needed.", pay.symbol, units(spend, pay.decimals))
         // The network fee and any new account's rent are still paid in SOL.
         val need = fee + BUY_HEADROOM
-        return if ((accs.getOrNull(0)?.lamports ?: BigInteger.ZERO) < need) "Insufficient SOL for fees: about ${units(need, 9)} needed." else null
+        return if ((accs.getOrNull(0)?.lamports ?: BigInteger.ZERO) < need) tr("Insufficient SOL for fees: about {1} needed.", units(need, 9)) else null
     }
 
     /** A sent transaction: `privately` through the block engines, with its `tip`. */
@@ -1153,7 +1154,7 @@ class SolTrader(
     /** Waits for a trade's transaction, then books how it ended. */
     private suspend fun confirm(t: Ticket, i: Int, p: Sent, job: LegJob) {
         val end = awaitSig(p) {
-            t.set(i) { it.copy(error = "Not confirmed yet. Check the explorer.") }
+            t.set(i) { it.copy(error = tr("Not confirmed yet. Check the explorer.")) }
             job.settled(null)
         }
         when (end) {
@@ -1274,7 +1275,7 @@ class SolTrader(
         fun block(i: Int, actions: List<BlockedAction>) {
             synchronized(lock) {
                 blocked = actions
-                steps[i] = steps[i].copy(status = StepStatus.BLOCKED, error = actions.firstOrNull { !it.ok }?.reason ?: "Blocked")
+                steps[i] = steps[i].copy(status = StepStatus.BLOCKED, error = actions.firstOrNull { !it.ok }?.reason ?: tr("Blocked"))
             }
             publish()
         }
@@ -1351,16 +1352,16 @@ class SolTrader(
         private val TEN_K: BigInteger = BigInteger.valueOf(10_000)
         private val MILLION: BigInteger = BigInteger.valueOf(1_000_000)
 
-        const val NO_ROUTE = "No pool can trade this coin right now."
-        const val EXPIRED = "Expired before it landed. Try a higher priority fee."
-        const val NOT_CONFIRMED = "Not confirmed. Check the explorer."
-        const val FEE_ACCOUNTS = "pump.fun changed its fee accounts."
-        const val CURVE_COMPLETE = "The pump.fun curve is complete. Trading opens on PumpSwap once it migrates."
-        const val UNTRADABLE = "Tokens with a transfer fee or hook cannot be traded here yet."
+        val NO_ROUTE: String get() = tr("No pool can trade this coin right now.")
+        val EXPIRED: String get() = tr("Expired before it landed. Try a higher priority fee.")
+        val NOT_CONFIRMED: String get() = tr("Not confirmed. Check the explorer.")
+        val FEE_ACCOUNTS: String get() = tr("pump.fun changed its fee accounts.")
+        val CURVE_COMPLETE: String get() = tr("The pump.fun curve is complete. Trading opens on PumpSwap once it migrates.")
+        val UNTRADABLE: String get() = tr("Tokens with a transfer fee or hook cannot be traded here yet.")
 
-        fun noPrice(symbol: String) = "No USD price for $symbol, so buys cannot be checked against your limits."
+        fun noPrice(symbol: String) = tr("No USD price for {1}, so buys cannot be checked against your limits.", symbol)
 
-        fun noSolPool(symbol: String?) = "This coin is bought with ${symbol ?: "another token"}, and no pool turns SOL into it right now."
+        fun noSolPool(symbol: String?) = tr("This coin is bought with {1}, and no pool turns SOL into it right now.", symbol ?: tr("another token"))
 
         /** A route's label for a trade through SOL and its pay token: "PumpSwap via AAPLx". */
         fun viaLabel(label: String, symbol: String) = label + (if (label.contains(" via ")) " →" else " via") + " " + symbol
@@ -1392,7 +1393,7 @@ class SolTrader(
             val mp = if (metaAcc?.owner == SolAddr.METADATA_PROGRAM) Layouts.decodeMetaplexMetadata(metaAcc.data) else null
             val uri = info.uri?.takeIf { it.isNotEmpty() } ?: mp?.uri?.takeIf { it.isNotEmpty() }
             return SolTokenMeta(
-                name = sanitizeLabel(info.name?.takeIf { it.isNotEmpty() } ?: mp?.name ?: "", 32).ifEmpty { "Unknown token" },
+                name = sanitizeLabel(info.name?.takeIf { it.isNotEmpty() } ?: mp?.name ?: "", 32).ifEmpty { tr("Unknown token") },
                 symbol = sanitizeLabel(info.symbol?.takeIf { it.isNotEmpty() } ?: mp?.symbol ?: "", 16).ifEmpty { "???" },
                 decimals = info.decimals,
                 tokenProgram = mintAcc.owner,

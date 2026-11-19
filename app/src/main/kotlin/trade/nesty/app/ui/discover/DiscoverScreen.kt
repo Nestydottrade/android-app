@@ -35,6 +35,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Chain
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.ChainChips
 import trade.nesty.app.ui.CoinAvatar
 import trade.nesty.app.ui.rememberCoinImage
@@ -78,8 +79,8 @@ fun DiscoverScreen() {
     LaunchedEffect(model.lane, model.chain) { list.scrollToItem(0) }
 
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Discover", onMenu = { nav.push(Route.Menu()) }) {
-            IconButton48(NIcons.search, "Search coins or paste an address") { nav.push(Route.Search) }
+        TabHeader(tr("Discover"), onMenu = { nav.push(Route.Menu()) }) {
+            IconButton48(NIcons.search, tr("Search coins or paste an address")) { nav.push(Route.Search) }
         }
         LaneTabs(Lane.entries.map { it.label }, model.lane.ordinal, { model.lane = Lane.entries[it] })
         ChainChips(Chain.entries, model.chain, { model.chain = it })
@@ -90,12 +91,12 @@ fun DiscoverScreen() {
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Quick buy", style = text(13, color = Ink.muted))
+                Text(tr("Quick buy"), style = text(13, color = Ink.muted))
                 Row(
                     Modifier
                         .height(44.dp)
-                        .clickable(onClickLabel = "Change the quick buy amount", role = Role.Button) { settings.nextQuickBuy() }
-                        .semantics { contentDescription = "Quick buy amount $${settings.quickBuy}, tap to change it" }
+                        .clickable(onClickLabel = tr("Change the quick buy amount"), role = Role.Button) { settings.nextQuickBuy() }
+                        .semantics { contentDescription = tr("Quick buy amount \${1}, tap to change it", settings.quickBuy) }
                         .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -109,7 +110,7 @@ fun DiscoverScreen() {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                Text("One Balance", style = text(13, color = Ink.muted))
+                Text(tr("One Balance"), style = text(13, color = Ink.muted))
                 Text(oneBalance(), style = text(15, FontWeight.SemiBold))
             }
         }
@@ -129,9 +130,9 @@ fun DiscoverScreen() {
                         )
                     }
                 }
-                !loaded && model.failed.isEmpty() -> EmptyNote("Loading…")
-                !loaded -> EmptyNote("Could not reach Nesty. Trying again.")
-                else -> EmptyNote("Nothing on ${model.chain?.title ?: "any chain"} in this list right now.")
+                !loaded && model.failed.isEmpty() -> EmptyNote(tr("Loading…"))
+                !loaded -> EmptyNote(tr("Could not reach Nesty. Trying again."))
+                else -> EmptyNote(tr("Nothing on {1} in this list right now.", model.chain?.title ?: tr("any chain")))
             }
         }
     }
@@ -140,9 +141,9 @@ fun DiscoverScreen() {
 @Composable
 private fun DiscoverRowView(r: DiscoverRow, lane: Lane, now: Long, quick: Int, onOpen: () -> Unit, onBuy: () -> Unit) {
     val line2 = buildList {
-        if (lane == Lane.NEAR && r.curve != null) add("Curve ${(r.curve * 100).toInt()}%")
+        if (lane == Lane.NEAR && r.curve != null) add(tr("Curve {1}%", (r.curve * 100).toInt()))
         r.volume?.let { add("V ${Fmt.usd(it)}") }
-        if (lane != Lane.NEAR || r.curve == null) r.holders?.let { add(Fmt.counted(it.toLong(), "holder")) }
+        if (lane != Lane.NEAR || r.curve == null) r.holders?.let { add(Fmt.counted(it.toLong(), "{1} holder", "{1} holders")) }
     }.joinToString(" · ")
 
     Box(Modifier.fillMaxWidth()) {
@@ -155,7 +156,7 @@ private fun DiscoverRowView(r: DiscoverRow, lane: Lane, now: Long, quick: Int, o
                 Modifier
                     .weight(1f)
                     .heightIn(min = 80.dp)
-                    .clickable(onClickLabel = "Open ${r.symbol}", role = Role.Button, onClick = onOpen)
+                    .clickable(onClickLabel = tr("Open {1}", r.symbol), role = Role.Button, onClick = onOpen)
                     .padding(start = 16.dp, end = 4.dp, top = 10.dp, bottom = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -168,7 +169,7 @@ private fun DiscoverRowView(r: DiscoverRow, lane: Lane, now: Long, quick: Int, o
                             style = text(16, FontWeight.Bold),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f, fill = false).semantics { contentDescription = "${r.symbol} on ${r.chain.title}" },
+                            modifier = Modifier.weight(1f, fill = false).semantics { contentDescription = tr("{1} on {2}", r.symbol, r.chain.title) },
                         )
                         if (r.since != null && r.since > 0) Text(Fmt.age(now - r.since), style = text(13, color = Ink.muted), maxLines = 1)
                     }
@@ -195,7 +196,7 @@ private fun DiscoverRowView(r: DiscoverRow, lane: Lane, now: Long, quick: Int, o
                     .height(44.dp)
                     .background(Ink.greenDeep, RoundedCornerShape(12.dp))
                     .border(1.dp, Ink.greenLine, RoundedCornerShape(12.dp))
-                    .clickable(onClickLabel = "Buy $$quick of ${r.symbol}", role = Role.Button, onClick = onBuy),
+                    .clickable(onClickLabel = tr("Buy \${1} of {2}", quick, r.symbol), role = Role.Button, onClick = onBuy),
                 contentAlignment = Alignment.Center,
             ) {
                 Text("$$quick", style = text(15, FontWeight.Bold, Ink.green))

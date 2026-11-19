@@ -23,6 +23,7 @@ import okhttp3.Response
 import java.io.IOException
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import trade.nesty.app.i18n.tr
 
 /** The server said no, or answered off its shape. */
 class ApiException(
@@ -147,9 +148,9 @@ class NestyApi(
             // Off the main thread: a feed of three lanes is a few hundred kilobytes.
             withContext(Dispatchers.Default) { NestyJson.decodeFromString<T>(text) }
         } catch (e: SerializationException) {
-            throw ApiException(200, "shape", message = "Answer off its shape: ${e.message}")
+            throw ApiException(200, "shape", message = tr("Answer off its shape: {1}", e.message))
         } catch (e: IllegalArgumentException) {
-            throw ApiException(200, "shape", message = "Answer off its shape: ${e.message}")
+            throw ApiException(200, "shape", message = tr("Answer off its shape: {1}", e.message))
         }
     }
 

@@ -7,6 +7,7 @@ import android.content.pm.Signature
 import android.os.Build
 import java.io.File
 import java.security.MessageDigest
+import trade.nesty.app.i18n.tr
 
 /** What Android reads of an APK, or of the installed app: its package, version and signers. */
 data class ApkFacts(
@@ -47,11 +48,11 @@ object ApkCheck {
 
     /** Why a fetched APK cannot be the update, or null when it can. `facts` null: Android could not read it. */
     fun refusal(facts: ApkFacts?, pkg: String, code: Int, installed: ApkFacts?): String? {
-        if (facts == null) return "Android could not read the file."
-        if (facts.pkg != pkg) return "The file is not Nesty."
-        if (facts.code != code.toLong()) return "The file is not the version published."
+        if (facts == null) return tr("Android could not read the file.")
+        if (facts.pkg != pkg) return tr("The file is not Nesty.")
+        if (facts.code != code.toLong()) return tr("The file is not the version published.")
         if (installed != null && installed.signers.isNotEmpty() && facts.signers.isNotEmpty() && !sameSigner(installed.signers, facts)) {
-            return "The file is not signed with Nesty's key."
+            return tr("The file is not signed with Nesty's key.")
         }
         return null
     }

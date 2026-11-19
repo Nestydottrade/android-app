@@ -1,5 +1,6 @@
 package trade.nesty.app.ui.holders
 
+import trade.nesty.app.i18n.trCount
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -45,6 +46,8 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.Holder
 import trade.nesty.app.data.Trade
 import trade.nesty.app.data.TraderRow
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.StickToTop
 import trade.nesty.app.ui.Divider
@@ -69,7 +72,7 @@ import trade.nesty.app.ui.token.Phase
 import trade.nesty.app.ui.token.TokenModel
 import trade.nesty.app.ui.token.rememberTokenModel
 
-private val TABS = listOf("Trades", "Holders", "Top traders", "Early buyers")
+private val TABS = listOf(trKey("Trades"), trKey("Holders"), trKey("Top traders"), trKey("Early buyers"))
 
 /** Rows from the end of the Trades list at which the page before it is read. */
 private const val NEAR_END = 15
@@ -85,8 +88,8 @@ fun TradesHoldersScreen(chain: Chain, address: String) {
     val sub = listOfNotNull(coin?.symbol, chain.title, coin?.mcapUsd?.let { "MC ${Fmt.usd(it)}" }).joinToString(" · ")
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Trades and holders", sub, onBack = { nav.pop() })
-        LaneTabs(TABS, tab, { tab = it })
+        BackHeader(tr("Trades and holders"), sub, onBack = { nav.pop() })
+        LaneTabs(TABS.map { tr(it) }, tab, { tab = it })
         val open = { w: String -> nav.push(Route.Wallet(chain, w)) }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             when (tab) {
@@ -137,12 +140,16 @@ private fun TradesList(model: TokenModel, only: String?, setOnly: (String?) -> U
             ) {
                 val whole = read?.phase == Phase.READY && read.all
                 Text(
-                    "${if (whole) "All " else ""}${shown.size} trades from ${Fmt.address(only)}",
+                    if (whole) {
+                        trCount(shown.size.toLong(), "All {1} trade from {2}", "All {1} trades from {2}", shown.size, Fmt.address(only))
+                    } else {
+                        trCount(shown.size.toLong(), "{1} trade from {2}", "{1} trades from {2}", shown.size, Fmt.address(only))
+                    },
                     style = text(13, FontWeight.SemiBold),
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    "Show all trades",
+                    tr("Show all trades"),
                     style = text(13, FontWeight.Bold, Ink.green),
                     modifier = Modifier.clickable(role = Role.Button) { setOnly(null) }.padding(horizontal = 8.dp, vertical = 14.dp),
                 )
@@ -157,11 +164,11 @@ private fun TradesList(model: TokenModel, only: String?, setOnly: (String?) -> U
                     OlderEnd(end) { scope.launch { model.loadOlder() } }
                 }
             }
-            only != null && read?.phase == Phase.FAILED -> EmptyNote("Could not read its trades. Trying again.")
-            only != null && read?.phase != Phase.READY -> EmptyNote("Reading its trades…")
-            model.tradesPhase == Phase.LOADING || model.tradesReading -> EmptyNote("Reading its trades…")
-            model.tradesPhase == Phase.FAILED -> EmptyNote("Could not read its trades. Trying again.")
-            else -> EmptyNote("No trades yet.")
+            only != null && read?.phase == Phase.FAILED -> EmptyNote(tr("Could not read its trades. Trying again."))
+            only != null && read?.phase != Phase.READY -> EmptyNote(tr("Reading its trades…"))
+            model.tradesPhase == Phase.LOADING || model.tradesReading -> EmptyNote(tr("Reading its trades…"))
+            model.tradesPhase == Phase.FAILED -> EmptyNote(tr("Could not read its trades. Trying again."))
+            else -> EmptyNote(tr("No trades yet."))
         }
     }
 }
@@ -171,10 +178,10 @@ private fun TradesList(model: TokenModel, only: String?, setOnly: (String?) -> U
 private fun OlderEnd(state: Older, ask: () -> Unit) {
     val line = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp)
     when (state) {
-        Older.LOADING -> Text("Reading older trades…", style = text(12, color = Ink.muted), textAlign = TextAlign.Center, modifier = line)
-        Older.FAILED -> Text("Could not read older trades. Trying again.", style = text(12, color = Ink.muted), textAlign = TextAlign.Center, modifier = line)
+        Older.LOADING -> Text(tr("Reading older trades…"), style = text(12, color = Ink.muted), textAlign = TextAlign.Center, modifier = line)
+        Older.FAILED -> Text(tr("Could not read older trades. Trying again."), style = text(12, color = Ink.muted), textAlign = TextAlign.Center, modifier = line)
         Older.STALLED -> Text(
-            "Show older trades",
+            tr("Show older trades"),
             style = text(13, FontWeight.Bold, Ink.green),
             textAlign = TextAlign.Center,
             modifier = Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = ask).padding(horizontal = 24.dp, vertical = 16.dp),
@@ -189,7 +196,7 @@ private fun TradeRow(t: Trade, now: Long, only: String?, setOnly: (String?) -> U
     Column {
         Row(Modifier.fillMaxWidth().heightIn(min = 60.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.widthIn(min = 92.dp).padding(start = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(if (t.isBuy) "Buy" else "Sell", style = text(13, FontWeight.Bold, if (t.isBuy) Ink.green else Ink.pink))
+                Text(if (t.isBuy) tr("Buy") else tr("Sell"), style = text(13, FontWeight.Bold, if (t.isBuy) Ink.green else Ink.pink))
                 Text(t.usd?.let { Fmt.usdFull(it) } ?: Fmt.DASH, style = figure(15, FontWeight.SemiBold), maxLines = 1)
             }
             Column(
@@ -199,8 +206,8 @@ private fun TradeRow(t: Trade, now: Long, only: String?, setOnly: (String?) -> U
                     .padding(vertical = 10.dp, horizontal = 4.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-                if (w != null) WalletName(w, t.tags) else Text("Pool trade", style = text(14, FontWeight.Medium, Ink.muted))
-                Text("at MC ${Fmt.usd(t.mcapUsd)} · ${Fmt.age(now - t.at)}", style = text(12, color = Ink.muted), maxLines = 1)
+                if (w != null) WalletName(w, t.tags) else Text(tr("Pool trade"), style = text(14, FontWeight.Medium, Ink.muted))
+                Text(tr("at MC {1} · {2}", Fmt.usd(t.mcapUsd), Fmt.age(now - t.at)), style = text(12, color = Ink.muted), maxLines = 1)
             }
             if (w != null) {
                 val on = only.equals(w, ignoreCase = true)
@@ -212,8 +219,8 @@ private fun TradeRow(t: Trade, now: Long, only: String?, setOnly: (String?) -> U
                         .background(if (on) Ink.violetBg else Ink.ground)
                         .clickable(role = Role.Switch) { setOnly(if (on) null else w) }
                         .semantics {
-                            contentDescription = if (on) "Show all trades" else "Only trades from ${Fmt.address(w)}"
-                            stateDescription = if (on) "On" else "Off"
+                            contentDescription = if (on) tr("Show all trades") else tr("Only trades from {1}", Fmt.address(w))
+                            stateDescription = if (on) tr("On") else tr("Off")
                         },
                     contentAlignment = Alignment.Center,
                 ) {
@@ -234,11 +241,11 @@ private fun HoldersList(model: TokenModel, chain: Chain, open: (String) -> Unit)
     val pnlOf = traders?.let { t -> (t.top + t.early).associateBy { it.wallet.lowercase() } } ?: emptyMap()
     val list: List<Holder> = answer?.list?.filter { it.role == null }.orEmpty()
     when {
-        chain == Chain.SOLANA -> EmptyNote("Holders are not counted on Solana yet.")
-        model.holdersServed == false -> EmptyNote("Nesty's holder book does not follow this coin.")
-        answer == null -> EmptyNote("Reading its holders…")
-        answer.state == "reading" -> EmptyNote("Counting its holders. This takes a moment for a new coin.")
-        list.isEmpty() -> EmptyNote("No wallet holds it yet.")
+        chain == Chain.SOLANA -> EmptyNote(tr("Holders are not counted on Solana yet."))
+        model.holdersServed == false -> EmptyNote(tr("Nesty's holder book does not follow this coin."))
+        answer == null -> EmptyNote(tr("Reading its holders…"))
+        answer.state == "reading" -> EmptyNote(tr("Counting its holders. This takes a moment for a new coin."))
+        list.isEmpty() -> EmptyNote(tr("No wallet holds it yet."))
         else -> {
             val top = list.first().share.takeIf { it > 0 } ?: 1.0
             LazyColumn(Modifier.fillMaxSize()) {
@@ -259,7 +266,7 @@ private fun HoldersList(model: TokenModel, chain: Chain, open: (String) -> Unit)
                             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                 WalletName(h.wallet, h.tags)
                                 Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text("Holds ${mcap?.let { Fmt.usd(it * h.share) } ?: Fmt.DASH}", style = text(12, color = Ink.muted))
+                                    Text(tr("Holds {1}", mcap?.let { Fmt.usd(it * h.share) } ?: Fmt.DASH), style = text(12, color = Ink.muted))
                                     if (pnl != null) {
                                         Text("· PnL", style = text(12, color = Ink.muted))
                                         Text(Fmt.usdSigned(pnl), style = text(12, FontWeight.SemiBold, signColor(pnl)))
@@ -275,9 +282,9 @@ private fun HoldersList(model: TokenModel, chain: Chain, open: (String) -> Unit)
                     }
                 }
                 item {
-                    val note = if (answer.state == "partial") " Some transfers could not be read, so shares may be a little off." else ""
+                    val note = if (answer.state == "partial") tr(" Some transfers could not be read, so shares may be a little off.") else ""
                     Text(
-                        "Wallets only: the curve, pools and burns are left out.$note",
+                        tr("Wallets only: the curve, pools and burns are left out.{1}", note),
                         style = text(12, color = Ink.muted),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
@@ -295,9 +302,9 @@ private fun TradersList(model: TokenModel, early: Boolean, open: (String) -> Uni
     val usd = t?.quote?.usd
     val supply = model.supply ?: model.coin?.supply
     when {
-        t == null && model.tradersPhase == Phase.FAILED -> EmptyNote("Could not read its traders. Trying again.")
-        t == null -> EmptyNote("Reading its traders…")
-        rows.isEmpty() -> EmptyNote(if (early) "No buyers yet." else "No trader has made anything yet.")
+        t == null && model.tradersPhase == Phase.FAILED -> EmptyNote(tr("Could not read its traders. Trying again."))
+        t == null -> EmptyNote(tr("Reading its traders…"))
+        rows.isEmpty() -> EmptyNote(if (early) tr("No buyers yet.") else tr("No trader has made anything yet."))
         else -> LazyColumn(Modifier.fillMaxSize()) {
             items(rows.size, key = keyAt(rows) { it.wallet }) { i ->
                 val r = rows[i]
@@ -322,7 +329,7 @@ private fun TradersList(model: TokenModel, early: Boolean, open: (String) -> Uni
                         }
                         if (early) {
                             val state = holdState(r)
-                            Text(state, style = text(13, FontWeight.SemiBold, if (state == "Holds all") Ink.text2 else Ink.amber))
+                            Text(state, style = text(13, FontWeight.SemiBold, if (state == tr("Holds all")) Ink.text2 else Ink.amber))
                         } else {
                             val p = usd?.let { r.pnl * it }
                             Text(p?.let { Fmt.usdSigned(it) } ?: Fmt.DASH, style = figure(16, FontWeight.SemiBold, signColor(p)))
@@ -334,7 +341,7 @@ private fun TradersList(model: TokenModel, early: Boolean, open: (String) -> Uni
             if (t.partial) {
                 item {
                     Text(
-                        "Some of its trades are not counted yet.",
+                        tr("Some of its trades are not counted yet."),
                         style = text(12, color = Ink.muted),
                         textAlign = TextAlign.Center,
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
@@ -348,26 +355,26 @@ private fun TradersList(model: TokenModel, early: Boolean, open: (String) -> Uni
 private fun topLine(r: TraderRow, usd: Double?): String {
     fun d(q: Double) = usd?.let { Fmt.usdFull(q * it) } ?: "${Fmt.compact(q)}"
     return when {
-        r.buys == 0 && r.sells > 0 -> "Sold ${d(r.sold)} · never bought"
-        r.sells == 0 -> "Bought ${d(r.bought)} · still holds all"
-        else -> "Bought ${d(r.bought)} · sold ${d(r.sold)}"
+        r.buys == 0 && r.sells > 0 -> tr("Sold {1} · never bought", d(r.sold))
+        r.sells == 0 -> tr("Bought {1} · still holds all", d(r.bought))
+        else -> tr("Bought {1} · sold {2}", d(r.bought), d(r.sold))
     }
 }
 
 private fun earlyLine(r: TraderRow, usd: Double?, supply: Double?): String {
-    if (r.boughtTokens <= 0 || usd == null || supply == null) return "Bought ${usd?.let { Fmt.usdFull(r.bought * it) } ?: Fmt.DASH}"
+    if (r.boughtTokens <= 0 || usd == null || supply == null) return tr("Bought {1}", usd?.let { Fmt.usdFull(r.bought * it) } ?: Fmt.DASH)
     val mc = r.bought / r.boughtTokens * usd * supply
-    return "Bought at MC ${Fmt.usd(mc)}"
+    return tr("Bought at MC {1}", Fmt.usd(mc))
 }
 
 /** What an early buyer did with what it bought. */
 fun holdState(r: TraderRow): String {
-    if (r.boughtTokens <= 0) return if (r.soldTokens > 0) "Sold all" else "Holds all"
+    if (r.boughtTokens <= 0) return if (r.soldTokens > 0) tr("Sold all") else tr("Holds all")
     val left = r.remaining ?: (r.boughtTokens - r.soldTokens)
     val kept = (left / r.boughtTokens).coerceIn(0.0, 1.0)
     return when {
-        kept >= 0.995 -> "Holds all"
-        kept <= 0.005 -> "Sold all"
-        else -> "Sold ${Math.round((1 - kept) * 100)}%"
+        kept >= 0.995 -> tr("Holds all")
+        kept <= 0.005 -> tr("Sold all")
+        else -> tr("Sold {1}%", Math.round((1 - kept) * 100))
     }
 }

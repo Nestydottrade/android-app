@@ -16,6 +16,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import trade.nesty.app.data.Chain
 import java.util.UUID
+import trade.nesty.app.i18n.tr
 
 /** Where the app can go. Tabs are the four of the bottom bar. */
 sealed interface Route {
@@ -109,8 +110,8 @@ class Navigator(start: Route) {
     }
 }
 
-val LocalNavigator = staticCompositionLocalOf<Navigator> { error("No navigator") }
-val LocalEntry = staticCompositionLocalOf<Entry> { error("No entry") }
+val LocalNavigator = staticCompositionLocalOf<Navigator> { error(tr("No navigator")) }
+val LocalEntry = staticCompositionLocalOf<Entry> { error(tr("No entry")) }
 
 /** A model kept for as long as this screen is in the back stack. */
 @Composable
@@ -161,4 +162,4 @@ data class ToastMessage(
     val onAction: (() -> Unit)? = null,
 )
 
-val LocalToasts = staticCompositionLocalOf<Toasts> { error("No toasts") }
+val LocalToasts = staticCompositionLocalOf<Toasts> { error(tr("No toasts")) }

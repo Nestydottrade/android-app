@@ -57,9 +57,59 @@ android {
         buildConfig = true
     }
 
+    // The libraries' own texts in the app's languages only (I18n.kt's Lang), not in some 80.
+    androidResources {
+        localeFilters += listOf("en", "in", "de", "es", "pt", "pt-rBR", "vi", "ru", "hi", "ja", "zh-rCN", "ko")
+    }
+
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+}
+
+/**
+ * The translations, kept as src/main/i18n/<tag>.json (each text's English to its translation),
+ * packed for the app: i18n/keys.txt lists every English text once, and i18n/<tag>.txt has each
+ * language's lines in the same order, empty where a text is not translated. The APK stores them
+ * compressed, and the app reads only the language in use.
+ */
+abstract class PackI18n : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val source: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val output: DirectoryProperty
+
+    @TaskAction
+    fun pack() {
+        val out = output.get().asFile.resolve("i18n")
+        out.deleteRecursively()
+        out.mkdirs()
+        val tables = source.get().asFile.listFiles { f -> f.extension == "json" }.orEmpty().sortedBy { it.name }.associate { f ->
+            @Suppress("UNCHECKED_CAST")
+            f.nameWithoutExtension to (groovy.json.JsonSlurper().parse(f, "UTF-8") as Map<String, String>)
+        }
+        val keys = tables.values.flatMap { it.keys }.toSortedSet().toList()
+        fun line(s: String) = s.replace("\\", "\\\\").replace("\n", "\\n")
+        out.resolve("keys.txt").writeText(keys.joinToString("\n") { line(it) }, Charsets.UTF_8)
+        for ((tag, table) in tables) {
+            out.resolve("$tag.txt").writeText(keys.joinToString("\n") { line(table[it].orEmpty()) }, Charsets.UTF_8)
+        }
+    }
+}
+
+val packI18n = tasks.register<PackI18n>("packI18n") {
+    source.set(layout.projectDirectory.dir("src/main/i18n"))
+}
+
+androidComponents {
+    onVariants { variant -> variant.sources.assets?.addGeneratedSourceDirectory(packI18n, PackI18n::output) }
+}
+
+// A test run with -Pnesty.pseudo=1 shows every text in brackets (I18n.kt's PseudoTexts).
+tasks.withType<Test>().configureEach {
+    providers.gradleProperty("nesty.pseudo").orNull?.let { systemProperty("nesty.pseudo", it) }
 }
 
 dependencies {

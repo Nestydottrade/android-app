@@ -2,6 +2,7 @@ package trade.nesty.app.move
 
 import trade.nesty.app.data.Chain
 import trade.nesty.app.evm.formatUnits
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.SolSend
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -51,6 +52,6 @@ object CoinSend {
     fun feeBlock(chain: Chain, native: BigInteger?, fee: BigInteger?, rent: BigInteger = BigInteger.ZERO, keep: BigInteger = BigInteger.ZERO): String? {
         if (native == null || fee == null) return null
         if (chain == Chain.SOLANA) return SolSend.coinSendBlock(native, rent, fee, keep)
-        return if (native < fee) "Not enough ${chain.native} for the fee." else null
+        return if (native < fee) tr("Not enough {1} for the fee.", chain.native) else null
     }
 }

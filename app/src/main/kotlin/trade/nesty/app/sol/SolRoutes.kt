@@ -1,6 +1,7 @@
 package trade.nesty.app.sol
 
 import trade.nesty.app.evm.Side
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.dex.Dex
 import trade.nesty.app.sol.dex.DexVenue
 import java.math.BigInteger
@@ -171,11 +172,11 @@ object SolRoutes {
 
     /** Why a buy is quoted nothing, when more can be said than that no route fills it. */
     fun noFill(r: SolRoute): String? {
-        if (r !is SolRoute.OnPump) return "This pool cannot fill that amount. Try a smaller one."
+        if (r !is SolRoute.OnPump) return tr("This pool cannot fill that amount. Try a smaller one.")
         val coin = Pump.routeCoin(r.pump)
         // Past a curve's end, where no migration fills the rest.
         return if (coin is CurveVenue && (Pump.routeVariant(r.pump) == TradeVariant.CURVE_V2 || coin.curve.isMayhemMode)) {
-            "This buy is more than the curve has left. Try a smaller amount."
+            tr("This buy is more than the curve has left. Try a smaller amount.")
         } else {
             null
         }

@@ -34,6 +34,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import trade.nesty.app.data.AppGraph
 import trade.nesty.app.data.Settings
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.GreenButton
 import trade.nesty.app.ui.theme.Ink
@@ -51,18 +52,18 @@ fun QuickBuySetting() {
     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("Quick buy amount", style = text(15, FontWeight.SemiBold))
-                Text("One tap on a list buys this much", style = text(13, color = Ink.muted))
+                Text(tr("Quick buy amount"), style = text(15, FontWeight.SemiBold))
+                Text(tr("One tap on a list buys this much"), style = text(13, color = Ink.muted))
             }
             Box(
                 Modifier
                     .heightIn(min = 44.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .clickable(onClickLabel = if (editing) "Close the amounts" else "Edit the amounts", role = Role.Button) { editing = !editing }
+                    .clickable(onClickLabel = if (editing) tr("Close the amounts") else tr("Edit the amounts"), role = Role.Button) { editing = !editing }
                     .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(if (editing) "Close" else "Edit", style = text(14, FontWeight.Bold, Ink.green))
+                Text(if (editing) tr("Close") else tr("Edit"), style = text(14, FontWeight.Bold, Ink.green))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -89,7 +90,7 @@ fun QuickBuySetting() {
                     editing = false
                     null
                 } else {
-                    "Use four different amounts, from $1 to ${Fmt.usdFull(Settings.QUICK_MAX.toDouble())}."
+                    tr("Use four different amounts, from $1 to {1}.", Fmt.usdFull(Settings.QUICK_MAX.toDouble()))
                 }
             }
         }
@@ -106,13 +107,13 @@ private fun AmountsEditor(now: List<Int>, onSave: (List<Int>) -> String?) {
         Modifier.fillMaxWidth().clip(shape).background(Ink.ground).border(1.dp, Ink.line, shape).padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Text("Amounts in dollars", style = text(13, color = Ink.muted))
+        Text(tr("Amounts in dollars"), style = text(13, color = Ink.muted))
         // Two across, so six figures fit a box on a narrow phone.
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             for (pair in typed.withIndex().chunked(2)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     for ((i, value) in pair) {
-                        DollarBox(value, "Quick buy amount ${i + 1}", Modifier.weight(1f), bad = why != null) { v ->
+                        DollarBox(value, tr("Quick buy amount {1}", i + 1), Modifier.weight(1f), bad = why != null) { v ->
                             typed = typed.toMutableList().also { it[i] = v }
                             why = null
                         }
@@ -122,7 +123,7 @@ private fun AmountsEditor(now: List<Int>, onSave: (List<Int>) -> String?) {
         }
         why?.let { Text(it, style = text(13, color = Ink.pink)) }
         GreenButton(
-            "Save",
+            tr("Save"),
             onClick = {
                 val amounts = typed.map { it.toIntOrNull() ?: 0 }
                 why = onSave(amounts)

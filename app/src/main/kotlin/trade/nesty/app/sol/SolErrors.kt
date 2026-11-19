@@ -12,6 +12,8 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.longOrNull
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 
 /**
  * A transaction error (from simulation or a landed transaction) as a sentence for the trade.
@@ -19,74 +21,74 @@ import kotlinx.serialization.json.longOrNull
  * src/background/solana/errors.ts.
  */
 object SolErrors {
-    private const val SLIPPAGE = "Price moved past your slippage. Raise slippage or try again."
+    private val SLIPPAGE = trKey("Price moved past your slippage. Raise slippage or try again.")
 
     /** pump.fun program errors a trade can hit (docs: PUMP_PROGRAM_README, IDL). */
     private val PUMP_ERRORS = mapOf(
         6002L to SLIPPAGE,
         6003L to SLIPPAGE,
-        6005L to "The pump.fun curve is complete. Trading opens on PumpSwap once it migrates.",
-        6021L to "Not enough tokens left on the curve.",
-        6023L to "Not enough tokens to sell.",
-        6040L to "Not enough SOL to cover the new accounts.",
-        6041L to "Not enough SOL to cover the fees.",
+        6005L to trKey("The pump.fun curve is complete. Trading opens on PumpSwap once it migrates."),
+        6021L to trKey("Not enough tokens left on the curve."),
+        6023L to trKey("Not enough tokens to sell."),
+        6040L to trKey("Not enough SOL to cover the new accounts."),
+        6041L to trKey("Not enough SOL to cover the fees."),
         6042L to SLIPPAGE,
         // Nesty trades cashback coins with v2, mayhem pools with v1: these mean the coin changed.
-        6094L to "pump.fun refused this trade for a cashback coin. Try again.",
+        6094L to trKey("pump.fun refused this trade for a cashback coin. Try again."),
     )
 
     private val PUMP_AMM_ERRORS = mapOf(
         6004L to SLIPPAGE,
         6040L to SLIPPAGE,
-        6063L to "The pool cannot pay out that much right now.",
-        6078L to "This pool is not a pump.fun pool.",
-        6079L to "PumpSwap refused this trade for a cashback coin. Try again.",
-        6080L to "PumpSwap refused this trade for a mayhem pool. Try again.",
-        6084L to "The route between the pools broke. Try again.",
-        6085L to "A curve on the route moved mid-trade. Try again.",
-        6086L to "The route mixed buys and sells.",
+        6063L to trKey("The pool cannot pay out that much right now."),
+        6078L to trKey("This pool is not a pump.fun pool."),
+        6079L to trKey("PumpSwap refused this trade for a cashback coin. Try again."),
+        6080L to trKey("PumpSwap refused this trade for a mayhem pool. Try again."),
+        6084L to trKey("The route between the pools broke. Try again."),
+        6085L to trKey("A curve on the route moved mid-trade. Try again."),
+        6086L to trKey("The route mixed buys and sells."),
     )
 
     fun explain(err: JsonElement?, instructions: List<Instruction>): String {
         if (err is JsonPrimitive && err.isString) return topLevel(err.content)
         if (err is JsonObject) {
-            val (kind, value) = err.entries.firstOrNull() ?: return "Transaction failed."
+            val (kind, value) = err.entries.firstOrNull() ?: return tr("Transaction failed.")
             if (kind == "InstructionError" && value is JsonArray) {
                 val index = (value.getOrNull(0) as? JsonPrimitive)?.intOrNull
                 val inner = value.getOrNull(1)
                 val program = index?.let { instructions.getOrNull(it)?.programId }
                 val custom = ((inner as? JsonObject)?.get("Custom") as? JsonPrimitive)?.longOrNull
                 if (custom != null) {
-                    if (program == Pump.PUMP_PROGRAM) PUMP_ERRORS[custom]?.let { return it }
-                    if (program == Pump.PUMP_AMM_PROGRAM) PUMP_AMM_ERRORS[custom]?.let { return it }
+                    if (program == Pump.PUMP_PROGRAM) PUMP_ERRORS[custom]?.let { return tr(it) }
+                    if (program == Pump.PUMP_AMM_PROGRAM) PUMP_AMM_ERRORS[custom]?.let { return tr(it) }
                     // Custom 1 is the system or token program's "insufficient funds", also when a
                     // trade runs into it moving tokens.
                     if (custom == 1L) {
-                        if (program == SolAddr.SYSTEM_PROGRAM) return "Insufficient SOL balance."
+                        if (program == SolAddr.SYSTEM_PROGRAM) return tr("Insufficient SOL balance.")
                         if (program == SolAddr.TOKEN_PROGRAM || program == Pump.PUMP_PROGRAM || program == Pump.PUMP_AMM_PROGRAM) {
-                            return "Insufficient balance for this trade."
+                            return tr("Insufficient balance for this trade.")
                         }
                     }
-                    return "Program error $custom."
+                    return tr("Program error {1}.", custom)
                 }
                 if (inner is JsonPrimitive && inner.isString) return topLevel(inner.content)
             }
-            if (kind == "InsufficientFundsForRent") return "Not enough SOL to keep the account open."
+            if (kind == "InsufficientFundsForRent") return tr("Not enough SOL to keep the account open.")
             return topLevel(kind)
         }
-        return "Transaction failed."
+        return tr("Transaction failed.")
     }
 
     private val LETTERS = Regex("^[A-Za-z]{1,40}$")
 
     private fun topLevel(code: String): String = when (code) {
-        "InsufficientFundsForFee" -> "Not enough SOL for the network fee."
-        "BlockhashNotFound" -> "Expired before it landed. Try again."
-        "AccountNotFound" -> "This wallet has no SOL yet."
-        "InsufficientFunds" -> "Insufficient SOL balance."
-        "ComputationalBudgetExceeded", "ProgramFailedToComplete" -> "Ran out of compute. Try again."
+        "InsufficientFundsForFee" -> tr("Not enough SOL for the network fee.")
+        "BlockhashNotFound" -> tr("Expired before it landed. Try again.")
+        "AccountNotFound" -> tr("This wallet has no SOL yet.")
+        "InsufficientFunds" -> tr("Insufficient SOL balance.")
+        "ComputationalBudgetExceeded", "ProgramFailedToComplete" -> tr("Ran out of compute. Try again.")
         // Our own names for the runtime's error kinds: letters only, never data.
-        else -> if (LETTERS.matches(code)) "Failed: $code." else "Transaction failed."
+        else -> if (LETTERS.matches(code)) tr("Failed: {1}.", code) else tr("Transaction failed.")
     }
 }
 

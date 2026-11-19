@@ -54,6 +54,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import trade.nesty.app.data.Candle
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.Fmt
 import trade.nesty.app.ui.NIcons
 import trade.nesty.app.ui.theme.Inter
@@ -81,24 +83,27 @@ enum class Frame(
     val step: Long,
     val seconds: Long,
     val limit: Int,
-    val words: String,
+    private val wordsKey: String,
     /** Where its candles start, in seconds past a whole number of them since 1970. */
     val anchor: Long = 0,
 ) {
-    S1("1s", "1s", 1, 1, 300, "1 second"),
-    S15("15s", "1s", 1, 15, 1_500, "15 second"),
-    M1("1m", "1m", 60, 60, 500, "1 minute"),
-    M5("5m", "5m", 300, 300, 500, "5 minute"),
-    M15("15m", "15m", 900, 900, 500, "15 minute"),
-    M30("30m", "15m", 900, 1_800, 1_000, "30 minute"),
-    H1("1h", "1h", 3_600, 3_600, 500, "1 hour"),
-    H4("4h", "4h", 14_400, 14_400, 500, "4 hour"),
-    H6("6h", "1h", 3_600, 21_600, 1_000, "6 hour"),
-    H12("12h", "4h", 14_400, 43_200, 1_500, "12 hour"),
-    D1("1d", "D", 86_400, 86_400, 500, "1 day"),
-    D3("3d", "D", 86_400, 259_200, 1_500, "3 day"),
-    W1("1w", "D", 86_400, 604_800, 1_500, "1 week", anchor = MONDAY),
+    S1("1s", "1s", 1, 1, 300, trKey("1 second")),
+    S15("15s", "1s", 1, 15, 1_500, trKey("15 second")),
+    M1("1m", "1m", 60, 60, 500, trKey("1 minute")),
+    M5("5m", "5m", 300, 300, 500, trKey("5 minute")),
+    M15("15m", "15m", 900, 900, 500, trKey("15 minute")),
+    M30("30m", "15m", 900, 1_800, 1_000, trKey("30 minute")),
+    H1("1h", "1h", 3_600, 3_600, 500, trKey("1 hour")),
+    H4("4h", "4h", 14_400, 14_400, 500, trKey("4 hour")),
+    H6("6h", "1h", 3_600, 21_600, 1_000, trKey("6 hour")),
+    H12("12h", "4h", 14_400, 43_200, 1_500, trKey("12 hour")),
+    D1("1d", "D", 86_400, 86_400, 500, trKey("1 day")),
+    D3("3d", "D", 86_400, 259_200, 1_500, trKey("3 day")),
+    W1("1w", "D", 86_400, 604_800, 1_500, trKey("1 week"), anchor = MONDAY),
     ;
+
+    /** The length in words, in the language the app shows. */
+    val words: String get() = tr(wordsKey)
 
     companion object {
         /** A coin's chart opens in these. */
@@ -262,11 +267,11 @@ fun CandleChart(
                 .semantics {
                     contentDescription = description
                     customActions = listOf(
-                        CustomAccessibilityAction("Show older candles") {
+                        CustomAccessibilityAction(tr("Show older candles")) {
                             view.setBack(latest, view.back(latest) + view.count / 2)
                             true
                         },
-                        CustomAccessibilityAction("Show newer candles") {
+                        CustomAccessibilityAction(tr("Show newer candles")) {
                             view.setBack(latest, view.back(latest) - view.count / 2)
                             true
                         },
@@ -408,7 +413,7 @@ fun CandleChart(
                     Ink.text2.copy(alpha = 0.8f), Offset(0f, athY), Offset(plotW, athY),
                     strokeWidth = 1.dp.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(1.dp.toPx(), 3.dp.toPx())),
                 )
-                val name = measurer.measure("All-time high", athStyle)
+                val name = measurer.measure(tr("All-time high"), athStyle)
                 val gap = 2.dp.toPx()
                 val nameY = if (athY - gap - name.size.height >= 0f) athY - gap - name.size.height else athY + gap
                 drawText(name, topLeft = Offset(4.dp.toPx(), nameY))
@@ -439,8 +444,8 @@ fun CandleChart(
                     .align(Alignment.BottomEnd)
                     .padding(end = LABEL_W, bottom = 2.dp)
                     .size(44.dp)
-                    .clickable(role = Role.Button, onClickLabel = "Back to the newest candle") { view.newest() }
-                    .semantics { contentDescription = "Back to the newest candle" },
+                    .clickable(role = Role.Button, onClickLabel = tr("Back to the newest candle")) { view.newest() }
+                    .semantics { contentDescription = tr("Back to the newest candle") },
                 contentAlignment = Alignment.Center,
             ) {
                 Box(

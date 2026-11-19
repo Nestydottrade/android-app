@@ -26,6 +26,8 @@ import trade.nesty.app.exit.ExitEvent
 import trade.nesty.app.exit.ExitKind
 import trade.nesty.app.exit.ExitMath
 import trade.nesty.app.exit.ExitPlan
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.move.MoveNote
 import trade.nesty.app.ui.Fmt
 import kotlin.math.abs
@@ -47,11 +49,11 @@ class PrefsAlertMarks(context: Context) : AlertMarks {
 
 /** What the alerts say, kept apart from where they come from so tests can read them. */
 object AlertTexts {
-    /** "all", "half" or "25%" of a holding. */
-    private fun pctOf(bps: Int) = when {
-        bps >= 10_000 -> "all"
-        bps == 5_000 -> "half"
-        else -> "${bps / 100}%"
+    /** One of three whole sentences for selling all, half or a percent of a holding: each language words them itself. */
+    private fun byShare(bps: Int, all: String, half: String, pct: String, vararg args: Any?): String = when {
+        bps >= 10_000 -> tr(all, *args)
+        bps == 5_000 -> tr(half, *args)
+        else -> tr(pct, bps / 100, *args)
     }
 
     fun plan(e: ExitEvent, mcap: Double?, now: Long): Alert {
@@ -62,20 +64,28 @@ object AlertTexts {
             is ExitEvent.Sold -> {
                 val rest = e.rule.sellBps >= 10_000 && p.rules.any { it.id != e.rule.id && it.firedAt != null }
                 val title = when {
-                    rest -> "Exit plan sold the rest of $sym"
-                    e.rule.sellBps >= 10_000 -> "Exit plan sold all your $sym"
-                    else -> "Exit plan sold ${e.rule.sellBps / 100}% of your $sym"
+                    rest -> tr("Exit plan sold the rest of {1}", sym)
+                    e.rule.sellBps >= 10_000 -> tr("Exit plan sold all your {1}", sym)
+                    else -> tr("Exit plan sold {1}% of your {2}", e.rule.sellBps / 100, sym)
                 }
-                val at = "At ${ExitMath.times(e.atBps)}" + (mcap?.let { ", MC ${Fmt.usd(it)}" } ?: "") + "."
-                val got = e.usd?.let { usd -> " You got about ${Fmt.usdFull(usd)}" + (e.gainUsd?.let { ", ${Fmt.usdSigned(it)}" } ?: "") + "." } ?: ""
+                val times = ExitMath.times(e.atBps)
+                val at = if (mcap != null) tr("At {1}, MC {2}.", times, Fmt.usd(mcap)) else tr("At {1}.", times)
+                val got = e.usd?.let { usd ->
+                    val gain = e.gainUsd
+                    if (gain != null) tr(" You got about {1}, {2}.", Fmt.usdFull(usd), Fmt.usdSigned(gain)) else tr(" You got about {1}.", Fmt.usdFull(usd))
+                } ?: ""
                 Alert("plan:${p.key}:${e.rule.id}:$now", AlertKind.PLAN, AlertTone.PLAN, title, at + got, now, link)
             }
             is ExitEvent.Failed -> Alert(
                 "plan:${p.key}:${e.rule.id}:fail:$now",
                 AlertKind.PLAN,
                 AlertTone.BAD,
-                "Exit plan could not sell your $sym",
-                e.error.trimEnd('.') + ". " + if (e.givenUp) "It stopped trying: sell it yourself if you still want to." else "It tries again.",
+                tr("Exit plan could not sell your {1}", sym),
+                if (e.givenUp) {
+                    tr("{1}. It stopped trying: sell it yourself if you still want to.", e.error.trimEnd('.'))
+                } else {
+                    tr("{1}. It tries again.", e.error.trimEnd('.'))
+                },
                 now,
                 link,
             )
@@ -84,11 +94,16 @@ object AlertTexts {
                 AlertKind.PLAN,
                 AlertTone.WARN,
                 when (e.rule.kind) {
-                    ExitKind.TP -> "$sym reached your take profit"
-                    ExitKind.SL -> "$sym hit your stop loss"
-                    ExitKind.TRAIL -> "$sym fell to your trailing stop"
+                    ExitKind.TP -> tr("{1} reached your take profit", sym)
+                    ExitKind.SL -> tr("{1} hit your stop loss", sym)
+                    ExitKind.TRAIL -> tr("{1} fell to your trailing stop", sym)
                 },
-                "Unlock Nesty to sell ${pctOf(e.rule.sellBps)}. The exit plan waits until then.",
+                byShare(
+                    e.rule.sellBps,
+                    trKey("Unlock Nesty to sell all. The exit plan waits until then."),
+                    trKey("Unlock Nesty to sell half. The exit plan waits until then."),
+                    trKey("Unlock Nesty to sell {1}%. The exit plan waits until then."),
+                ),
                 now,
                 link,
             )
@@ -100,8 +115,8 @@ object AlertTexts {
         "paused:$now",
         AlertKind.PLAN,
         AlertTone.WARN,
-        "Exit plans paused",
-        "Android closed Nesty, which locks your wallets. Unlock Nesty so your exit plans can sell.",
+        tr("Exit plans paused"),
+        tr("Android closed Nesty, which locks your wallets. Unlock Nesty so your exit plans can sell."),
         now,
         AlertLink(AlertLink.PORTFOLIO),
     )
@@ -145,10 +160,10 @@ object AlertTexts {
         val usd = t.dollars
         val share = left?.let { l -> if (t.tokens > 0) t.tokens / (t.tokens + l.coerceAtLeast(0.0)) else null }
         val title = when {
-            t.isBuy -> "$name bought $symbol" + (usd?.let { " for ${Fmt.usd(it)}" } ?: "")
-            share != null && share >= 0.99 -> "$name sold all their $symbol"
-            share != null && share in 0.45..0.55 -> "$name sold half their $symbol"
-            else -> "$name sold $symbol" + (usd?.let { " for ${Fmt.usd(it)}" } ?: "")
+            t.isBuy -> if (usd != null) tr("{1} bought {2} for {3}", name, symbol, Fmt.usd(usd)) else tr("{1} bought {2}", name, symbol)
+            share != null && share >= 0.99 -> tr("{1} sold all their {2}", name, symbol)
+            share != null && share in 0.45..0.55 -> tr("{1} sold half their {2}", name, symbol)
+            else -> if (usd != null) tr("{1} sold {2} for {3}", name, symbol, Fmt.usd(usd)) else tr("{1} sold {2}", name, symbol)
         }
         val supply = price?.let { p -> if (p.priceUsd != null && p.mcapUsd != null && p.priceUsd > 0) p.mcapUsd / p.priceUsd else null }
         val mcThen = if (usd != null && t.tokens > 0 && supply != null) usd / t.tokens * supply else null
@@ -156,17 +171,30 @@ object AlertTexts {
             val value = held.value
             val pnl = held.pnl
             val paid = held.position.paid
-            val move = if (pnl != null && paid > 0) {
-                val pct = (pnl / paid * 100).roundToInt()
-                if (pct >= 0) "up ${abs(pct)}%" else "down ${abs(pct)}%"
-            } else {
-                null
+            val pct = if (pnl != null && paid > 0) (pnl / paid * 100).roundToInt() else null
+            // Whole sentences, so each language words them itself.
+            val hold = when {
+                value != null && pct != null && pct >= 0 -> tr("You hold {1} of it, up {2}%.", Fmt.usdFull(value), abs(pct))
+                value != null && pct != null -> tr("You hold {1} of it, down {2}%.", Fmt.usdFull(value), abs(pct))
+                value != null -> tr("You hold {1} of it.", Fmt.usdFull(value))
+                pct != null && pct >= 0 -> tr("You hold some of it, up {1}%.", abs(pct))
+                pct != null -> tr("You hold some of it, down {1}%.", abs(pct))
+                else -> tr("You hold some of it.")
             }
-            val hold = "You hold " + (value?.let { Fmt.usdFull(it) + " of it" } ?: "some of it") + (move?.let { ", $it" } ?: "") + "."
             val tp = plan?.rules?.firstOrNull { it.kind == ExitKind.TP && !it.done }
-            hold + (tp?.let { " Your exit plan sells ${pctOf(it.sellBps)} at ${ExitMath.times(it.triggerBps)}." } ?: "")
+            hold + (
+                tp?.let {
+                    byShare(
+                        it.sellBps,
+                        trKey(" Your exit plan sells all at {1}."),
+                        trKey(" Your exit plan sells half at {1}."),
+                        trKey(" Your exit plan sells {1}% at {2}."),
+                        ExitMath.times(it.triggerBps),
+                    )
+                } ?: ""
+            )
         } else {
-            listOfNotNull(mcThen?.let { "At MC ${Fmt.usd(it)}." }, price?.mcapUsd?.let { "It is ${Fmt.usd(it)} now." }).joinToString(" ")
+            listOfNotNull(mcThen?.let { tr("At MC {1}.", Fmt.usd(it)) }, price?.mcapUsd?.let { tr("It is {1} now.", Fmt.usd(it)) }).joinToString(" ")
         }
         val sellsYours = held != null && !t.isBuy
         val tone = when {
@@ -188,17 +216,22 @@ object AlertTexts {
     fun signal(chain: Chain, r: SignalRow, figures: SignalFigures?, now: Long): Alert {
         val sym = r.symbol?.takeIf { it.isNotBlank() } ?: Fmt.address(r.token)
         val minutes = ((r.at - r.first).coerceAtLeast(0) / 60_000.0).roundToInt()
-        val within = if (minutes < 1) "Within a minute" else "Within $minutes min"
         val mc = r.usdThen?.let { u -> r.supply?.let { u * it } }
+        val within = when {
+            minutes < 1 && mc != null -> tr("Within a minute, at MC {1}.", Fmt.usd(mc))
+            minutes < 1 -> tr("Within a minute.")
+            mc != null -> tr("Within {1} min, at MC {2}.", minutes, Fmt.usd(mc))
+            else -> tr("Within {1} min.", minutes)
+        }
         val record = figures?.takeIf { it.n >= MIN_RECORD }?.let { f ->
-            " Of signals like this, ${(f.x2 * 100.0 / f.n).roundToInt()}% reached 2× and ${(f.half * 100.0 / f.n).roundToInt()}% fell by half."
+            tr(" Of signals like this, {1}% reached 2× and {2}% fell by half.", (f.x2 * 100.0 / f.n).roundToInt(), (f.half * 100.0 / f.n).roundToInt())
         } ?: ""
         return Alert(
             id = "sig:${chain.feed}:${r.token.lowercase()}:${r.size}",
             kind = AlertKind.SIGNAL,
             tone = AlertTone.SIGNAL,
-            title = "Signal: ${r.size} proven wallets bought $sym",
-            body = within + (mc?.let { ", at MC ${Fmt.usd(it)}" } ?: "") + "." + record,
+            title = tr("Signal: {1} proven wallets bought {2}", r.size, sym),
+            body = within + record,
             at = r.at.takeIf { it > 0 } ?: now,
             link = AlertLink.token(chain.feed, r.token),
         )

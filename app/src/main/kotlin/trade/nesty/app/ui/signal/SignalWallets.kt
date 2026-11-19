@@ -1,5 +1,6 @@
 package trade.nesty.app.ui.signal
 
+import trade.nesty.app.i18n.trCount
 import kotlin.math.abs
 import kotlin.math.roundToLong
 import trade.nesty.app.data.CoinSignal
@@ -7,6 +8,7 @@ import trade.nesty.app.data.Quote
 import trade.nesty.app.data.SignalRow
 import trade.nesty.app.data.TraderRow
 import trade.nesty.app.data.TradersAnswer
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Fmt
 
 /** Which signal a sheet is about: how many wallets, when, and who, in the signal's order. */
@@ -43,8 +45,8 @@ data class WalletFigures(
 )
 
 object SignalWallets {
-    const val NO_TRADES = "No trades read for this wallet"
-    const val PARTIAL = "Some of this coin's trades are not counted yet."
+    val NO_TRADES: String get() = tr("No trades read for this wallet")
+    val PARTIAL: String get() = tr("Some of this coin's trades are not counted yet.")
 
     fun head(row: SignalRow) = SignalHead(row.size, row.at, row.first, row.wallets)
 
@@ -73,7 +75,7 @@ object SignalWallets {
 
     /** "3 proven wallets bought KILN 3h ago": an age, never a clock time. */
     fun title(size: Int, symbol: String, at: Long, now: Long): String =
-        "$size proven wallets bought $symbol ${Fmt.age(now - at)} ago"
+        tr("{1} proven wallets bought {2} {3} ago", size, symbol, Fmt.age(now - at))
 
     /**
      * A row's figures. Amounts are in the answer's quote: dollars where the quote has a price,
@@ -98,7 +100,7 @@ object SignalWallets {
             if (count <= 0 && paid <= 0 && tokens <= 0) return Figure(Fmt.DASH)
             val note = listOfNotNull(
                 if (tokens > 0) Fmt.compact(tokens) else null,
-                if (count > 0) "$count tx" else null,
+                if (count > 0) tr("{1} tx", count) else null,
                 mcap(paid, tokens)?.let { "${Fmt.usd(it)} MC" },
             ).joinToString(" · ")
             return Figure(money(paid), note.ifEmpty { null })
@@ -106,8 +108,8 @@ object SignalWallets {
         fun said(verb: String, paid: Double, tokens: Double, count: Int): String? {
             if (count <= 0 && paid <= 0 && tokens <= 0) return null
             val parts = listOfNotNull(
-                if (count > 0) "in $count ${if (count == 1) "trade" else "trades"}" else null,
-                mcap(paid, tokens)?.let { "at ${Fmt.usd(it)} market cap" },
+                if (count > 0) trCount(count.toLong(), "in {1} trade", "in {1} trades", count) else null,
+                mcap(paid, tokens)?.let { tr("at {1} market cap", Fmt.usd(it)) },
             ).joinToString(" ")
             return "$verb ${money(paid)}" + if (parts.isEmpty()) "" else " $parts"
         }
@@ -117,31 +119,31 @@ object SignalWallets {
         val kept = if (left != null && row.boughtTokens > 0) (left / row.boughtTokens * 100).roundToLong() else null
         val holds = when {
             left == null -> Figure(Fmt.DASH)
-            kept != null -> Figure(Fmt.count(left.roundToLong()), "$kept% of bought")
-            holdsSome -> Figure(Fmt.count(left.roundToLong()), "not bought here")
+            kept != null -> Figure(Fmt.count(left.roundToLong()), tr("{1}% of bought", kept))
+            holdsSome -> Figure(Fmt.count(left.roundToLong()), tr("not bought here"))
             else -> Figure("0")
         }
         val open = row.unrealized?.takeIf { holdsSome }
 
         val spoken = listOfNotNull(
-            said("Bought", row.bought, row.boughtTokens, row.buys) ?: "Did not buy here",
-            said("Sold", row.sold, row.soldTokens, row.sells) ?: "Sold nothing",
+            said(tr("Bought"), row.bought, row.boughtTokens, row.buys) ?: tr("Did not buy here"),
+            said(tr("Sold"), row.sold, row.soldTokens, row.sells) ?: tr("Sold nothing"),
             when (sign(row.realized)) {
-                0 -> "Nothing realized"
-                1 -> "Realized profit ${money(row.realized)}"
-                else -> "Realized loss ${money(abs(row.realized))}"
+                0 -> tr("Nothing realized")
+                1 -> tr("Realized profit {1}", money(row.realized))
+                else -> tr("Realized loss {1}", money(abs(row.realized)))
             },
             open?.let {
                 when (sign(it)) {
-                    0 -> "Unrealized nothing"
-                    1 -> "Unrealized profit ${money(it)}"
-                    else -> "Unrealized loss ${money(abs(it))}"
+                    0 -> tr("Unrealized nothing")
+                    1 -> tr("Unrealized profit {1}", money(it))
+                    else -> tr("Unrealized loss {1}", money(abs(it)))
                 }
             },
             when {
                 left == null -> null
-                !holdsSome -> "Holds none"
-                else -> "Holds ${holds.value} tokens" + (holds.note?.let { ", $it" } ?: "")
+                !holdsSome -> tr("Holds none")
+                else -> tr("Holds {1} tokens", holds.value) + (holds.note?.let { ", $it" } ?: "")
             },
         ).joinToString(". ") + "."
 

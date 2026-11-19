@@ -75,10 +75,10 @@ class FormatTest {
 
     @Test
     fun countsTakeASingular() {
-        assertEquals("1 holder", Fmt.counted(1, "holder"))
-        assertEquals("0 holders", Fmt.counted(0, "holder"))
-        assertEquals("1,421 holders", Fmt.counted(1_421, "holder"))
-        assertEquals("12.4K trades", Fmt.counted(12_400, "trade"))
+        assertEquals("1 holder", Fmt.counted(1, "{1} holder", "{1} holders"))
+        assertEquals("0 holders", Fmt.counted(0, "{1} holder", "{1} holders"))
+        assertEquals("1,421 holders", Fmt.counted(1_421, "{1} holder", "{1} holders"))
+        assertEquals("12.4K trades", Fmt.counted(12_400, "{1} trade", "{1} trades"))
     }
 
     @Test

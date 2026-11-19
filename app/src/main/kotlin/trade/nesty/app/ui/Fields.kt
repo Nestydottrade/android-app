@@ -36,6 +36,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.theme.Ink
 import trade.nesty.app.ui.theme.text
 
@@ -123,7 +124,7 @@ object SecretClipboard {
      */
     fun copy(context: Context, value: String) {
         val board = context.getSystemService(ClipboardManager::class.java) ?: return
-        val clip = ClipData.newPlainText("Nesty", value)
+        val clip = ClipData.newPlainText(tr("Nesty"), value)
         clip.description.extras = PersistableBundle().apply { putBoolean("android.content.extra.IS_SENSITIVE", true) }
         board.setPrimaryClip(clip)
         // Only a hash of it is kept for the check, not the secret itself.

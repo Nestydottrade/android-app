@@ -35,6 +35,7 @@ import trade.nesty.app.data.FillTx
 import trade.nesty.app.data.TradeCosts
 import trade.nesty.app.data.Trading
 import trade.nesty.app.exit.ExitMath
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.Card
 import trade.nesty.app.ui.CoinAvatar
 import trade.nesty.app.ui.Divider
@@ -71,9 +72,9 @@ fun TradeDetailScreen(wallet: String, tx: String) {
     Column(Modifier.fillMaxSize()) {
         if (fill == null || chain == null) {
             Row(Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                IconButton48(NIcons.arrowBack, "Back", Ink.text) { nav.pop() }
+                IconButton48(NIcons.arrowBack, tr("Back"), Ink.text) { nav.pop() }
             }
-            Box(Modifier.padding(16.dp)) { EmptyNote("This trade is no longer on this phone.") }
+            Box(Modifier.padding(16.dp)) { EmptyNote(tr("This trade is no longer on this phone.")) }
             return@Column
         }
         val t = TradeFigures(fill, chain)
@@ -162,18 +163,18 @@ private fun Header(f: Fill, chain: Chain, symbol: String, now: Long, onBack: () 
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        IconButton48(NIcons.arrowBack, "Back", Ink.text, onClick = onBack)
+        IconButton48(NIcons.arrowBack, tr("Back"), Ink.text, onClick = onBack)
         CoinAvatar(rememberCoinImage(chain, f.token), symbol, f.token, chain, 38.dp)
         Column(Modifier.weight(1f).padding(start = 8.dp), verticalArrangement = Arrangement.spacedBy(1.dp)) {
             val title = when {
-                f.failed -> (if (f.isBuy) "Buy of " else "Sell of ") + symbol + " failed"
-                f.isBuy -> "Bought $symbol"
-                else -> "Sold $symbol"
+                f.failed -> if (f.isBuy) tr("Buy of {1} failed", symbol) else tr("Sell of {1} failed", symbol)
+                f.isBuy -> tr("Bought {1}", symbol)
+                else -> tr("Sold {1}", symbol)
             }
             Text(title, style = text(18, FontWeight.Bold, lineHeight = 22.sp), maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.semantics { heading() })
-            Text("${chain.title} · ${Fmt.duration((now - f.at).toDouble())} ago", style = text(13, color = Ink.muted), maxLines = 1)
+            Text(tr("{1} · {2} ago", chain.title, Fmt.duration((now - f.at).toDouble())), style = text(13, color = Ink.muted), maxLines = 1)
         }
-        if (f.failed) Chip("Failed", Ink.pinkSoft, Ink.pinkBg) else Chip("Confirmed", Ink.green, Ink.greenDeep)
+        if (f.failed) Chip(tr("Failed"), Ink.pinkSoft, Ink.pinkBg) else Chip(tr("Confirmed"), Ink.green, Ink.greenDeep)
     }
 }
 
@@ -190,25 +191,25 @@ private fun Summary(t: TradeFigures) {
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             if (f.failed) {
-                Text(if (t.buy) "Nothing was bought" else "Nothing was sold", style = text(24, FontWeight.Bold))
+                Text(if (t.buy) tr("Nothing was bought") else tr("Nothing was sold"), style = text(24, FontWeight.Bold))
                 Text(failedWhy(t), style = text(14, color = Ink.text2, lineHeight = 20.sp))
                 return@Column
             }
             val big = if (t.buy) {
                 "+${Fmt.amount(f.tokens)} ${t.symbol}"
             } else {
-                t.paidAmount?.let { "+${Fmt.amount(it)} ${t.paidUnit}" } ?: f.usd?.let { Fmt.usdSigned(it) } ?: "Sold"
+                t.paidAmount?.let { "+${Fmt.amount(it)} ${t.paidUnit}" } ?: f.usd?.let { Fmt.usdSigned(it) } ?: tr("Sold")
             }
             Text(big, style = figure(30, FontWeight.SemiBold).copy(lineHeight = 34.sp), maxLines = 2)
             val each = f.usd?.let { u -> if (f.tokens > 0) u / f.tokens else null }
             val sub = listOfNotNull(
-                if (t.buy) t.paidAmount?.let { "for ${Fmt.amount(it)} ${t.paidUnit}" } else "for ${Fmt.amount(f.tokens)} ${t.symbol}",
+                if (t.buy) t.paidAmount?.let { tr("for {1} {2}", Fmt.amount(it), t.paidUnit) } else tr("for {1} {2}", Fmt.amount(f.tokens), t.symbol),
                 f.usd?.let { Fmt.usdFull(it) },
-                each?.let { "${priceText(it)} each" },
+                each?.let { tr("{1} each", priceText(it)) },
             ).joinToString(" · ")
             if (sub.isNotEmpty()) Text(sub, style = text(14, color = Ink.text2, lineHeight = 20.sp))
             f.mcapUsd?.let {
-                Text((if (t.buy) "Entry market cap " else "Exit market cap ") + Fmt.usd(it), style = text(14, color = Ink.muted))
+                Text(if (t.buy) tr("Entry market cap {1}", Fmt.usd(it)) else tr("Exit market cap {1}", Fmt.usd(it)), style = text(14, color = Ink.muted))
             }
         }
     }
@@ -220,15 +221,17 @@ private fun failedWhy(t: TradeFigures): String {
     val error = d?.error?.trim()?.trimEnd('.')
     val slip = d?.slippageBps?.let { Fmt.taxPct(it / 10_000.0) }
     val why = when {
-        error == null -> "It did not land"
-        error.startsWith("Reverted", ignoreCase = true) ->
-            "It reverted on chain" + (slip?.let { ", most often because the price moved more than your $it slippage allows" } ?: "")
+        error == null -> tr("It did not land")
+        // Nesty's own words in the app's language, or a server's in English.
+        error.equals(tr("Reverted on-chain"), ignoreCase = true) || error.startsWith("Reverted", ignoreCase = true) ->
+            slip?.let { tr("It reverted on chain, most often because the price moved more than your {1} slippage allows", it) }
+                ?: tr("It reverted on chain")
         else -> error
     }
     val kept = if (t.buy) {
-        t.f.usd?.let { "Your ${Fmt.usdFull(it)} stayed in your ${t.chain.title} balance." } ?: "Your funds stayed in your ${t.chain.title} balance."
+        t.f.usd?.let { tr("Your {1} stayed in your {2} balance.", Fmt.usdFull(it), t.chain.title) } ?: tr("Your funds stayed in your {1} balance.", t.chain.title)
     } else {
-        "Your ${Fmt.amount(t.f.tokens)} ${t.symbol} stayed in your wallet."
+        tr("Your {1} {2} stayed in your wallet.", Fmt.amount(t.f.tokens), t.symbol)
     }
     return "$why. $kept"
 }
@@ -247,12 +250,12 @@ private fun SaleResult(t: TradeFigures, wallet: String) {
     val made = back - paid
     val trading = AppGraph.trading
     val held = if (trading.addressOn(t.chain)?.equals(wallet, true) == true) trading.holding(t.chain, f.token)?.takeIf { it.open } else null
-    Section("What the sale made") {
-        DetailRow("You paid for these tokens", Fmt.usdFull(paid))
-        DetailRow("You got back, after fees", Fmt.usdFull(back))
+    Section(tr("What the sale made")) {
+        DetailRow(tr("You paid for these tokens"), Fmt.usdFull(paid))
+        DetailRow(tr("You got back, after fees"), Fmt.usdFull(back))
         MadeRow(made, if (paid > 0) made / paid * 100 else null)
         if (held != null) {
-            DetailRow("Still held", "${Fmt.amount(held.tokens)} ${t.symbol}" + (held.value?.let { " · ${Fmt.usdFull(it)}" } ?: ""))
+            DetailRow(tr("Still held"), "${Fmt.amount(held.tokens)} ${t.symbol}" + (held.value?.let { " · ${Fmt.usdFull(it)}" } ?: ""))
         }
     }
 }
@@ -264,7 +267,7 @@ private fun MadeRow(made: Double, pct: Double?) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Made on this sale", style = text(14, FontWeight.Bold), modifier = Modifier.weight(1f))
+        Text(tr("Made on this sale"), style = text(14, FontWeight.Bold), modifier = Modifier.weight(1f))
         Text(
             Fmt.usdSigned(made) + (pct?.let { " · ${Fmt.pctChange(it)}" } ?: ""),
             style = figure(15, FontWeight.SemiBold, signColor(made)),
@@ -289,38 +292,38 @@ private fun Costs(t: TradeFigures) {
                 take += other
                 other = 0.0
             }
-            val venue = if (onCurve) d?.launchpad ?: "Launchpad" else "Pool"
-            val takeLabel = venue + if (takeBps > TAX_ABOVE_BPS) " fee and tax" else " fee"
-            if (s.impact * v >= CENT) rows += "Price impact" to part(v * s.impact, s.impact)
+            val venue = if (onCurve) d?.launchpad ?: tr("Launchpad") else tr("Pool")
+            val takeLabel = if (takeBps > TAX_ABOVE_BPS) tr("{1} fee and tax", venue) else tr("{1} fee", venue)
+            if (s.impact * v >= CENT) rows += tr("Price impact") to part(v * s.impact, s.impact)
             if (take * v >= CENT) rows += takeLabel to part(v * take, take)
-            if (s.outside * v >= CENT) rows += "${t.symbol} tax" to part(v * s.outside, s.outside)
-            if (other * v >= CENT) rows += "Swap into ${t.via} on the way" to part(v * other, other)
+            if (s.outside * v >= CENT) rows += tr("{1} tax", t.symbol) to part(v * s.outside, s.outside)
+            if (other * v >= CENT) rows += tr("Swap into {1} on the way", t.via) to part(v * other, other)
         } else if (s.cost * v >= CENT && d?.priceUsd != null) {
-            rows += "Price impact, fees and tax" to part(v * s.cost, s.cost)
+            rows += tr("Price impact, fees and tax") to part(v * s.cost, s.cost)
         }
     }
-    t.networkUsd?.let { usd -> rows += "Network fee" to (dollars(usd) + (t.feeNative?.let { " · ${Fmt.amount(it)} ${t.chain.native}" } ?: "")) }
-    t.tipNative?.let { n -> rows += "MEV protection tip" to listOfNotNull(t.tipUsd?.let { dollars(it) }, "${Fmt.amount(n)} ${t.chain.native}").joinToString(" · ") }
-    d?.move?.let { m -> if (t.moveFee > 0) rows += "Moving funds from ${Chain.of(m.from)?.title ?: "another chain"}" to dollars(t.moveFee) }
+    t.networkUsd?.let { usd -> rows += tr("Network fee") to (dollars(usd) + (t.feeNative?.let { " · ${Fmt.amount(it)} ${t.chain.native}" } ?: "")) }
+    t.tipNative?.let { n -> rows += tr("MEV protection tip") to listOfNotNull(t.tipUsd?.let { dollars(it) }, "${Fmt.amount(n)} ${t.chain.native}").joinToString(" · ") }
+    d?.move?.let { m -> if (t.moveFee > 0) rows += tr("Moving funds from {1}", Chain.of(m.from)?.title ?: tr("another chain")) to dollars(t.moveFee) }
     if (rows.isEmpty()) return
-    Section(if (t.buy || t.f.failed) "What it cost" else "What it cost to sell") {
+    Section(if (t.buy || t.f.failed) tr("What it cost") else tr("What it cost to sell")) {
         rows.forEach { (label, value) -> DetailRow(label, value) }
         val total = t.totalCost
         if (total != null && v != null && !t.f.failed) {
             Divider(Modifier.padding(horizontal = 14.dp))
-            DetailRow(if (t.buy) "Cost to get in" else "Cost to get out", part(total, total / v), strong = true)
+            DetailRow(if (t.buy) tr("Cost to get in") else tr("Cost to get out"), part(total, total / v), strong = true)
         }
     }
 }
 
 @Composable
 private fun PaidFrom(t: TradeFigures, move: trade.nesty.app.data.FillMove) {
-    val from = Chain.of(move.from)?.title ?: "another chain"
+    val from = Chain.of(move.from)?.title ?: tr("another chain")
     val own = t.f.usd?.let { u -> move.arrivedUsd?.let { (u - it).coerceAtLeast(0.0) } }
-    Section("Paid from") {
-        if (own != null && own >= CENT) DetailRow("${t.chain.title} balance", Fmt.usdFull(own))
-        val moved = listOfNotNull(move.sentUsd?.let { "${Fmt.usdFull(it)} sent" }, move.arrivedUsd?.let { "${Fmt.usdFull(it)} arrived" }).joinToString(" · ")
-        DetailRow("Moved from $from", moved.ifEmpty { Fmt.DASH })
+    Section(tr("Paid from")) {
+        if (own != null && own >= CENT) DetailRow(tr("{1} balance", t.chain.title), Fmt.usdFull(own))
+        val moved = listOfNotNull(move.sentUsd?.let { tr("{1} sent", Fmt.usdFull(it)) }, move.arrivedUsd?.let { tr("{1} arrived", Fmt.usdFull(it)) }).joinToString(" · ")
+        DetailRow(tr("Moved from {1}", from), moved.ifEmpty { Fmt.DASH })
     }
 }
 
@@ -329,31 +332,31 @@ private fun Speed(t: TradeFigures) {
     val d = t.d ?: return
     val moveMs = d.move?.ms
     if (moveMs == null && d.sentMs == null && d.confirmMs == null) return
-    Section("Speed") {
-        moveMs?.let { DetailRow("Moving funds", seconds(it)) }
+    Section(tr("Speed")) {
+        moveMs?.let { DetailRow(tr("Moving funds"), seconds(it)) }
         d.sentMs?.let {
             val label = when {
-                d.byPlan -> "Plan to sent"
-                d.move != null -> "Sent after the move"
-                else -> "Tap to sent"
+                d.byPlan -> tr("Plan to sent")
+                d.move != null -> tr("Sent after the move")
+                else -> tr("Tap to sent")
             }
             DetailRow(label, seconds(it))
         }
-        d.confirmMs?.let { DetailRow("Confirmed after", seconds(it)) }
+        d.confirmMs?.let { DetailRow(tr("Confirmed after"), seconds(it)) }
     }
 }
 
 @Composable
 private fun RouteCard(t: TradeFigures) {
     val d = t.d ?: return
-    Section("Route and settings") {
-        d.route?.let { DetailRow("Pool", it) }
+    Section(tr("Route and settings")) {
+        d.route?.let { DetailRow(tr("Pool"), it) }
         val preset = listOfNotNull(
             d.preset?.let { "P${it + 1}" },
-            d.slippageBps?.let { "${Fmt.taxPct(it / 10_000.0)} slippage" },
-            d.speed,
+            d.slippageBps?.let { tr("{1} slippage", Fmt.taxPct(it / 10_000.0)) },
+            d.speed?.let { tr(it) },
         ).joinToString(" · ")
-        if (preset.isNotEmpty()) DetailRow("Preset", preset)
+        if (preset.isNotEmpty()) DetailRow(tr("Preset"), preset)
         d.minOut?.let { raw ->
             val least = if (t.buy) {
                 raw.toBigIntegerOrNull()?.let { "${Fmt.amount(BigDecimal(it).movePointLeft(t.f.decimals).toDouble())} ${t.symbol}" }
@@ -361,20 +364,20 @@ private fun RouteCard(t: TradeFigures) {
                 val decimals = if (d.payout != null) d.payoutDecimals ?: t.chain.decimals else t.chain.decimals
                 raw.toBigIntegerOrNull()?.let { "${Fmt.amount(BigDecimal(it).movePointLeft(decimals).toDouble())} ${t.paidUnit}" }
             }
-            least?.let { DetailRow("Least you would take", it) }
+            least?.let { DetailRow(tr("Least you would take"), it) }
         }
-        DetailRow("MEV protection", mevWords(d, t.chain))
-        if (d.byPlan) DetailRow("Sent by", "Your exit plan")
-        DetailRow("Nesty fee", "None")
+        DetailRow(tr("MEV protection"), mevWords(d, t.chain))
+        if (d.byPlan) DetailRow(tr("Sent by"), tr("Your exit plan"))
+        DetailRow(tr("Nesty fee"), tr("None"))
     }
 }
 
 /** Whether it went out away from front-runners, or why it did not need to. */
 private fun mevWords(d: FillDetail, chain: Chain): String = when {
-    d.mev == true -> "On"
+    d.mev == true -> tr("On")
     // Rollups whose sequencer keeps no public queue of transactions.
-    chain == Chain.BASE || chain == Chain.ROBINHOOD -> "Not needed on ${chain.title}"
-    else -> "Off"
+    chain == Chain.BASE || chain == Chain.ROBINHOOD -> tr("Not needed on {1}", chain.title)
+    else -> tr("Off")
 }
 
 @Composable
@@ -383,7 +386,7 @@ private fun Transactions(t: TradeFigures) {
     val uri = LocalUriHandler.current
     val toasts = LocalToasts.current
     val txs = t.d?.txs?.takeIf { it.isNotEmpty() } ?: listOf(FillTx(if (t.buy) "buy" else "sell", t.f.feed, t.f.tx, ok = !t.f.failed))
-    Section(if (txs.size == 1) "Transaction" else "Transactions") {
+    Section(if (txs.size == 1) tr("Transaction") else tr("Transactions")) {
         txs.forEachIndexed { i, tx ->
             if (i > 0) Divider(Modifier.padding(horizontal = 14.dp))
             val chain = Chain.of(tx.feed)
@@ -391,8 +394,8 @@ private fun Transactions(t: TradeFigures) {
                 label = txLabel(tx, t),
                 tx = tx,
                 onCopy = {
-                    copyText(context, "Transaction", tx.hash)
-                    toasts.show("Transaction copied", Fmt.address(tx.hash))
+                    copyText(context, tr("Transaction"), tx.hash)
+                    toasts.show(tr("Transaction copied"), Fmt.address(tx.hash))
                 },
                 onOpen = chain?.let { c -> { runCatching { uri.openUri(c.txUrl(tx.hash)) } } },
             )
@@ -403,13 +406,13 @@ private fun Transactions(t: TradeFigures) {
 private fun txLabel(tx: FillTx, t: TradeFigures): String {
     val chain = Chain.of(tx.feed)
     return when (tx.kind) {
-        "move" -> "Move from ${chain?.title ?: "another chain"}"
-        "arrive" -> "Arrived on ${chain?.title ?: "the chain"}"
-        "fund" -> "Swap into ${t.via ?: "its pay token"}"
-        "back" -> "Back to ${t.chain.native}"
-        "approve" -> if (t.buy) "Allow selling later" else "Allow selling"
-        "buy" -> "Buy"
-        "sell" -> "Sell"
+        "move" -> tr("Move from {1}", chain?.title ?: tr("another chain"))
+        "arrive" -> tr("Arrived on {1}", chain?.title ?: tr("the chain"))
+        "fund" -> tr("Swap into {1}", t.via ?: tr("its pay token"))
+        "back" -> tr("Back to {1}", t.chain.native)
+        "approve" -> if (t.buy) tr("Allow selling later") else tr("Allow selling")
+        "buy" -> tr("Buy")
+        "sell" -> tr("Sell")
         else -> tx.kind.replaceFirstChar { it.uppercase() }
     }
 }
@@ -421,11 +424,11 @@ private fun TxRow(label: String, tx: FillTx, onCopy: () -> Unit, onOpen: (() -> 
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text(label + if (tx.ok) "" else " · failed", style = text(14, color = if (tx.ok) Ink.text2 else Ink.pinkSoft))
+            Text(if (tx.ok) label else tr("{1} · failed", label), style = text(14, color = if (tx.ok) Ink.text2 else Ink.pinkSoft))
             Text(Fmt.address(tx.hash), style = figure(13, FontWeight.Normal, Ink.muted))
         }
-        IconButton48(NIcons.copy, "Copy transaction", Ink.muted, 20.dp, onCopy)
-        if (onOpen != null) IconButton48(NIcons.external, "Open in explorer", Ink.muted, 20.dp, onOpen)
+        IconButton48(NIcons.copy, tr("Copy transaction"), Ink.muted, 20.dp, onCopy)
+        if (onOpen != null) IconButton48(NIcons.external, tr("Open in explorer"), Ink.muted, 20.dp, onOpen)
     }
 }
 
@@ -437,15 +440,15 @@ private fun Actions(t: TradeFigures) {
     val f = t.f
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
         if (f.failed) {
-            GreenButton("Try again", onClick = {
+            GreenButton(tr("Try again"), onClick = {
                 if (f.isBuy) nav.push(Route.Token(t.chain, f.token, buy = true, buyUsd = f.usd)) else nav.push(Route.Position(t.chain, f.token))
             }, modifier = Modifier.weight(1f), solid = true, height = 48.dp, fontSize = 15)
         } else {
-            GreenButton("See your position", onClick = { nav.push(Route.Position(t.chain, f.token)) }, modifier = Modifier.weight(1f), solid = true, height = 48.dp, fontSize = 15)
+            GreenButton(tr("See your position"), onClick = { nav.push(Route.Position(t.chain, f.token)) }, modifier = Modifier.weight(1f), solid = true, height = 48.dp, fontSize = 15)
         }
-        GreenButton("Copy coin address", onClick = {
-            copyText(context, "Coin address", f.token)
-            toasts.show("Coin address copied", Fmt.address(f.token))
+        GreenButton(tr("Copy coin address"), onClick = {
+            copyText(context, tr("Coin address"), f.token)
+            toasts.show(tr("Coin address copied"), Fmt.address(f.token))
         }, modifier = Modifier.weight(1f), height = 48.dp, fontSize = 15)
     }
 }

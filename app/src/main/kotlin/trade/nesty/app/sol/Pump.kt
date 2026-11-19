@@ -1,6 +1,7 @@
 package trade.nesty.app.sol
 
 import trade.nesty.app.evm.Side
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.sol.SolAddr.ATA_PROGRAM
 import trade.nesty.app.sol.SolAddr.DEFAULT_KEY
 import trade.nesty.app.sol.SolAddr.SYSTEM_PROGRAM
@@ -448,7 +449,7 @@ object Pump {
 
     /** Why a curve takes no trades right now, or null when it does. */
     fun curveIdle(c: BondingCurve): String? =
-        if (c.complete || c.virtualTokenReserves.signum() == 0) "The pump.fun curve is complete. Trading opens on PumpSwap once it migrates." else null
+        if (c.complete || c.virtualTokenReserves.signum() == 0) tr("The pump.fun curve is complete. Trading opens on PumpSwap once it migrates.") else null
 
     /**
      * Tokens a curve buy gives for `amountIn` of its quote. With `synthetic` (v3 buys and route

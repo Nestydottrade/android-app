@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import trade.nesty.app.data.Fill
+import trade.nesty.app.i18n.tr
 import trade.nesty.app.ui.GhostButton
 import trade.nesty.app.ui.SecretClipboard
 import trade.nesty.app.ui.TextBox
@@ -136,7 +137,7 @@ fun PortfolioScreen() {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TabHeader("Portfolio", onMenu = { nav.push(Route.Menu()) })
+        TabHeader(tr("Portfolio"), onMenu = { nav.push(Route.Menu()) })
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), contentPadding = PaddingValues(bottom = 24.dp)) {
             item(key = "balance") {
                 Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 14.dp)) {
@@ -147,18 +148,18 @@ fun PortfolioScreen() {
                 session.state == VaultState.NONE -> item(key = "setup") {
                     Box(Modifier.padding(horizontal = 16.dp)) {
                         SetupCard(
-                            "No wallet yet",
-                            "Make a password, then create a wallet or import one. Its keys stay encrypted on this phone.",
-                            "Set up a wallet",
+                            tr("No wallet yet"),
+                            tr("Make a password, then create a wallet or import one. Its keys stay encrypted on this phone."),
+                            tr("Set up a wallet"),
                         ) { nav.push(Route.Setup) }
                     }
                 }
                 wallet == null -> item(key = "setup") {
                     Box(Modifier.padding(horizontal = 16.dp)) {
                         SetupCard(
-                            "No wallet yet",
-                            "Create a wallet or import one to deposit and trade.",
-                            "Add a wallet",
+                            tr("No wallet yet"),
+                            tr("Create a wallet or import one to deposit and trade."),
+                            tr("Add a wallet"),
                         ) { nav.push(Route.Wallets(adding = true)) }
                     }
                 }
@@ -167,14 +168,14 @@ fun PortfolioScreen() {
                         Box(Modifier.padding(bottom = 10.dp)) {
                             MoveCard(m, onBuy = { openMove(m) }) {
                                 mover.keep(m.id)
-                                toasts.show("Kept on ${m.toChain?.title ?: "its chain"}", "The funds stay in that chain's balance.")
+                                toasts.show(tr("Kept on {1}", m.toChain?.title ?: tr("its chain")), tr("The funds stay in that chain's balance."))
                             }
                         }
                     }
                     if (holdings.isNotEmpty()) item(key = "totals") { Totals(open, holdings) }
                     item(key = "tabs") {
                         LaneTabs(
-                            listOf(if (open.isEmpty()) "Open" else "Open ${open.size}", "Closed", "Activity"),
+                            listOf(if (open.isEmpty()) tr("Open") else tr("Open {1}", open.size), tr("Closed"), tr("Activity")),
                             tab,
                             { tab = it },
                             Modifier.padding(horizontal = 16.dp),
@@ -183,7 +184,7 @@ fun PortfolioScreen() {
                     when (tab) {
                         0 -> {
                             if (open.isEmpty()) {
-                                item(key = "none") { EmptyNote("No open positions. Buy a coin from Discover or from its page.") }
+                                item(key = "none") { EmptyNote(tr("No open positions. Buy a coin from Discover or from its page.")) }
                             } else {
                                 uniqueItems(open, { "o:" + it.position.chain.feed + it.position.token }) { h ->
                                     OpenRow(h, trading.mcaps[Balances.tokenKey(h.position.chain, h.position.token)]) {
@@ -194,14 +195,14 @@ fun PortfolioScreen() {
                             item(key = "import") { ImportCoin() }
                         }
                         1 -> if (closed.isEmpty()) {
-                            item(key = "none") { EmptyNote("Nothing closed yet.") }
+                            item(key = "none") { EmptyNote(tr("Nothing closed yet.")) }
                         } else {
                             uniqueItems(closed, { "c:" + it.position.chain.feed + it.position.token }) { h ->
                                 ClosedRow(h, now) { nav.push(Route.Position(h.position.chain, h.position.token)) }
                             }
                         }
                         else -> if (entries.isEmpty()) {
-                            item(key = "none") { EmptyNote("Nothing yet. Your buys, sells and withdrawals will list here.") }
+                            item(key = "none") { EmptyNote(tr("Nothing yet. Your buys, sells and withdrawals will list here.")) }
                         } else {
                             uniqueItems(entries, { e -> if (e is Move) "m:" + e.id else (e as Fill).let { "a:" + it.tx + it.token } }) { e ->
                                 if (e is Move) {
@@ -229,12 +230,12 @@ private fun BalanceCard(wallet: WalletInfo?, balance: WalletBalance?, onDeposit:
     Card {
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text("One Balance", style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.semantics { heading() })
+                Text(tr("One Balance"), style = text(13, FontWeight.SemiBold, Ink.muted), modifier = Modifier.semantics { heading() })
                 Text(oneBalanceText(wallet, balance), style = figure(38, FontWeight.SemiBold).copy(lineHeight = 40.sp))
             }
             if (wallet != null) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    GreenButton("Deposit", onDeposit, Modifier.weight(1f), solid = true, height = 44.dp, fontSize = 15)
+                    GreenButton(tr("Deposit"), onDeposit, Modifier.weight(1f), solid = true, height = 44.dp, fontSize = 15)
                     Box(
                         Modifier
                             .weight(1f)
@@ -245,7 +246,7 @@ private fun BalanceCard(wallet: WalletInfo?, balance: WalletBalance?, onDeposit:
                             .clickable(role = Role.Button, onClick = onWithdraw),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Text("Withdraw", style = text(15, FontWeight.Bold))
+                        Text(tr("Withdraw"), style = text(15, FontWeight.Bold))
                     }
                 }
                 // The chains this wallet has an address on, three across.
@@ -258,7 +259,7 @@ private fun BalanceCard(wallet: WalletInfo?, balance: WalletBalance?, onDeposit:
                     }
                 }
                 if (balance != null && balance.unread.isNotEmpty()) {
-                    Text("Not read just now: ${balance.unread.joinToString(", ") { it.title }}. Trying again.", style = text(12, color = Ink.muted))
+                    Text(tr("Not read just now: {1}. Trying again.", balance.unread.joinToString(", ") { it.title }), style = text(12, color = Ink.muted))
                 }
             }
         }
@@ -276,9 +277,9 @@ private fun Totals(open: List<Holding>, all: List<Holding>) {
     val profit = results.sum()
     val paid = all.filter { it.known }.sumOf { it.position.paid }
     Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        Stat("In open positions", Fmt.usdFull(inOpen), Modifier.weight(1f))
+        Stat(tr("In open positions"), Fmt.usdFull(inOpen), Modifier.weight(1f))
         Stat(
-            "Profit so far",
+            tr("Profit so far"),
             if (results.isEmpty()) Fmt.DASH else Fmt.usdSigned(profit) + if (paid > 0) " (${Fmt.pctChange(profit / paid * 100)})" else "",
             Modifier.weight(1f),
             valueColor = if (results.isEmpty()) Ink.muted else signColor(profit),
@@ -329,7 +330,7 @@ private fun OpenRow(h: Holding, mcapNow: Double?, onOpen: () -> Unit) {
         symbol,
         h,
         // A coin got from outside Nesty has no entry on record: what is held, and its market cap now.
-        if (h.known) "Entry ${Fmt.usd(p.entryMcap)} → now ${Fmt.usd(mcapNow)}" else "${Fmt.amount(h.tokens)} · MC ${Fmt.usd(mcapNow)}",
+        if (h.known) tr("Entry {1} → now {2}", Fmt.usd(p.entryMcap), Fmt.usd(mcapNow)) else "${Fmt.amount(h.tokens)} · MC ${Fmt.usd(mcapNow)}",
         h.value?.let { Fmt.usdFull(it) } ?: Fmt.DASH,
         Ink.text,
         listOfNotNull(pnl?.let { Fmt.usdSigned(it) }, times?.let { Fmt.times(it) }).joinToString(" · ").ifEmpty { null },
@@ -368,7 +369,7 @@ private fun ActivityRow(f: Fill, now: Long, onOpen: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            if (f.isBuy) "Buy" else "Sell",
+            if (f.isBuy) tr("Buy") else tr("Sell"),
             style = text(13, FontWeight.Bold, if (f.failed) Ink.muted else if (f.isBuy) Ink.green else Ink.pinkSoft),
             modifier = Modifier.widthIn(min = 36.dp),
         )
@@ -378,10 +379,10 @@ private fun ActivityRow(f: Fill, now: Long, onOpen: () -> Unit) {
                 f.usd?.let { Text(Fmt.usdFull(it), style = figure(15, FontWeight.SemiBold, if (f.failed) Ink.muted else Ink.text)) }
             }
             if (f.failed) {
-                Text("Failed", style = text(13, FontWeight.SemiBold, Ink.pinkSoft), maxLines = 1)
+                Text(tr("Failed"), style = text(13, FontWeight.SemiBold, Ink.pinkSoft), maxLines = 1)
             } else {
                 Text(
-                    listOfNotNull(Fmt.amount(f.tokens), f.mcapUsd?.let { "at MC ${Fmt.usd(it)}" }).joinToString(" "),
+                    listOfNotNull(Fmt.amount(f.tokens), f.mcapUsd?.let { tr("at MC {1}", Fmt.usd(it)) }).joinToString(" "),
                     style = text(13, color = Ink.muted),
                     maxLines = 1,
                 )
@@ -396,7 +397,7 @@ private fun ActivityRow(f: Fill, now: Long, onOpen: () -> Unit) {
 private fun ChainCell(chain: Chain, balance: WalletBalance?, modifier: Modifier) {
     val usd = balance?.chains?.get(chain)
     val figure = usd?.let { Fmt.usdFull(it) } ?: Fmt.DASH
-    Column(modifier.semantics(mergeDescendants = true) { contentDescription = "${chain.title} ${if (usd != null) figure else "not read yet"}" }, verticalArrangement = Arrangement.spacedBy(1.dp)) {
+    Column(modifier.semantics(mergeDescendants = true) { contentDescription = "${chain.title} ${if (usd != null) figure else tr("not read yet")}" }, verticalArrangement = Arrangement.spacedBy(1.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             ChainDot(chain, 8.dp)
             Text(chain.title, style = text(12, color = Ink.muted), maxLines = 1)
@@ -436,14 +437,14 @@ private fun ImportCoin() {
     }
     Box(Modifier.padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
         if (!open) {
-            GhostButton("Import a coin", { open = true }, Modifier.fillMaxWidth())
+            GhostButton(tr("Import a coin"), { open = true }, Modifier.fillMaxWidth())
             return@Box
         }
         Card {
             Column(Modifier.fillMaxWidth().padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("Import a coin", style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
+                Text(tr("Import a coin"), style = text(15, FontWeight.Bold), modifier = Modifier.semantics { heading() })
                 Text(
-                    "Paste the address of a coin this wallet holds. It shows here while you hold it.",
+                    tr("Paste the address of a coin this wallet holds. It shows here while you hold it."),
                     style = text(13, color = Ink.text2, lineHeight = 18.sp),
                 )
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -453,14 +454,14 @@ private fun ImportCoin() {
                             address = it.trim()
                             note = null
                         },
-                        "Coin address",
+                        tr("Coin address"),
                         Modifier.weight(1f),
-                        placeholder = "Coin address",
+                        placeholder = tr("Coin address"),
                         bad = note,
                     )
-                    Pill("Paste") {
+                    Pill(tr("Paste")) {
                         val pasted = SecretClipboard.paste(context)?.trim()
-                        if (pasted.isNullOrEmpty()) toasts.show("Nothing to paste", "Copy the coin's address first.") else {
+                        if (pasted.isNullOrEmpty()) toasts.show(tr("Nothing to paste"), tr("Copy the coin's address first.")) else {
                             address = pasted
                             note = null
                         }
@@ -469,7 +470,7 @@ private fun ImportCoin() {
                 note?.let { Text(it, style = text(13, color = Ink.pink, lineHeight = 18.sp), modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     GreenButton(
-                        if (busy) "Reading…" else "Import",
+                        if (busy) tr("Reading…") else tr("Import"),
                         {
                             if (!busy && address.isNotEmpty()) {
                                 busy = true
@@ -478,12 +479,12 @@ private fun ImportCoin() {
                                     try {
                                         val added = AppGraph.trading.importCoin(address)
                                         val name = added.firstNotNullOfOrNull { it.symbol } ?: Fmt.address(added.first().token)
-                                        toasts.show("Imported $name", "On " + added.mapNotNull { it.chain?.title }.joinToString(" and "))
+                                        toasts.show(tr("Imported {1}", name), tr("On {1}", Fmt.joinAnd(added.mapNotNull { it.chain?.title })))
                                         close()
                                     } catch (e: CancellationException) {
                                         throw e
                                     } catch (e: Exception) {
-                                        note = e.message ?: "Could not import it. Try again."
+                                        note = e.message ?: tr("Could not import it. Try again.")
                                     } finally {
                                         busy = false
                                     }
@@ -495,7 +496,7 @@ private fun ImportCoin() {
                         height = 44.dp,
                         fontSize = 15,
                     )
-                    GhostButton("Cancel", close, Modifier.weight(1f))
+                    GhostButton(tr("Cancel"), close, Modifier.weight(1f))
                 }
             }
         }
@@ -511,7 +512,7 @@ fun inFours(address: String): String =
 private fun DepositSheet(wallet: WalletInfo, onClose: () -> Unit, onWallets: () -> Unit) {
     val context = LocalContext.current
     val toasts = LocalToasts.current
-    NestySheet("Deposit to One Balance", onClose) {
+    NestySheet(tr("Deposit to One Balance"), onClose) {
         Column(
             Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(start = 16.dp, end = 16.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -528,24 +529,24 @@ private fun DepositSheet(wallet: WalletInfo, onClose: () -> Unit, onWallets: () 
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     ToneMark(Tone.WARN, 18.dp)
-                    Text("Back up this wallet's key before you send funds to it", style = text(13, color = Ink.text2, lineHeight = 18.sp), modifier = Modifier.weight(1f))
-                    Text("Back up", style = text(14, FontWeight.Bold, Ink.green))
+                    Text(tr("Back up this wallet's key before you send funds to it"), style = text(13, color = Ink.text2, lineHeight = 18.sp), modifier = Modifier.weight(1f))
+                    Text(tr("Back up"), style = text(14, FontWeight.Bold, Ink.green))
                 }
             }
             wallet.evm?.let { address ->
                 AddressCard(
-                    "One address for Ethereum, Base, BNB Chain, Robinhood and Elysium",
+                    tr("One address for Ethereum, Base, BNB Chain, Robinhood and Elysium"),
                     address,
-                    "Send ETH on Ethereum, Base or Robinhood, BNB on BNB Chain, or HYPE on Elysium.",
+                    tr("Send ETH on Ethereum, Base or Robinhood, BNB on BNB Chain, or HYPE on Elysium."),
                 ) {
-                    copyText(context, "EVM address", address)
-                    toasts.show("EVM address copied", Fmt.address(address))
+                    copyText(context, tr("EVM address"), address)
+                    toasts.show(tr("EVM address copied"), Fmt.address(address))
                 }
             }
             wallet.sol?.let { address ->
-                AddressCard("Solana address", address, "Send SOL.") {
-                    copyText(context, "Solana address", address)
-                    toasts.show("Solana address copied", Fmt.address(address))
+                AddressCard(tr("Solana address"), address, tr("Send SOL.")) {
+                    copyText(context, tr("Solana address"), address)
+                    toasts.show(tr("Solana address copied"), Fmt.address(address))
                 }
             }
             // The side it lacks is added on the Wallets screen, made there or imported.
@@ -561,11 +562,11 @@ private fun DepositSheet(wallet: WalletInfo, onClose: () -> Unit, onWallets: () 
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
                     Text(
-                        if (side == WalletKind.EVM_KEY) "This wallet was made from a Solana key: it has no EVM address." else "This wallet was made from an EVM key: it has no Solana address.",
+                        if (side == WalletKind.EVM_KEY) tr("This wallet was made from a Solana key: it has no EVM address.") else tr("This wallet was made from an EVM key: it has no Solana address."),
                         style = text(13, color = Ink.text2, lineHeight = 18.sp),
                         modifier = Modifier.weight(1f),
                     )
-                    Text("Add", style = text(14, FontWeight.Bold, Ink.green))
+                    Text(tr("Add"), style = text(14, FontWeight.Bold, Ink.green))
                 }
             }
         }
@@ -590,11 +591,11 @@ private fun AddressCard(title: String, address: String, note: String, onCopy: ()
                     .clip(RoundedCornerShape(22.dp))
                     .background(Ink.raised)
                     .border(1.dp, Ink.line3, RoundedCornerShape(22.dp))
-                    .clickable(onClickLabel = "Copy this address", role = Role.Button, onClick = onCopy)
+                    .clickable(onClickLabel = tr("Copy this address"), role = Role.Button, onClick = onCopy)
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Copy", style = text(14, FontWeight.Bold))
+                Text(tr("Copy"), style = text(14, FontWeight.Bold))
             }
         }
         Text(note, style = text(13, color = Ink.text2, lineHeight = 19.sp))

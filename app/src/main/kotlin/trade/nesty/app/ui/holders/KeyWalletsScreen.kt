@@ -32,6 +32,8 @@ import trade.nesty.app.data.Chain
 import trade.nesty.app.data.KeyMove
 import trade.nesty.app.data.KeysAnswer
 import trade.nesty.app.data.Trade
+import trade.nesty.app.i18n.tr
+import trade.nesty.app.i18n.trKey
 import trade.nesty.app.ui.BackHeader
 import trade.nesty.app.ui.Divider
 import trade.nesty.app.ui.EmptyNote
@@ -54,11 +56,14 @@ import trade.nesty.app.ui.uniqueItems
 import java.util.Locale
 
 /** Which of a coin's key wallet moves the list shows. */
-enum class KeyShow(val label: String) {
-    ALL("All"),
-    SIDE("Creator & team"),
-    TOP("Top 10"),
-    BIG("Big buys"),
+enum class KeyShow(private val key: String) {
+    ALL(trKey("All")),
+    SIDE(trKey("Creator & team")),
+    TOP(trKey("Top 10")),
+    BIG(trKey("Big buys"));
+
+    /** Its name in the language the app shows. */
+    val label: String get() = tr(key)
 }
 
 /**
@@ -78,14 +83,25 @@ object KeyList {
     private val SIDE = setOf("dev", "team", "handoff", "insider")
 
     fun roleWord(role: String): String = when (role) {
-        "dev" -> "Creator"
-        "team", "handoff" -> "Team"
-        "insider" -> "Insider"
-        "bundler" -> "Bundler"
-        "sniper" -> "Sniper"
-        "top" -> "Top 10"
-        "big" -> "Big buy"
+        "dev" -> tr("Creator")
+        "team", "handoff" -> tr("Team")
+        "insider" -> tr("Insider")
+        "bundler" -> tr("Bundler")
+        "sniper" -> tr("Sniper")
+        "top" -> tr("Top 10")
+        "big" -> tr("Big buy")
         else -> role.replaceFirstChar { it.uppercase() }
+    }
+
+    /** A role inside a sentence, after a wallet's name: "Pal, insider". */
+    fun roleInLine(role: String): String = when (role) {
+        "team", "handoff" -> tr("team")
+        "insider" -> tr("insider")
+        "bundler" -> tr("bundler")
+        "sniper" -> tr("sniper")
+        "top" -> tr("top 10")
+        "big" -> tr("big buy")
+        else -> role
     }
 
     fun roleTag(role: String): WalletTag = when (role) {
@@ -99,14 +115,14 @@ object KeyList {
     }
 
     /** A largest holder shows its place: Top 10 #3. */
-    fun roleLabel(role: String, rank: Int?): String = if (role == "top" && rank != null) "Top 10 #$rank" else roleWord(role)
+    fun roleLabel(role: String, rank: Int?): String = if (role == "top" && rank != null) tr("Top 10 #{1}", rank) else roleWord(role)
 
     fun verbWord(verb: String): String = when (verb) {
-        "bought" -> "Bought"
-        "sold" -> "Sold"
-        "sent" -> "Sent"
-        "received" -> "Received"
-        "burned" -> "Burned"
+        "bought" -> tr("Bought")
+        "sold" -> tr("Sold")
+        "sent" -> tr("Sent")
+        "received" -> tr("Received")
+        "burned" -> tr("Burned")
         else -> verb.replaceFirstChar { it.uppercase() }
     }
 
@@ -154,7 +170,7 @@ object KeyList {
     fun heldNote(held: Double?, supply: Double?): String? {
         if (held == null || supply == null || supply <= 0) return null
         val share = held / supply
-        return if (share < DUST_SHARE) "holds none now" else "holds ${ofSupply(share)} now"
+        return if (share < DUST_SHARE) tr("holds none now") else tr("holds {1} now", ofSupply(share))
     }
 
     /**
@@ -172,15 +188,15 @@ object KeyList {
         fun who(w: String): String {
             val name = nameOf(w) ?: Fmt.address(w)
             val role = roles[w.lowercase()] ?: return name
-            return "$name, " + if (role == "dev") "the creator" else roleWord(role).lowercase()
+            return if (role == "dev") tr("{1}, the creator", name) else tr("{1}, {2}", name, roleInLine(role))
         }
         val other = m.other
         return when {
-            m.verb == "sent" && other != null -> "To ${who(other)}"
-            m.verb == "received" && other != null -> "From ${who(other)}"
-            m.verb == "burned" -> "To the burn address"
+            m.verb == "sent" && other != null -> tr("To {1}", who(other))
+            m.verb == "received" && other != null -> tr("From {1}", who(other))
+            m.verb == "burned" -> tr("To the burn address")
             else -> listOfNotNull(
-                m.mcapUsd?.let { "at MC ${Fmt.usd(it)}" },
+                m.mcapUsd?.let { tr("at MC {1}", Fmt.usd(it)) },
                 if (newest) heldNote(held[m.wallet.lowercase()], a.supply) else null,
             ).joinToString(" · ")
         }
@@ -188,10 +204,10 @@ object KeyList {
 
     /** Why a list shows no move. */
     fun emptyNote(a: KeysAnswer, show: KeyShow): String = when {
-        a.moves.isNotEmpty() -> "None of these yet."
-        a.reading -> "Reading what the key wallets did…"
-        a.wallets.isEmpty() && show == KeyShow.ALL -> "No creator, launch buyer or largest holder is known for this coin yet."
-        else -> "No moves from the creator, its team, the launch buyers or the largest holders yet, and no big buys."
+        a.moves.isNotEmpty() -> tr("None of these yet.")
+        a.reading -> tr("Reading what the key wallets did…")
+        a.wallets.isEmpty() && show == KeyShow.ALL -> tr("No creator, launch buyer or largest holder is known for this coin yet.")
+        else -> tr("No moves from the creator, its team, the launch buyers or the largest holders yet, and no big buys.")
     }
 
     /**
@@ -257,7 +273,7 @@ fun KeyWalletsScreen(chain: Chain, address: String) {
     val failed = if (solana) model.tradesPhase == Phase.FAILED else model.keysPhase == Phase.FAILED
 
     Column(Modifier.fillMaxSize()) {
-        BackHeader("Key wallets", sub, onBack = { nav.pop() })
+        BackHeader(tr("Key wallets"), sub, onBack = { nav.pop() })
         // No largest holders are counted on Solana, so it has no Top 10 to show.
         val shows = if (solana) KeyShow.entries.filter { it != KeyShow.TOP } else KeyShow.entries
         PillGroup(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -272,7 +288,7 @@ fun KeyWalletsScreen(chain: Chain, address: String) {
 @Composable
 private fun KeyMovesList(a: KeysAnswer?, failed: Boolean, show: KeyShow, solana: Boolean, open: (String) -> Unit) {
     if (a == null) {
-        EmptyNote(if (failed) "Could not read its key wallets. Trying again." else "Reading its key wallets…")
+        EmptyNote(if (failed) tr("Could not read its key wallets. Trying again.") else tr("Reading its key wallets…"))
         return
     }
     val now = rememberNow()
@@ -293,9 +309,9 @@ private fun KeyMovesList(a: KeysAnswer?, failed: Boolean, show: KeyShow, solana:
         }
         item(key = "end") {
             val note = when {
-                solana -> "From the trades read on this page."
-                a.reading -> "Reading older moves…"
-                a.partial -> "Some moves may be missing."
+                solana -> tr("From the trades read on this page.")
+                a.reading -> tr("Reading older moves…")
+                a.partial -> tr("Some moves may be missing.")
                 else -> null
             }
             if (note != null) {

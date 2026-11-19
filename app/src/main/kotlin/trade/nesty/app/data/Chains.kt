@@ -1,5 +1,7 @@
 package trade.nesty.app.data
 
+import trade.nesty.app.i18n.tr
+
 /**
  * The chains the server serves, in the order the screens list them. Arbitrum is a chain of the
  * extension only and is left out: the server does not serve it.
