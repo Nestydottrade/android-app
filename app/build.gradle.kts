@@ -15,8 +15,8 @@ android {
         targetSdk = 36
         // Raised for each release. A test build may raise them on the command line instead
         // (-Pnesty.versionCode=2 -Pnesty.versionName=0.1.1), to try the updater in the emulator.
-        versionCode = providers.gradleProperty("nesty.versionCode").orNull?.toInt() ?: 7
-        versionName = providers.gradleProperty("nesty.versionName").orNull ?: "0.1.6"
+        versionCode = providers.gradleProperty("nesty.versionCode").orNull?.toInt() ?: 8
+        versionName = providers.gradleProperty("nesty.versionName").orNull ?: "0.1.7"
     }
 
     signingConfigs {
